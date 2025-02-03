@@ -14,12 +14,31 @@ constants:
   last_date: "2025-10-01"
 
 flags:
-  # Description
+  # Running on CS cluster
   CS: false
-  # Description
+  # NAG availability
   nag: false
-  # Description
+  # Knitro availability
   knitro: false
+
+  # Test Derivatives of ED
+  TestED: false
+  # Test Objective Function Derivatives
+  TestObj: true
+  # Test Derivatives of Constraints
+  TestEstimationConstraint: true
+  # Test Programs to Compute OmegaBar
+  TestOmega: false
+  # Test Computation of Equilibrium
+  TestComputeEquilibrium: false
+  # Allow Default (tue = sigmaBar > 0 and allow default; false = sigmaBar = 0 for all industries)
+  allowDefault: true
+
+  # Use data from mat files
+  data_from_mat: false
+
+  # Random initial values for parameters
+  random_initial_values: false
 
 elasticities:
   consumption: [[3, 2.0]]
@@ -28,45 +47,77 @@ elasticities:
   production: [[0.4, 0.75, 2.0]]
   investment: [[0.4, 2.0]]
 
-input_dir: input
+files:
+  input_dir: input
 
-output_dir: output
+  output_dir: output
 
-required:
-  inputs:
-    InputOutput: "uk_input_output2019.xlsx"
-    Imports: "uk_input_output2019.xlsx"
-    mergeCodes64: "mergeCodes64.xlsx"
-    mergeCodes105: "mergeCodes105.csv"
+  required:
+    inputs:
+      InputOutput: "uk_input_output2019.xlsx"
+      Imports: "uk_input_output2019.xlsx"
+      mergeCodes64: "mergeCodes64.xlsx"
+      mergeCodes105: "mergeCodes105.csv"
 
-    # Time series: income of two types (lo, hi) in two scenarios (0,1) = (noCovid, covid)
-    loIncome0: "derived/{version}/noCollegeIncome0.csv"
-    hiIncome0: "derived/{version}/collegeIncome0.csv"
-    loIncome1: "derived/{version}/noCollegeIncome1.csv"
-    hiIncome1: "derived/{version}/collegeIncome1.csv"
+      # Time series: income of two types (lo, hi) in two scenarios (0,1) = (noCovid, covid)
+      loIncome0: "derived/{version}/noCollegeIncome0.csv"
+      hiIncome0: "derived/{version}/collegeIncome0.csv"
+      loIncome1: "derived/{version}/noCollegeIncome1.csv"
+      hiIncome1: "derived/{version}/collegeIncome1.csv"
 
-    # Time series: hours worked of two types (lo, hi) in two scenarios (0,1)
-    loHours0: "derived/{version}/noCollegeHours0.csv"
-    hiHours0: "derived/{version}/collegeHours0.csv"
-    loHours1: "derived/{version}/noCollegeHours1.csv"
-    hiHours1: "derived/{version}/collegeHours1.csv"
+      # Time series: hours worked of two types (lo, hi) in two scenarios (0,1)
+      loHours0: "derived/{version}/noCollegeHours0.csv"
+      hiHours0: "derived/{version}/collegeHours0.csv"
+      loHours1: "derived/{version}/noCollegeHours1.csv"
+      hiHours1: "derived/{version}/collegeHours1.csv"
 
-    # Time series: capital in two scenarios (0,1)
-    capital0: "derived/{version}/capital0.csv"
-    capital1: "derived/{version}/capital1.csv"
+      # Time series: capital in two scenarios (0,1)
+      capital0: "derived/{version}/capital0.csv"
+      capital1: "derived/{version}/capital1.csv"
 
-    # Time series: inventories (one scenario only)
-    inventory: "derived/{version}/inventories.csv"
+      # Time series: inventories (one scenario only)
+      inventory: "derived/{version}/inventories.csv"
 
-    # Base year: depreciation rates
-    depreciation: "derived/{version}/depreciation.csv"
+      # Base year: depreciation rates
+      depreciation: "derived/{version}/depreciation.csv"
 
-    # Financial data
-    RiskFreeRate: "derived/{version}/interestRate.csv"
-    assets: "derived/{version}/firmData.csv"
-    DefaultSigma: "derived/{version}/modelResults.csv"
+      # Financial data
+      RiskFreeRate: "derived/{version}/interestRate.csv"
+      assets: "derived/{version}/firmData.csv"
+      DefaultSigma: "derived/{version}/modelResults.csv"
 
-    # Forecast scenarios
-    gdp: "derived/{version}/gdp_forecast.csv"
-    turnoverS0: "derived/{version}/turnover_s0.csv"
-    turnoverS1: "derived/{version}/turnover_s1.csv"
+      # Forecast scenarios
+      gdp: "derived/{version}/gdp_forecast.csv"
+      turnoverS0: "derived/{version}/turnover_s0.csv"
+      turnoverS1: "derived/{version}/turnover_s1.csv"
+
+initial_params:
+  # Scaling factors for the parameters
+  hLOScale: 1
+  hHIScale: 1
+  kScale: 1
+  yScale: 1
+
+  # Elasticity parameters
+  epsilon: 3
+  epsilon_a: 3
+  zeta1: 3
+  zeta1_a: 3
+  zeta1Tilde: 3
+  zeta2: 3
+  zeta2_a: 3
+  zeta2Tilde: 3
+  xi: 0.5
+  xi_h: 0.75 # avg. value from Havranek et al. (2020)
+  xi_a: 0.5
+  eta: 0.5
+  eta_a: 0.5
+
+  P1Tilde: 1
+  PX1Tilde: 1
+  P2Tilde: 1
+  PX2Tilde: 1
+
+  q0: 1.0
+  kOmega: 10
+  lambda: 0.12 # see Bernanke et al. page 1368
