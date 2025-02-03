@@ -41,11 +41,16 @@ flags:
   random_initial_values: false
 
 elasticities:
-  consumption: [[3, 2.0]]
-  EU_export_demand: [[3, 2.0, 2.0]]
-  ROW_export_demand: [[3, 2.0, 2.0]]
-  production: [[0.4, 0.75, 2.0]]
-  investment: [[0.4, 2.0]]
+  consumption:
+    - [3, 2.0]
+  EU_export_demand:
+    - [3, 2.0, 2.0]
+  ROW_export_demand:
+    - [3, 2.0, 2.0]
+  production:
+    - [0.4, 0.75, 2.0]
+  investment:
+    - [0.4, 2.0]
 
 files:
   input_dir: input
