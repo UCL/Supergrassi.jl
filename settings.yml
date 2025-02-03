@@ -116,21 +116,6 @@ initial_params:
   kScale: 1
   yScale: 1
 
-  # Elasticity parameters
-  epsilon: 3
-  epsilon_a: 3
-  zeta1: 3
-  zeta1_a: 3
-  zeta1Tilde: 3
-  zeta2: 3
-  zeta2_a: 3
-  zeta2Tilde: 3
-  xi: 0.5
-  xi_h: 0.75 # avg. value from Havranek et al. (2020)
-  xi_a: 0.5
-  eta: 0.5
-  eta_a: 0.5
-
   P1Tilde: 1
   PX1Tilde: 1
   P2Tilde: 1
