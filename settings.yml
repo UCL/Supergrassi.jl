@@ -1,0 +1,72 @@
+version: "2024-12-31"
+experiment_run: 1
+
+constants:
+  # Small number to avoid log(0)
+  small: 1e-12
+  # Number of industries in the raw data
+  n_raw: 64
+  # IO table data year
+  data_year: 2019
+  # First date to simulate
+  first_date: "2020-01-01"
+  # Last date to simulate
+  last_date: "2025-10-01"
+
+flags:
+  # Description
+  CS: false
+  # Description
+  nag: false
+  # Description
+  knitro: false
+
+elasticities:
+  consumption: [[3, 2.0]]
+  EU_export_demand: [[3, 2.0, 2.0]]
+  ROW_export_demand: [[3, 2.0, 2.0]]
+  production: [[0.4, 0.75, 2.0]]
+  investment: [[0.4, 2.0]]
+
+input_dir: input
+
+output_dir: output
+
+required:
+  inputs:
+    InputOutput: "uk_input_output2019.xlsx"
+    Imports: "uk_input_output2019.xlsx"
+    mergeCodes64: "mergeCodes64.xlsx"
+    mergeCodes105: "mergeCodes105.csv"
+
+    # Time series: income of two types (lo, hi) in two scenarios (0,1) = (noCovid, covid)
+    loIncome0: "derived/{version}/noCollegeIncome0.csv"
+    hiIncome0: "derived/{version}/collegeIncome0.csv"
+    loIncome1: "derived/{version}/noCollegeIncome1.csv"
+    hiIncome1: "derived/{version}/collegeIncome1.csv"
+
+    # Time series: hours worked of two types (lo, hi) in two scenarios (0,1)
+    loHours0: "derived/{version}/noCollegeHours0.csv"
+    hiHours0: "derived/{version}/collegeHours0.csv"
+    loHours1: "derived/{version}/noCollegeHours1.csv"
+    hiHours1: "derived/{version}/collegeHours1.csv"
+
+    # Time series: capital in two scenarios (0,1)
+    capital0: "derived/{version}/capital0.csv"
+    capital1: "derived/{version}/capital1.csv"
+
+    # Time series: inventories (one scenario only)
+    inventory: "derived/{version}/inventories.csv"
+
+    # Base year: depreciation rates
+    depreciation: "derived/{version}/depreciation.csv"
+
+    # Financial data
+    RiskFreeRate: "derived/{version}/interestRate.csv"
+    assets: "derived/{version}/firmData.csv"
+    DefaultSigma: "derived/{version}/modelResults.csv"
+
+    # Forecast scenarios
+    gdp: "derived/{version}/gdp_forecast.csv"
+    turnoverS0: "derived/{version}/turnover_s0.csv"
+    turnoverS1: "derived/{version}/turnover_s1.csv"
