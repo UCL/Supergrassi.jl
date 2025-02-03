@@ -60,42 +60,44 @@ files:
 
   required:
     inputs:
-      InputOutput: "uk_input_output2019.xlsx"
-      Imports: "uk_input_output2019.xlsx"
-      mergeCodes64: "mergeCodes64.xlsx"
-      mergeCodes105: "mergeCodes105.csv"
+      base:
+        InputOutput: "uk_input_output2019.xlsx"
+        Imports: "uk_input_output2019.xlsx"
+        mergeCodes64: "mergeCodes64.xlsx"
+        mergeCodes105: "mergeCodes105.csv"
 
-      # Time series: income of two types (lo, hi) in two scenarios (0,1) = (noCovid, covid)
-      loIncome0: "noCollegeIncome0.csv"
-      hiIncome0: "collegeIncome0.csv"
-      loIncome1: "noCollegeIncome1.csv"
-      hiIncome1: "collegeIncome1.csv"
+      derived:
+        # Time series: income of two types (lo, hi) in two scenarios (0,1) = (noCovid, covid)
+        loIncome0: "noCollegeIncome0.csv"
+        hiIncome0: "collegeIncome0.csv"
+        loIncome1: "noCollegeIncome1.csv"
+        hiIncome1: "collegeIncome1.csv"
 
-      # Time series: hours worked of two types (lo, hi) in two scenarios (0,1)
-      loHours0: "noCollegeHours0.csv"
-      hiHours0: "collegeHours0.csv"
-      loHours1: "noCollegeHours1.csv"
-      hiHours1: "collegeHours1.csv"
+        # Time series: hours worked of two types (lo, hi) in two scenarios (0,1)
+        loHours0: "noCollegeHours0.csv"
+        hiHours0: "collegeHours0.csv"
+        loHours1: "noCollegeHours1.csv"
+        hiHours1: "collegeHours1.csv"
 
-      # Time series: capital in two scenarios (0,1)
-      capital0: "capital0.csv"
-      capital1: "capital1.csv"
+        # Time series: capital in two scenarios (0,1)
+        capital0: "capital0.csv"
+        capital1: "capital1.csv"
 
-      # Time series: inventories (one scenario only)
-      inventory: "derived/{version}/inventories.csv"
+        # Time series: inventories (one scenario only)
+        inventory: "derived/{version}/inventories.csv"
 
-      # Base year: depreciation rates
-      depreciation: "depreciation.csv"
+        # Base year: depreciation rates
+        depreciation: "depreciation.csv"
 
-      # Financial data
-      RiskFreeRate: "interestRate.csv"
-      assets: "firmData.csv"
-      DefaultSigma: "modelResults.csv"
+        # Financial data
+        RiskFreeRate: "interestRate.csv"
+        assets: "firmData.csv"
+        DefaultSigma: "modelResults.csv"
 
-      # Forecast scenarios
-      gdp: "gdp_forecast.csv"
-      turnoverS0: "turnover_s0.csv"
-      turnoverS1: "turnover_s1.csv"
+        # Forecast scenarios
+        gdp: "gdp_forecast.csv"
+        turnoverS0: "turnover_s0.csv"
+        turnoverS1: "turnover_s1.csv"
 
 initial_params:
   # Scaling factors for the parameters
