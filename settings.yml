@@ -2,8 +2,6 @@ version: "2024-12-31"
 experiment_run: 1
 
 constants:
-  # Small number to avoid log(0)
-  small: 1e-12
   # Number of industries in the raw data
   n_raw: 64
   # IO table data year
