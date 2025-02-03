@@ -95,6 +95,19 @@ files:
       gdp: "gdp_forecast.csv"
       turnoverS0: "turnover_s0.csv"
       turnoverS1: "turnover_s1.csv"
+  outputs:
+    BaseData: "ukdata.mat"
+    parms: "parms.mat"
+    logp: "logp.mat"
+    LogY: "logy.mat"
+    NoCovidMAT: "forecastNoCovid.mat"
+    NoCovidCSV: "forecastNoCovid.csv"
+    CovidCSV: "cge_results.csv"
+    CovidMAT: "turnover_model.mat"
+    TradeCSV: "net_exports.csv"
+    SimulateEconomy3MAT: "simEcon3.mat"
+    SimulateEconomy3CSV: "simEcon3.csv"
+    CompStatsResults: "compStats.mat"
 
 initial_params:
   # Scaling factors for the parameters
