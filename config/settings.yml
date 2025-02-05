@@ -59,11 +59,11 @@ files:
         capital: "capital.csv"
 
         # Forecast scenarios
-        turnover_S: "turnover_s.csv"
+        turnover: "turnover.csv"
 
       scenario_independent:
         # Time series: inventories (one scenario only)
-        inventory: "derived/{version}/inventories.csv"
+        inventory: "inventories.csv"
 
         # Base year: depreciation rates
         depreciation: "depreciation.csv"
@@ -78,20 +78,17 @@ files:
 
   outputs:
     scenario_dependent:
-      forecast_mat: "forecast.mat"
-      forecast_csv: "forecast.csv"
+      forecast: "forecast.csv"
 
     scenario_independent:
-      base_data: "ukdata.mat"
-      parms: "parms.mat"
-      log_p: "logp.mat"
-      log_Y: "logy.mat"
-      covid_csv: "cge_results.csv"
-      covid_mat: "turnover_model.mat"
-      trade_csv: "net_exports.csv"
-      simulate_economy_3_mat: "simEcon3.mat"
-      simulate_economy_3_csv: "simEcon3.csv"
-      comp_stats_results: "compStats.mat"
+      base_data: "ukdata.csv"
+      parms: "parms.csv"
+      log_p: "logp.csv"
+      log_Y: "logy.csv"
+      covid: "cge_results.csv"
+      trade: "net_exports.csv"
+      simulate_economy_3: "simEcon3.csv"
+      comp_stats: "compStats.csv"
 
 initial_params:
   price_index:
