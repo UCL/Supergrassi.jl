@@ -12,12 +12,11 @@ constants:
   last_date: "2025-10-01"
 
 flags:
-  stochasticity:
-    # Use data from mat files
-    data_from_mat: false # Replace mat by better format
+  # Use data from mat files
+  data_from_mat: false # Replace mat by better format
 
-    # Random initial values for parameters
-    random_initial_values: false
+  # Random initial values for parameters
+  random_initial_values: false
 
 elasticities:
   consumption:
