@@ -2,7 +2,7 @@ module Supergrassi
 
 # Write your package code here.
 
-include("reader.jl")
+include("FileReader.jl")
 
 export read_data
 
