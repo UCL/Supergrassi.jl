@@ -69,9 +69,9 @@ files:
         depreciation: "depreciation.csv"
 
         # Financial data
-        RiskFreeRate: "interestRate.csv"
+        risk_free_rate: "interestRate.csv"
         assets: "firmData.csv"
-        DefaultSigma: "modelResults.csv"
+        model_results: "modelResults.csv"
 
         # Forecast scenarios
         gdp: "gdp_forecast.csv"
