@@ -14,7 +14,7 @@ struct FilePath
 
 end
 
-function create_filepath_from_template(basepath::String, substitution_dict::Dict{String, String})
+function create_filepath_from_template(basepath::String, substitution_dict::Dict{String, Any})
 
     for (key, value) in substitution_dict
         var = "{$key}"

@@ -6,17 +6,19 @@ using Supergrassi
 
     substitutions = Dict(
         "name" => "data",
-        "format" => "csv"
+        "format" => "csv",
+        "directory" => "dir",
+        "suffix" => 1,
     )
 
-    template = "{name}.{format}"
-    expected_filename = "data.csv"
+    template = "{directory}/{name}{suffix}.{format}"
+    expected_filename = "data1.csv"
+    expected_directory = "dir"
 
     created_filepath = create_filepath_from_template(template, substitutions)
 
-    println(created_filepath.file)
-
     @test created_filepath.file == expected_filename
+    @test created_filepath.directory == expected_directory
 
 
 end
