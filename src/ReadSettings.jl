@@ -1,16 +1,35 @@
 using YAML
 
-function read_settings(file_path::FilePath)
-    settings = YAML.load_file(file_path.path)
+function classify_dict(dict::Dict{Any, Any})
 
-    settings_keys = collect(keys(settings))
-    for key in settings_keys
-        if !isa(key, String)
-            error("Invalid key: $key")
+    dict_keys = collect(keys(dict))
+    key_types = typeof.(values(dict_keys))
+
+    dict_values = collect(values(dict))
+    value_types = typeof.(dict_values)
+
+    set_key_types = Set(key_types)
+    set_value_types = Set(value_types)
+
+    key_type = length(set_key_types) > 1 ? Any : first(set_key_types)
+    value_type = length(set_value_types) > 1 ? Any : first(set_value_types)
+
+    new_dict = Dict{key_type, value_type}(dict)
+
+    for (key, value) in dict
+        if isa(value, Dict)
+            new_dict[key] = classify_dict(value)
         end
     end
 
-    settings = Dict{String, Any}(settings)
+    return new_dict
+
+end
+
+
+function read_settings(file_path::FilePath)
+    settings = YAML.load_file(file_path.path)
+    settings = classify_dict(settings)
     return settings
 end
 
