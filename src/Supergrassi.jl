@@ -4,7 +4,8 @@ module Supergrassi
 
 include("FileReader.jl")
 include("FilePathValidator.jl")
+include("ReadSettings.jl")
 
-export read_data, create_filepath_from_template
+export create_filepath, create_filepath_from_template, read_data, read_settings, validate_settings
 
 end

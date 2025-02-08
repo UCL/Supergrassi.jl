@@ -64,3 +64,26 @@ function create_filepath_from_template(basepath::String, substitution_dict::Dict
 
     return FilePath(basepath)
 end
+
+
+"""
+    Validates a file path.
+
+    # Arguments
+    - `file_path::FilePath`: The file path object.
+
+    # Returns
+    - `Bool`: Whether the file path is valid.
+
+    # Examples
+    ```julia
+    file_path = FilePath("data.csv")
+    is_valid = validate_filepath(file_path)
+    println(is_valid) # true
+    ```
+"""
+function create_filepath(basepath::String)
+
+    return FilePath(basepath)
+
+end
