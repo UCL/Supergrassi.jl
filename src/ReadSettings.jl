@@ -33,21 +33,19 @@ function read_settings(file_path::FilePath)
     return settings
 end
 
-function validate_dictionary_keys(settings::Dict{String, Any}, required_keys::Vector{String})
-    dict_keys = collect(keys(settings))
-    for key in required_keys
-        if !(key in dict_keys)
-            error("Missing key: $key")
+function validate_settings(settings::Dict{<:Any, <:Any}, structure::Dict{<:Any, <:Any})
+
+    for (key, value) in settings
+
+        println(key)
+        
+        if !haskey(structure, key)
+            error("Invalid key: $key")
         end
+
+        if isa(value, Dict)
+            validate_settings(value, structure[key])
+        end
+
     end
-end
-
-
-
-function validate_settings(settings::Dict{String, Any})
-
-    base_keys = ["constants", "flags", "elasticities", "files", "initial_params", "experiment_run", "version"]
-    validate_dictionary_keys(settings, base_keys)
-
-    println("Settings are valid.")
 end

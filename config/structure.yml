@@ -1,0 +1,96 @@
+version: date
+experiment_run: int
+
+constants:
+  # Industry names file
+  industry_names: str
+  # IO table data year
+  data_year: int
+  # First date to simulate
+  first_date: date
+  # Last date to simulate
+  last_date: date
+
+flags:
+  # Use data from mat files
+  data_from_mat: bool
+
+  # Random initial values for parameters
+  random_initial_values: bool
+
+elasticities:
+  consumption: elas
+  eu_export_demand: elas
+  rest_of_world_export_demand: elas
+  production: elas
+  investment: elas
+
+files:
+  input_dir: str
+  output_dir: str
+  scenario: 0 # 0: noCovid, 1: covid
+
+  input_derived_dir: str
+
+  inputs:
+    base:
+      input_output: str
+      imports: str
+      merge_codes_64: str
+      merge_codes_105: str
+
+    derived:
+      scenario_dependent:
+        # Time series: income of two types (lo, hi) in two scenarios (0,1) = (noCovid, covid)
+        lo_income: str
+        hi_income: str
+
+        # Time series: hours worked of two types (lo, hi) in two scenarios (0,1)
+        lo_hours: str
+        hi_hours: str
+
+        # Time series: capital in two scenarios (0,1)
+        capital: str
+
+        # Forecast scenarios
+        turnover: str
+
+      scenario_independent:
+        # Time series: inventories (one scenario only)
+        inventory: str
+
+        # Base year: depreciation rates
+        depreciation: str
+
+        # Financial data
+        risk_free_rate: str
+        assets: str
+        model_results: str
+
+        # Forecast scenarios
+        gdp: str
+
+  outputs:
+    scenario_dependent:
+      forecast: str
+
+    scenario_independent:
+      base_data: str
+      parms: str
+      log_p: str
+      log_Y: str
+      covid: str
+      trade: str
+      simulate_economy_3: str
+      comp_stats: str
+
+initial_params:
+  price_index:
+    eu: int
+    eu_export: int
+    rest_of_world: int
+    rest_of_world_export: int
+
+  beginning_price_of_capital: float
+  leverage_grid_resolution: int
+  assets_destroyed_in_bankrupcy: float
