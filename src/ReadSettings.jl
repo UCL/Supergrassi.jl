@@ -1,5 +1,14 @@
 using YAML
 
+data_type_dict = Dict(
+    "int" => Int64,
+    "float" => Float64,
+    "str" => String,
+    "bool" => Bool,
+    "elas" => Vector{Vector{Float64}},
+    "date" => String,
+)
+
 function classify_dict(dict::Dict{Any, Any})
 
     dict_keys = collect(keys(dict))
@@ -36,8 +45,6 @@ end
 function validate_settings(settings::Dict{<:Any, <:Any}, structure::Dict{<:Any, <:Any})
 
     for (key, value) in settings
-
-        println(key)
         
         if !haskey(structure, key)
             error("Invalid key: $key")
@@ -45,7 +52,12 @@ function validate_settings(settings::Dict{<:Any, <:Any}, structure::Dict{<:Any, 
 
         if isa(value, Dict)
             validate_settings(value, structure[key])
+        else
+            if !isa(value, data_type_dict[structure[key]])
+                error("Invalid value type for key: $key")
+            end
         end
 
     end
+    
 end

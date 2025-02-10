@@ -28,7 +28,7 @@ elasticities:
 files:
   input_dir: str
   output_dir: str
-  scenario: 0 # 0: noCovid, 1: covid
+  scenario: int # 0: noCovid, 1: covid
 
   input_derived_dir: str
 
