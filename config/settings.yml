@@ -31,7 +31,7 @@ elasticities:
     - [0.4, 2.0]
 
 files:
-  input_dir: input
+  input_dir: input/uk_dir
   output_dir: output
   scenario: 0 # 0: noCovid, 1: covid
 
