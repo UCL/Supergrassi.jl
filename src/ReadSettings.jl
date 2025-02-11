@@ -44,10 +44,17 @@ end
 
 function validate_settings(settings::Dict{<:Any, <:Any}, structure::Dict{<:Any, <:Any})
 
+    for key in keys(structure)
+        if !haskey(settings, key)
+            error("Missing key in settings YAML: $key")
+        end
+    end
+
     for (key, value) in settings
         
         if !haskey(structure, key)
-            error("Invalid key: $key")
+            @warn "Unvalidated Key in settings YAML: $key"
+            continue
         end
 
         if isa(value, Dict)
