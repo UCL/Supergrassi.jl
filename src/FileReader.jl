@@ -83,3 +83,21 @@ function read_data(file::String, sheet::String, range::String)
     return read_excel(file, sheet=sheet, range=range)
 
 end
+
+function read_data(filepaths::Dict{String, FilePath})
+    data = Dict{String, DataFrame}()
+
+    for (key, filepath) in filepaths
+        println("Reading data from $(filepath.path)")
+
+        if occursin(r"\.csv$", filepath.path)
+            data[key] = read_csv(filepath.path)
+        elseif occursin(r"\.xlsx$", filepath.path)
+            @warn "Excel files not supported yet"
+        else
+            @warn "Invalid file format: $(filepath.path)"
+        end
+    end
+
+    return data
+end
