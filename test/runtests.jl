@@ -1,6 +1,7 @@
 using Supergrassi
 using Test
 using Enzyme
+using CSV, DataFrames
 
 @testset "Supergrassi.jl" begin
     # Write your tests here.
@@ -10,20 +11,11 @@ end
 
     n = 16
     elasticity = 2.0
-    log_price = (uk = randn(n), eu = randn(n), world = randn(n))
-    goods_consumption = (uk = ones(n), eu = ones(n), world = ones(n))
 
-    alpha = Supergrassi.compute_demand.(elasticity,
-                                        log_price.uk,
-                                        log_price.eu,
-                                        log_price.world,
-                                        goods_consumption.uk,
-                                        goods_consumption.eu,
-                                        goods_consumption.world)
+    alpha = Matrix{Float64}(undef, n, 6)
+    grad_alpha = Matrix{Float64}(undef, n, 6)
+    df = CSV.read("../data/data_for_compute_demand.csv", DataFrame)
 
-    @test length(alpha) == n
-    @test all(i -> minimum(i) > 0, alpha)
-    
     f(el, pd, peu, pw, fd, feu, fw) = gradient(Forward,
                                                Supergrassi.compute_demand,
                                                Const(el),
@@ -33,23 +25,30 @@ end
                                                Const(fd),
                                                Const(feu),
                                                Const(fw))
-    
-    grad_alpha = f.(elasticity,
-                    log_price.uk,
-                    log_price.eu,
-                    log_price.world,
-                    goods_consumption.uk,
-                    goods_consumption.eu,
-                    goods_consumption.world)
 
-    # Test grad_alpha is of right shape
-    @test length(grad_alpha) == n
-    @test all(i -> length(i) == 7, grad_alpha)
-    # Test gradients of Consts are `nothing`
-    @test all(i -> isnothing(i[1]), grad_alpha)
-    @test all(i -> all(j -> isnothing(j), i[3:7]), grad_alpha)
-    # Test gradients of `pd` are finite
-    @test all(i -> all(j -> isfinite(j), i[2]), grad_alpha)
+    for row in axes(alpha, 1)
+        alpha[row,:] .= Supergrassi.compute_demand(elasticity,
+                                                   df.logP_uk[row],
+                                                   df.logP_eu[row],
+                                                   df.logP_w[row],
+                                                   df.f_uk[row],
+                                                   df.f_eu[row],
+                                                   df.f_w[row])
+
+        grad_alpha[row,:] .= f(elasticity,
+                               df.logP_uk[row],
+                               df.logP_eu[row],
+                               df.logP_w[row],
+                               df.f_uk[row],
+                               df.f_eu[row],
+                               df.f_w[row])[2]
+    end
+
+    alpha[12,2:6] .= 0.0
+    grad_alpha[12,:] .= 0.0
+    
+    @test isapprox(alpha[:,1:3], [df.alpha_uk df.alpha_eu df.alpha_w], atol = 1e-4)
+    @test isapprox(grad_alpha[:,4:6], [df.dlogalpha_uk df.dlogalpha_eu df.dlogalpha_w], atol = 1e-4)
 end
 
 # @testset "Compute equilibrium test" begin
