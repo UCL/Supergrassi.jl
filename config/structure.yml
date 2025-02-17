@@ -94,3 +94,19 @@ initial_params:
   beginning_price_of_capital: float
   leverage_grid_resolution: int
   assets_destroyed_in_bankrupcy: float
+
+excel_limits:
+  input_output:
+    sheet: str
+    top_left: str
+    bottom_right: str
+
+  imports:
+    sheet: str
+    top_left: str
+    bottom_right: str
+
+  merge_codes_64:
+    sheet: str
+    top_left: str
+    bottom_right: str

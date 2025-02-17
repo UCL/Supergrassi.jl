@@ -84,7 +84,7 @@ function read_data(file::String, sheet::String, range::String)
 
 end
 
-function read_data(filepaths::Dict{String, FilePath})
+function read_data(filepaths::Dict{String, FilePath}, settings::Dict{String, Any})
     data = Dict{String, DataFrame}()
 
     for (key, filepath) in filepaths
@@ -93,7 +93,11 @@ function read_data(filepaths::Dict{String, FilePath})
         if occursin(r"\.csv$", filepath.path)
             data[key] = read_csv(filepath.path)
         elseif occursin(r"\.xlsx$", filepath.path)
-            @warn "Excel files not supported yet"
+            sheet = settings["excel_limits"][key]["sheet"]
+            top_left = settings["excel_limits"][key]["top_left"]
+            bottom_right = settings["excel_limits"][key]["bottom_right"]
+            range = "$top_left:$bottom_right"
+            data[key] = read_excel(filepath.path, sheet=sheet, range=range)
         else
             @warn "Invalid file format: $(filepath.path)"
         end
