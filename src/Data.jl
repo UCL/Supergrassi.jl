@@ -9,16 +9,17 @@ struct HouseHoldData
     hours::IncomeData
 end
 
-
+struct IndustryData
+    capital::DataFrame
+    turnover::DataFrame
+    inventory::DataFrame
+end
 
 struct Data
 
     household::HouseHoldData
+    industry::IndustryData
 
-    capital::DataFrame
-    turnover::DataFrame
-
-    inventory::DataFrame
     depreciation::DataFrame
 
     risk_free_rate::DataFrame
