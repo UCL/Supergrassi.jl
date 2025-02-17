@@ -58,7 +58,7 @@ files:
         capital: "capital.csv"
 
         # Forecast scenarios
-        turnover: "turnover.csv"
+        turnover: "turnover_s.csv"
 
       scenario_independent:
         # Time series: inventories (one scenario only)
