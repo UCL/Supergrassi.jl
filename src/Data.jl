@@ -15,6 +15,10 @@ struct IndustryData
     inventory::DataFrame
 end
 
+struct InputOutputData
+    # todo
+end
+
 struct Data
 
     household::HouseHoldData
