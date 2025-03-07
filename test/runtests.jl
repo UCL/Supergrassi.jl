@@ -7,7 +7,7 @@ using CSV, DataFrames
     # Write your tests here.
 end
 
-@testset "Compute consumption" begin
+@testset "Household demand parameters" begin
 
     n = 16
     elasticity_a = 2.0
@@ -18,16 +18,6 @@ end
     grad_alpha = Matrix{Float64}(undef, n, 6)
     df = CSV.read("../data/data_for_compute_demand.csv", DataFrame)
 
-    gradient_function(el, puk, peu, pw, fuk, feu, fw) = gradient(Forward,
-                                                                 Supergrassi.consumption_weights,
-                                                                 Const(el),
-                                                                 puk,
-                                                                 Const(peu),
-                                                                 Const(pw),
-                                                                 Const(fuk),
-                                                                 Const(feu),
-                                                                 Const(fw))
-
     for row in axes(alpha, 1)
         alpha[row,:] .= Supergrassi.consumption_weights(elasticity_a,
                                                       df.logP_uk[row],
@@ -36,14 +26,15 @@ end
                                                       df.f_uk[row],
                                                       df.f_eu[row],
                                                       df.f_w[row])
-
-        grad_alpha[row,:] .= gradient_function(elasticity_a,
-                                               df.logP_uk[row],
-                                               df.logP_eu[row],
-                                               df.logP_w[row],
-                                               df.f_uk[row],
-                                               df.f_eu[row],
-                                               df.f_w[row])[2]
+        grad_alpha[row,:] .= gradient(Forward,
+                                      Supergrassi.consumption_weights,
+                                      Const(elasticity_a),
+                                      df.logP_uk[row],
+                                      Const(df.logP_eu[row]),
+                                      Const(df.logP_w[row]),
+                                      Const(df.f_uk[row]),
+                                      Const(df.f_eu[row]),
+                                      Const(df.f_w[row]))[2]
     end
     
     alpha[12,2:6] .= 0.0
@@ -58,6 +49,12 @@ end
     Alpha = jacobian(ForwardWithPrimal, Supergrassi.total_consumption_weight, logPf, Const(df.f), Const(elasticity))
 
     @test isapprox(Alpha.val, df.alpha, atol = tol)
+
+end
+
+@testset "EU demand parameters" begin
+
+    
 
 end
 
