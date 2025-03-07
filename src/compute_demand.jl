@@ -1,30 +1,71 @@
-# function compute_demand(n,elasticity,log_price_uk,log_price_eu,log_price_world,goods_consumption)
-function compute_demand(elasticity::T,
-                        log_price_uk::T,
-                        log_price_eu::T,
-                        log_price_world::T,
-                        goods_consumption_uk::T,
-                        goods_consumption_eu::T,
-                        goods_consumption_world::T) where {T <: Real}
+function log_price_index(elasticity::T,
+                         log_price_uk::T, log_price_eu::T, log_price_world::T,
+                         demand_uk::T, demand_eu::T, demand_world::T) where {T <: Real}
+
+    # Abbreviated logPf in papers and Matlab code
+
+    return elasticity / (elasticity - 1.0) * log(
+        demand_uk ^ (1.0/elasticity) * exp((elasticity - 1.0) * log_price_uk / elasticity) +
+        demand_eu ^ (1.0/elasticity) * exp((elasticity - 1.0) * log_price_eu / elasticity) +
+        demand_world  ^ (1.0/elasticity) * exp((elasticity - 1.0) * log_price_world  / elasticity)
+    )
+
+end
+
+function consumption_weights(elasticity::T,
+                             log_price_uk::T,log_price_eu::T,log_price_world::T,
+                             consumption_uk::T,consumption_eu::T,consumption_world::T) where {T <: Real}
 
     # Inputs
     # elasticity # parms.epsilon_a
     # log_price_{uk, eu, w} # logPd, parms.logP{eu,w}
-    # goods_consumption_{uk, eu, w} #data.fValue{UK, EU, W}
+    # consumption_{uk, eu, w} #data.fValue{UK, EU, W}
 
     # Outputs
-    # alpha.{uk, eu, w}
-    
-    log_consumer_price_index = elasticity / (elasticity - 1.0) * log(
-        goods_consumption_uk ^ (1.0/elasticity) * exp((elasticity - 1.0) * log_price_uk / elasticity) +
-        goods_consumption_eu ^ (1.0/elasticity) * exp((elasticity - 1.0) * log_price_eu / elasticity) +
-        goods_consumption_world  ^ (1.0/elasticity) * exp((elasticity - 1.0) * log_price_world  / elasticity)
-    ) #logPf
+    # weight_{uk, eu, w}
 
-    alpha_uk = goods_consumption_uk * exp((elasticity - 1.0) * (log_price_uk - log_consumer_price_index))
-    alpha_eu = goods_consumption_eu * exp((elasticity - 1.0) * (log_price_eu - log_consumer_price_index))
-    alpha_world = goods_consumption_world * exp((elasticity - 1.0) * (log_price_world - log_consumer_price_index))
+    logPf = log_price_index(elasticity, log_price_uk, log_price_eu, log_price_world, consumption_uk, consumption_eu, consumption_world)
 
-    return alpha_uk, alpha_eu, alpha_world, log(alpha_uk), log(alpha_eu), log(alpha_world)
-    
+    weight_uk = consumption_uk * exp((elasticity - 1.0) * (log_price_uk - logPf))
+    weight_eu = consumption_eu * exp((elasticity - 1.0) * (log_price_eu - logPf))
+    weight_world = consumption_world * exp((elasticity - 1.0) * (log_price_world - logPf))
+
+    return weight_uk, weight_eu, weight_world, log(weight_uk), log(weight_eu), log(weight_world)
+
+end
+
+function log_total_price_index(elasticity::T, log_price_index::Vector{T}, consumption::Vector{T}) where {T <: Real}
+
+    # Abbreviated LogPBar in papers and Matlab code
+
+    s = 0.0
+    for i in axes(log_price_index,1)
+        s += consumption[i] ^ (1.0 / elasticity) * exp((elasticity - 1.0) * log_price_index[i] / elasticity)
+    end
+
+    weight = elasticity/(elasticity - 1.0) * log(s)
+
+    return weight
+
+end
+
+function total_consumption_weight(log_price_index::Vector{T}, consumption::Vector{T}, elasticity::T ) where {T <: Real}
+
+    # Both e.g. parms.beta1 and parms.beta1Tilde are of this form.
+    # in beta1, consumption = data.x1Value and log_total_price_index = LogPX1Bar
+    # in beta1Tilde, consumption = EX1/E1Tilde and log_total_price_index = LogPX1Bar + parms.fx_EUR.
+    # TODO: Think about if this should be separated into different functions
+    # TODO: Check if this is still true
+
+    length(log_price_index) == length(consumption) || error()
+
+    logPBar = log_total_price_index(elasticity, log_price_index, consumption)
+    weight = Vector{T}(undef, length(log_price_index))
+
+    for i in axes(log_price_index,1)
+        weight[i] = consumption[i] * exp((elasticity - 1.0)  * (log_price_index[i] - logPBar))
+    end
+
+    return weight
+
 end
