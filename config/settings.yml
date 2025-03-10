@@ -115,3 +115,7 @@ excel_limits:
     sheet: "Sheet1"
     top_left: "A1"
     bottom_right: "J65"
+# aggregation:
+#   - 105
+#   - 64
+#   - 16

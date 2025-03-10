@@ -69,8 +69,6 @@ struct InputOutput
 
         return new(raw_data, input_output_matrix, industry_names, final_consumption, gross_fixed_capital_formation, delta_v_value_uk, x1_value_uk, x2_value_uk, y_value_uk, x_services)
 
-
-
     end
 
 end
