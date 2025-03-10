@@ -16,13 +16,24 @@ struct IndustryData
 end
 
 struct InputOutputData
-    # todo
+
+    m_value_uk::DataFrame
+    f_value_uk::DataFrame
+    i_value_uk::DataFrame
+
+    delta_v_value_uk::DataFrame
+
+    x1_value_uk::DataFrame
+    x2_value_uk::DataFrame
+
 end
 
 struct Data
 
     household::HouseHoldData
     industry::IndustryData
+
+    input_output::DataFrame
 
     depreciation::DataFrame
 
@@ -47,13 +58,16 @@ struct Data
             data_struct["inventory"]
         )
 
+        input_output = data_struct["input_output"]
+
+
         depreciation = data_struct["depreciation"]
         risk_free_rate = data_struct["risk_free_rate"]
         assets = data_struct["assets"]
         model_results = data_struct["model_results"]
         merge_codes_105 = data_struct["merge_codes_105"]
 
-        return new(household, industry, depreciation, risk_free_rate, assets, model_results, merge_codes_105)
+        return new(household, industry, input_output, depreciation, risk_free_rate, assets, model_results, merge_codes_105)
     end
 
 end

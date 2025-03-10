@@ -103,8 +103,8 @@ initial_params:
 excel_limits:
   input_output:
     sheet: "IOT"
-    top_left: "B7"
-    bottom_right: "DN111"
+    top_left: "A1"
+    bottom_right: "DO120"
 
   imports:
     sheet: "IOT"
