@@ -8,7 +8,23 @@ data_type_dict = Dict(
     "elas" => Vector{Vector{Float64}},
     "date" => String,
 )
+"""
 
+    Classifies a dictionary type based on the types of its keys and values.
+    Used to create a typed dictionary from an untyped dictionary extracted from a YAML file.
+
+    # Arguments
+    - `dict::Dict{Any, Any}`: The dictionary to classify.
+
+    # Returns
+    - `Dict{key_type, value_type}`: The classified dictionary.
+
+    # Examples
+    ```julia
+    untyped_dict = YAML.load_file("settings.yaml")
+    typed_dict = classify_dict(dict)
+    ```
+"""
 function classify_dict(dict::Dict{Any, Any})
 
     dict_keys = collect(keys(dict))
