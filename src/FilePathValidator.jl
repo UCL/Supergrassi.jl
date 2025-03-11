@@ -78,7 +78,6 @@ end
     # Examples
     ```julia
     file_path = FilePath("data.csv")
-    is_valid = validate_filepath(file_path)
     println(is_valid) # true
     ```
 """
