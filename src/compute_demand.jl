@@ -24,11 +24,11 @@ function consumption_weights(elasticity::T,
     # Outputs
     # weight_{uk, eu, w}
 
-    logPf = log_price_index(elasticity, log_price_uk, log_price_eu, log_price_world, consumption_uk, consumption_eu, consumption_world)
+    logP = log_price_index(elasticity, log_price_uk, log_price_eu, log_price_world, consumption_uk, consumption_eu, consumption_world)
 
-    weight_uk = consumption_uk * exp((elasticity - 1.0) * (log_price_uk - logPf))
-    weight_eu = consumption_eu * exp((elasticity - 1.0) * (log_price_eu - logPf))
-    weight_world = consumption_world * exp((elasticity - 1.0) * (log_price_world - logPf))
+    weight_uk = consumption_uk * exp((elasticity - 1.0) * (log_price_uk - logP))
+    weight_eu = consumption_eu * exp((elasticity - 1.0) * (log_price_eu - logP))
+    weight_world = consumption_world * exp((elasticity - 1.0) * (log_price_world - logP))
 
     return weight_uk, weight_eu, weight_world, log(weight_uk), log(weight_eu), log(weight_world)
 
