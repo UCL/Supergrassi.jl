@@ -63,9 +63,35 @@ function total_consumption_weight(log_price_index::Vector{T}, consumption::Vecto
     weight = Vector{T}(undef, length(log_price_index))
 
     for i in axes(log_price_index,1)
-        weight[i] = consumption[i] * exp((elasticity - 1.0)  * (log_price_index[i] - logPBar))
+        #weight[i] = consumption[i] * exp((elasticity - 1.0)  * (log_price_index[i] - logPBar))
+        weight[i] = weight_kernel(consumption[i], exp(log_price_index[i] - logPBar), elasticity)
     end
 
     return weight
+
+end
+
+function log_beta_tilde(log_price_index::Vector{T}, consumption::Vector{T},
+                        Ex::T, ETilde::T, ePx::T, PTilde::T, elasticity::T, elasticity_tilde::T) where {T <: Real}
+
+    #TODO: Rename this function
+    #TODO: Should be possible to refactor this and total_consumption_weight into one
+
+    length(log_price_index) == length(consumption) || error()
+    logPBar = log_total_price_index(elasticity, log_price_index, consumption)
+
+    return log_weight_kernel(Ex/ETilde, exp(logPBar) * ePx / PTilde, elasticity_tilde)
+
+end
+
+function weight_kernel(a::T, b::T, elasticity::T) where T
+
+    return a / b ^ (1.0 - elasticity)
+
+end
+
+function log_weight_kernel(a::T, b::T, elasticity::T) where T
+
+    return log(a) + (elasticity - 1.0) * log(b)
 
 end
