@@ -7,6 +7,7 @@ data_type_dict = Dict(
     "bool" => Bool,
     "elas" => Vector{Vector{Float64}},
     "date" => String,
+    "list" => Vector{Int64},
 )
 """
 

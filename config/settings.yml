@@ -106,6 +106,21 @@ excel_limits:
     top_left: "A1"
     bottom_right: "DO120"
 
+    row_range: [7, 111]
+    matrix_cols: [3, 107]
+
+    gross_fixed_capital_formation_col: 113
+
+    delta_v_value_uk_col_1: 114
+    delta_v_value_uk_col_2: 115
+
+    x1_value_uk_col: 116
+    x2_value_uk_col: 117
+
+    y_value_uk_col: 119
+
+    x_services_col: 118
+
   imports:
     sheet: "IOT"
     top_left: "B7"

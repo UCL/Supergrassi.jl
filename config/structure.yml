@@ -101,6 +101,20 @@ excel_limits:
     top_left: str
     bottom_right: str
 
+    row_range: list
+    col_range: list
+
+    gross_fixed_capital_formation_col: int
+
+    delta_v_value_uk_col_1: int
+    delta_v_value_uk_col_2: int
+
+    x1_value_uk_col: int
+    x2_value_uk_col: int
+
+    y_value_uk_col: int
+    x_value_uk_col: int
+
   imports:
     sheet: str
     top_left: str
