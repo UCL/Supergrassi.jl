@@ -15,18 +15,6 @@ struct IndustryData
     inventory::DataFrame
 end
 
-struct InputOutputData
-
-    m_value_uk::DataFrame
-    f_value_uk::DataFrame
-    i_value_uk::DataFrame
-
-    delta_v_value_uk::DataFrame
-
-    x1_value_uk::DataFrame
-    x2_value_uk::DataFrame
-
-end
 
 struct InputOutput
 
