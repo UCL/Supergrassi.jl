@@ -118,12 +118,12 @@ excel_limits:
     delta_v_value_uk_col_1: 114
     delta_v_value_uk_col_2: 115
 
-    x1_value_uk_col: 116
-    x2_value_uk_col: 117
+    exports_eu_to_uk_col: 116
+    exports_world_to_uk_col: 117
 
-    y_value_uk_col: 119
+    total_use_col: 119
 
-    x_services_col: 118
+    services_export_col: 118
 
   imports:
     sheet: "IOT"
