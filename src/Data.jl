@@ -49,23 +49,25 @@ struct InputOutput
     x_services::Array{Number, 1}
 
 
-    function InputOutput(raw_data::DataFrame)
+    function InputOutput(raw_data::DataFrame, settings::Dict{String, Any})
 
 
-        input_output_matrix = raw_data[7:111, 3:107]
-        industry_names = Array(raw_data[4, 3:107])
+        limits = settings["excel_limits"]["input_output"]
 
-        final_consumption = Array(raw_data[7:111 , 109])
-        gross_fixed_capital_formation = Array(raw_data[7:111 , 113])
+        input_output_matrix = raw_data[limits["row_range"][1]:limits["row_range"][2], limits["matrix_cols"][1]:limits["matrix_cols"][2]]
+        industry_names = Array(raw_data[limits["industry_names_row"], limits["matrix_cols"][1]:limits["matrix_cols"][2]])
 
-        delta_v_value_uk = Array(raw_data[7:111 , 114]) + Array(raw_data[7:111 , 115])
+        final_consumption = Array(raw_data[limits["row_range"][1]:limits["row_range"][2], limits["final_consumption_col"]])
+        gross_fixed_capital_formation = Array(raw_data[limits["row_range"][1]:limits["row_range"][2], limits["gross_fixed_capital_formation_col"]])
 
-        x1_value_uk = Array(raw_data[7:111 , 116])
-        x2_value_uk = Array(raw_data[7:111 , 117])
+        delta_v_value_uk = Array(raw_data[limits["row_range"][1]:limits["row_range"][2], limits["delta_v_value_uk_col_1"]]) + Array(raw_data[limits["row_range"][1]:limits["row_range"][2], limits["delta_v_value_uk_col_2"]])
 
-        y_value_uk = Array(raw_data[7:111 , 119])
+        x1_value_uk = Array(raw_data[limits["row_range"][1]:limits["row_range"][2], limits["x1_value_uk_col"]])
+        x2_value_uk = Array(raw_data[limits["row_range"][1]:limits["row_range"][2], limits["x2_value_uk_col"]])
 
-        x_services = Array(raw_data[7:111 , 118])
+        y_value_uk = Array(raw_data[limits["row_range"][1]:limits["row_range"][2], limits["y_value_uk_col"]])
+
+        x_services = Array(raw_data[limits["row_range"][1]:limits["row_range"][2], limits["x_services_col"]])
 
         return new(raw_data, input_output_matrix, industry_names, final_consumption, gross_fixed_capital_formation, delta_v_value_uk, x1_value_uk, x2_value_uk, y_value_uk, x_services)
 
@@ -90,7 +92,7 @@ struct Data
 
     # gdp::DataFrame
 
-    function Data(data_struct::Dict{String, DataFrame})
+    function Data(data_struct::Dict{String, DataFrame}, settings::Dict{String, Any})
 
         household = HouseHoldData(
             IncomeData(data_struct["hi_income"], data_struct["lo_income"]),
@@ -103,7 +105,7 @@ struct Data
             data_struct["inventory"]
         )
 
-        input_output = InputOutput(data_struct["input_output"])
+        input_output = InputOutput(data_struct["input_output"], settings)
 
         depreciation = data_struct["depreciation"]
         risk_free_rate = data_struct["risk_free_rate"]

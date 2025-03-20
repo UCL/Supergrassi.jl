@@ -103,7 +103,7 @@ function read_data(filepaths::Dict{String, FilePath}, settings::Dict{String, Any
         end
     end
 
-    data = Data(data)
+    data = Data(data, settings)
 
     println("Data read successfully.")
 

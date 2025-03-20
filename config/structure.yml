@@ -104,6 +104,10 @@ excel_limits:
     row_range: list
     col_range: list
 
+    industry_names_row: int
+
+    final_consumption_col: int
+
     gross_fixed_capital_formation_col: int
 
     delta_v_value_uk_col_1: int
