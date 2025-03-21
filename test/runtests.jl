@@ -249,3 +249,20 @@ end
     @test isapprox(Rho_out, df.rho, atol = tol)
 
 end
+
+@testset "Production function parameters" begin
+
+
+
+end
+
+@testset "Intermediate goods price index" begin
+
+    xi = 0.4
+    df = CSV.read("../data/data_for_goods_price_index.csv", DataFrame)
+
+    pdYBar = Supergrassi.intermediate_goods_price_index(df.logP_uk, df.zOC, df.tau, df.mu, df.gammaK, df.K0, xi)
+
+    @test isapprox(pdYBar, df.pdYBar, atol = tol)
+    
+end
