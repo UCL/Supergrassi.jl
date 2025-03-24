@@ -255,6 +255,9 @@ end
     xi = 0.4
     xi_a = 2.0
 
+    df = CSV.read("../data/1d_data_for_firm_production.csv", DataFrame)
+    df2d = CSV.read("../data/2d_data_for_firm_production.csv", DataFrame)
+    
 end
 
 @testset "Intermediate goods price index" begin
