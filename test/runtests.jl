@@ -252,7 +252,8 @@ end
 
 @testset "Production function parameters" begin
 
-
+    xi = 0.4
+    xi_a = 2.0
 
 end
 
@@ -264,5 +265,5 @@ end
     pdYBar = Supergrassi.intermediate_goods_price_index(df.logP_uk, df.zOC, df.tau, df.mu, df.gammaK, df.K0, xi)
 
     @test isapprox(pdYBar, df.pdYBar, atol = tol)
-    
+
 end
