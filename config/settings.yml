@@ -126,9 +126,28 @@ excel_limits:
     services_export_col: 118
 
   imports:
-    sheet: "IOT"
-    top_left: "B7"
-    bottom_right: "DN111"
+    sheet: "Imports use pxp"
+    top_left: "A1"
+    bottom_right: "DO120"
+
+    row_range: [7, 111]
+    matrix_cols: [3, 107]
+
+    industry_names_row: 4
+
+    final_consumption_col: 109
+
+    gross_fixed_capital_formation_col: 113
+
+    delta_v_value_uk_col_1: 114
+    delta_v_value_uk_col_2: 115
+
+    exports_eu_to_uk_col: 116
+    exports_world_to_uk_col: 117
+
+    total_use_col: 119
+
+    services_export_col: 118
 
   merge_codes_64:
     sheet: "Sheet1"

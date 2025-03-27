@@ -69,6 +69,7 @@ struct Data
     industry::IndustryData
 
     input_output::InputOutput
+    imports::InputOutput
 
     depreciation::DataFrame
 
@@ -94,6 +95,7 @@ struct Data
         )
 
         input_output = InputOutput(data_struct["input_output"], settings)
+        imports = InputOutput(data_struct["imports"], settings)
 
         depreciation = data_struct["depreciation"]
         risk_free_rate = data_struct["risk_free_rate"]
@@ -101,7 +103,7 @@ struct Data
         model_results = data_struct["model_results"]
         merge_codes_105 = data_struct["merge_codes_105"]
 
-        return new(household, industry, input_output, depreciation, risk_free_rate, assets, model_results, merge_codes_105)
+        return new(household, industry, input_output, imports, depreciation, risk_free_rate, assets, model_results, merge_codes_105)
     end
 
 end
