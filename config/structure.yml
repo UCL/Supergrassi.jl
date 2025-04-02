@@ -36,6 +36,7 @@ files:
     base:
       input_output: str
       imports: str
+      others: str
       merge_codes_64: str
       merge_codes_105: str
 
@@ -143,6 +144,11 @@ excel_limits:
     total_use_col: int
 
     services_export_col: int
+
+  others:
+    sheet: str
+    top_left: str
+    bottom_right: str
 
   merge_codes_64:
     sheet: str

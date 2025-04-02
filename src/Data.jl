@@ -79,6 +79,8 @@ struct Data
 
     merge_codes_105::DataFrame
 
+    others::DataFrame
+
     # gdp::DataFrame
 
     function Data(data_struct::Dict{String, DataFrame}, settings::Dict{String, Any})
@@ -97,21 +99,15 @@ struct Data
         input_output = InputOutput(data_struct["input_output"], settings)
         imports = InputOutput(data_struct["imports"], settings)
 
+        others = data_struct["others"]
+
         depreciation = data_struct["depreciation"]
         risk_free_rate = data_struct["risk_free_rate"]
         assets = data_struct["assets"]
         model_results = data_struct["model_results"]
         merge_codes_105 = data_struct["merge_codes_105"]
 
-        return new(household, industry, input_output, imports, depreciation, risk_free_rate, assets, model_results, merge_codes_105)
+        return new(household, industry, input_output, imports, depreciation, risk_free_rate, assets, model_results, merge_codes_105, others)
     end
 
-end
-
-function organise_data(data_struct::Dict{String, DataFrame})
-
-    data = Data(data_struct)
-
-    return data
-    
 end

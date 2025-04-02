@@ -41,6 +41,7 @@ files:
     base:
       input_output: "uk_input_output2019.xlsx"
       imports: "uk_input_output2019.xlsx"
+      others: "uk_input_output2019.xlsx"
       merge_codes_64: "mergeCodes64.xlsx"
       merge_codes_105: "mergeCodes105.csv"
 
@@ -148,6 +149,11 @@ excel_limits:
     total_use_col: 119
 
     services_export_col: 118
+
+  others:
+    sheet: "IOT"
+    top_left: "A112"
+    bottom_right: "DD120"
 
   merge_codes_64:
     sheet: "Sheet1"
