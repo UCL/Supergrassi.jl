@@ -110,7 +110,7 @@ excel_limits:
     row_range: [7, 111]
     matrix_cols: [3, 107]
 
-    industry_names_row: 4
+    industry_names_row: 5
 
     final_consumption_col: 109
 
@@ -134,7 +134,7 @@ excel_limits:
     row_range: [7, 111]
     matrix_cols: [3, 107]
 
-    industry_names_row: 4
+    industry_names_row: 5
 
     final_consumption_col: 109
 
