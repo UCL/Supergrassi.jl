@@ -15,43 +15,43 @@ tol = 1e-12
 
 @testset "Household demand parameters" begin
 
-    alpha = Matrix{Float64}(undef, n, 6)
-    grad_alpha = Matrix{Float64}(undef, n, 6)
+    alpha = Matrix{Float64}(undef, n, 3)
+    grad_log_alpha = Matrix{Float64}(undef, n, 3)
     df = CSV.read("../data/data_for_household_demand.csv", DataFrame)
 
     for row in axes(alpha, 1)
-        alpha[row,:] .= Supergrassi.consumption_weights(elasticity_a,
+        alpha[row,:] .= Supergrassi.weights_by_region(elasticity_a,
                                                       df.logP_uk[row],
                                                       df.logP_eu[row],
                                                       df.logP_w[row],
                                                       df.f_uk[row],
                                                       df.f_eu[row],
                                                       df.f_w[row])
-        grad_alpha[row,:] .= gradient(Forward,
-                                      Supergrassi.consumption_weights,
-                                      Const(elasticity_a),
-                                      df.logP_uk[row],
-                                      Const(df.logP_eu[row]),
-                                      Const(df.logP_w[row]),
-                                      Const(df.f_uk[row]),
-                                      Const(df.f_eu[row]),
-                                      Const(df.f_w[row]))[2]
+        grad_log_alpha[row,:] .= gradient(Forward,
+                                          Supergrassi.log_weights_by_region,
+                                          Const(elasticity_a),
+                                          df.logP_uk[row],
+                                          Const(df.logP_eu[row]),
+                                          Const(df.logP_w[row]),
+                                          Const(df.f_uk[row]),
+                                          Const(df.f_eu[row]),
+                                          Const(df.f_w[row]))[2]
     end
 
     mask = 12
 
-    alpha[mask,2:6] .= 0.0
-    grad_alpha[mask,:] .= 0.0
+    alpha[mask,2:3] .= 0.0
+    grad_log_alpha[mask,:] .= 0.0
 
     @test isapprox(alpha[:,1], df.alpha_uk, atol = tol)
     @test isapprox(alpha[:,2], df.alpha_eu, atol = tol)
     @test isapprox(alpha[:,3], df.alpha_w, atol = tol)
-    @test isapprox(grad_alpha[:,4], df.dlogalpha_uk, atol = tol)
-    @test isapprox(grad_alpha[:,5], df.dlogalpha_eu, atol = tol)
-    @test isapprox(grad_alpha[:,6], df.dlogalpha_w, atol = tol)
+    @test isapprox(grad_log_alpha[:,1], df.dlogalpha_uk, atol = tol)
+    @test isapprox(grad_log_alpha[:,2], df.dlogalpha_eu, atol = tol)
+    @test isapprox(grad_log_alpha[:,3], df.dlogalpha_w, atol = tol)
 
     logPf = Supergrassi.log_price_index.(elasticity_a,df.logP_uk,df.logP_eu,df.logP_w,df.f_uk,df.f_eu,df.f_w)
-    Alpha = jacobian(ForwardWithPrimal, Supergrassi.total_consumption_weight, logPf, Const(df.f), Const(elasticity))
+    Alpha = jacobian(ForwardWithPrimal, Supergrassi.total_weights, logPf, Const(df.f), Const(elasticity))
 
     @test isapprox(Alpha.val, df.alpha, atol = tol)
 
@@ -61,8 +61,8 @@ end
 
     df = CSV.read("../data/data_for_eu_demand.csv", DataFrame)
 
-    beta = Matrix{Float64}(undef, n, 6)
-    grad_beta = Matrix{Float64}(undef, n, 6)
+    beta = Matrix{Float64}(undef, n, 3)
+    grad_log_beta = Matrix{Float64}(undef, n, 3)
     grad_beta_tilde = Vector{Float64}(undef, n)
 
     Ex = 1.3953e+00
@@ -73,15 +73,15 @@ end
 
     for row in axes(beta, 1)
 
-        beta[row,:] .= Supergrassi.consumption_weights(elasticity_a,
+        beta[row,:] .= Supergrassi.weights_by_region(elasticity_a,
                                                        df.logP_uk[row],
                                                        df.logP_eu[row],
                                                        df.logP_w[row],
                                                        df.x1_uk[row],
                                                        df.x1_eu[row],
                                                        df.x1_w[row])
-        grad_beta[row,:] .= gradient(Forward,
-                                     Supergrassi.consumption_weights,
+        grad_log_beta[row,:] .= gradient(Forward,
+                                     Supergrassi.log_weights_by_region,
                                      Const(elasticity_a),
                                      df.logP_uk[row],
                                      Const(df.logP_eu[row]),
@@ -93,9 +93,9 @@ end
     end
 
     logPf = Supergrassi.log_price_index.(elasticity_a,df.logP_uk,df.logP_eu,df.logP_w,df.x1_uk,df.x1_eu,df.x1_w)
-    Beta = jacobian(ForwardWithPrimal, Supergrassi.total_consumption_weight, logPf, Const(df.x1), Const(elasticity))
+    Beta = jacobian(ForwardWithPrimal, Supergrassi.total_weights, logPf, Const(df.x1), Const(elasticity))
     grad_log_beta_tilde = gradient(ForwardWithPrimal,
-                                   Supergrassi.log_beta_tilde,
+                                   Supergrassi.log_eu_expenditure_on_uk_exports,
                                    logPf,
                                    Const(df.x1),
                                    Const(Ex),
@@ -105,18 +105,18 @@ end
                                    Const(elasticity),
                                    Const(elasticity_tilde))
 
-    mask = [4,     5,     7,     8,     9,    10,    11,    12,    13,    16]
+    mask = [4, 5, 7, 8, 9, 10, 11, 12, 13, 16]
 
     beta[mask,1] .= 1.0
-    beta[mask,2:6] .= 0.0
-    grad_beta[mask,:] .= 0.0
+    beta[mask,2:3] .= 0.0
+    grad_log_beta[mask,:] .= 0.0
 
     @test isapprox(beta[:,1], df.beta_uk, atol = tol)
     @test isapprox(beta[:,2], df.beta_eu, atol = tol)
     @test isapprox(beta[:,3], df.beta_w, atol = tol)
-    @test isapprox(grad_beta[:,4], df.dlogbeta_uk, atol = tol)
-    @test isapprox(grad_beta[:,5], df.dlogbeta_eu, atol = tol)
-    @test isapprox(grad_beta[:,6], df.dlogbeta_w, atol = tol)
+    @test isapprox(grad_log_beta[:,1], df.dlogbeta_uk, atol = tol)
+    @test isapprox(grad_log_beta[:,2], df.dlogbeta_eu, atol = tol)
+    @test isapprox(grad_log_beta[:,3], df.dlogbeta_w, atol = tol)
     @test isapprox(Beta.val, df.beta, atol = tol)
     @test isapprox(grad_log_beta_tilde.val, logBeta1Tilde, atol = 1e-4)
 
@@ -126,8 +126,8 @@ end
 
     df = CSV.read("../data/data_for_row_demand.csv", DataFrame)
 
-    beta = Matrix{Float64}(undef, n, 6)
-    grad_beta = Matrix{Float64}(undef, n, 6)
+    beta = Matrix{Float64}(undef, n, 3)
+    grad_log_beta = Matrix{Float64}(undef, n, 3)
 
     Ex = 1.4894e+00
     ETilde = 2.3429e+01
@@ -137,15 +137,15 @@ end
 
     for row in axes(beta, 1)
 
-        beta[row,:] .= Supergrassi.consumption_weights(elasticity_a,
+        beta[row,:] .= Supergrassi.weights_by_region(elasticity_a,
                                                        df.logP_uk[row],
                                                        df.logP_eu[row],
                                                        df.logP_w[row],
                                                        df.x2_uk[row],
                                                        df.x2_eu[row],
                                                        df.x2_w[row])
-        grad_beta[row,:] .= gradient(Forward,
-                                     Supergrassi.consumption_weights,
+        grad_log_beta[row,:] .= gradient(Forward,
+                                     Supergrassi.log_weights_by_region,
                                      Const(elasticity_a),
                                      df.logP_uk[row],
                                      Const(df.logP_eu[row]),
@@ -158,9 +158,9 @@ end
     end
 
     logPf = Supergrassi.log_price_index.(elasticity_a,df.logP_uk,df.logP_eu,df.logP_w,df.x2_uk,df.x2_eu,df.x2_w)
-    Beta = jacobian(ForwardWithPrimal, Supergrassi.total_consumption_weight, logPf, Const(df.x2), Const(elasticity))
+    Beta = jacobian(ForwardWithPrimal, Supergrassi.total_weights, logPf, Const(df.x2), Const(elasticity))
     grad_log_beta2_tilde = gradient(ForwardWithPrimal,
-                                   Supergrassi.log_beta_tilde,
+                                   Supergrassi.log_eu_expenditure_on_uk_exports,
                                    logPf,
                                    Const(df.x2),
                                    Const(Ex),
@@ -170,18 +170,18 @@ end
                                    Const(elasticity),
                                    Const(elasticity_tilde))
 
-    mask = [4,     5,     7,     8,     9,    10,    11,    12,    13,    16]
+    mask = [4, 5, 7, 8, 9, 10, 11, 12, 13, 16]
 
     beta[mask,1] .= 1.0
-    beta[mask,2:6] .= 0.0
-    grad_beta[mask,:] .= 0.0
+    beta[mask,2:3] .= 0.0
+    grad_log_beta[mask,:] .= 0.0
 
     @test isapprox(beta[:,1], df.beta2_uk, atol = tol)
     @test isapprox(beta[:,2], df.beta2_eu, atol = tol)
     @test isapprox(beta[:,3], df.beta2_w, atol = tol)
-    @test isapprox(grad_beta[:,4], df.dlogbeta2_uk, atol = tol)
-    @test isapprox(grad_beta[:,5], df.dlogbeta2_eu, atol = tol)
-    @test isapprox(grad_beta[:,6], df.dlogbeta2_w, atol = tol)
+    @test isapprox(grad_log_beta[:,1], df.dlogbeta2_uk, atol = tol)
+    @test isapprox(grad_log_beta[:,2], df.dlogbeta2_eu, atol = tol)
+    @test isapprox(grad_log_beta[:,3], df.dlogbeta2_w, atol = tol)
     @test isapprox(Beta.val, df.beta2, atol = tol)
     @test isapprox(grad_log_beta2_tilde.val, logBeta2Tilde, atol = 1e-4)
 
@@ -193,20 +193,20 @@ end
 
     elasticity = 0.4
 
-    rho = Matrix{Float64}(undef, n, 6)
-    grad_rho = Matrix{Float64}(undef, n, 6)
+    rho = Matrix{Float64}(undef, n, 3)
+    grad_log_rho = Matrix{Float64}(undef, n, 3)
 
     for row in axes(rho, 1)
 
-        rho[row,:] .= Supergrassi.consumption_weights(elasticity_a,
+        rho[row,:] .= Supergrassi.weights_by_region(elasticity_a,
                                                       df.logP_uk[row],
                                                       df.logP_eu[row],
                                                       df.logP_w[row],
                                                       df.I_uk[row],
                                                       df.I_eu[row],
                                                       df.I_w[row])
-        grad_rho[row,:] .= gradient(Forward,
-                                    Supergrassi.consumption_weights,
+        grad_log_rho[row,:] .= gradient(Forward,
+                                    Supergrassi.log_weights_by_region,
                                     Const(elasticity_a),
                                     df.logP_uk[row],
                                     Const(df.logP_eu[row]),
@@ -217,9 +217,9 @@ end
 
     end
 
-    mask_zero_uk = [2,     6,     7,    11,    13,    14,    16]
-    mask_one_uk = [5,     8,     9,    12,    15]
-    mask_zero_row = [2,     5,     6,     7,     8,     9,    11,    12,    13,    14,    15,    16]
+    mask_zero_uk = [2, 6, 7, 11, 13, 14, 16]
+    mask_one_uk = [5, 8, 9, 12, 15]
+    mask_zero_row = [2, 5, 6, 7, 8, 9, 11, 12, 13, 14, 15, 16]
 
     mask = Vector{Bool}(undef, n)
     mask .= true
@@ -229,19 +229,19 @@ end
     rho[mask_one_uk,1]  .= 1.0
     rho[mask_zero_row, 2:3] .= 0.0
 
-    grad_rho[mask_zero_uk, 4] .= 0.0
-    grad_rho[mask_one_uk, 4]  .= 0.0
-    grad_rho[mask_zero_row, 5:6] .= 0.0
+    grad_log_rho[mask_zero_uk, 1] .= 0.0
+    grad_log_rho[mask_one_uk, 1]  .= 0.0
+    grad_log_rho[mask_zero_row, 2:3] .= 0.0
 
     @test isapprox(rho[:,1], df.rho_uk, atol = tol)
     @test isapprox(rho[:,2], df.rho_eu, atol = tol)
     @test isapprox(rho[:,3], df.rho_w, atol = tol)
-    @test isapprox(grad_rho[:,4], df.dlogrho_uk, atol = tol)
-    @test isapprox(grad_rho[:,5], df.dlogrho_eu, atol = tol)
-    @test isapprox(grad_rho[:,6], df.dlogrho_w, atol = tol)
+    @test isapprox(grad_log_rho[:,1], df.dlogrho_uk, atol = tol)
+    @test isapprox(grad_log_rho[:,2], df.dlogrho_eu, atol = tol)
+    @test isapprox(grad_log_rho[:,3], df.dlogrho_w, atol = tol)
 
     logPI = Supergrassi.log_price_index.(elasticity_a,df.logP_uk,df.logP_eu,df.logP_w,df.I_uk,df.I_eu,df.I_w)
-    Rho = jacobian(ForwardWithPrimal, Supergrassi.total_consumption_weight, logPI[mask], Const(df.I[mask]), Const(elasticity))
+    Rho = jacobian(ForwardWithPrimal, Supergrassi.total_weights, logPI[mask], Const(df.I[mask]), Const(elasticity))
 
     Rho_out = zeros(n)
     Rho_out[mask] .= Rho.val
@@ -268,8 +268,8 @@ end
     mEU = reshape(df2d.mEU, (n,n))
     mW = reshape(df2d.mW, (n,n))
 
-    gammaM = zeros(n,n,6)
-    grad_gammaM = zeros(n,n,6)
+    gammaM = zeros(n,n,3)
+    grad_gammaM = zeros(n,n,3)
 
     mask = fill(true, n,n)
     ind = [12 16 96 112 208 209 224 241 242 243 244 245 246 247 248 249 250 251 252 253 254 255 256]
@@ -278,10 +278,10 @@ end
     for i in axes(gammaMUK_ref, 1)
         for j in axes(gammaMUK_ref, 2)
             if (mask[i,j])
-                gammaM[i,j,:] .= Supergrassi.consumption_weights(xi_a, df.logP_uk[j], df.logP_eu[j], df.logP_w[j],
+                gammaM[i,j,:] .= Supergrassi.weights_by_region(xi_a, df.logP_uk[j], df.logP_eu[j], df.logP_w[j],
                                                                  mUK[i,j], mEU[i,j], mW[i,j])
                 grad_gammaM[i,j,:] .= gradient(Forward,
-                                               Supergrassi.consumption_weights,
+                                               Supergrassi.weights_by_region,
                                                Const(xi_a),
                                                df.logP_uk[j],
                                                Const(df.logP_eu[j]),
@@ -312,7 +312,7 @@ end
         logP[isinf.(logP)] .= 0.0
 
         jacM = jacobian(ForwardWithPrimal,
-                        Supergrassi.total_input_weight,
+                        Supergrassi.total_input_weights,
                         logP,
                         Const(m[i,:]),
                         Const(df.k[i]),
@@ -327,7 +327,7 @@ end
         grad_GammaM[i,:,:] .= jacM.derivs[1]
 
         jacH = jacobian(ForwardWithPrimal,
-                        Supergrassi.total_labor_weight,
+                        Supergrassi.total_labor_weights,
                         logP,
                         Const(m[i,:]),
                         Const(df.k[i]),
@@ -342,7 +342,7 @@ end
         grad_GammaH[i,:] .= jacH.derivs[1]
 
         jacK = jacobian(ForwardWithPrimal,
-                        Supergrassi.total_capital_weight,
+                        Supergrassi.total_capital_weights,
                         logP,
                         Const(m[i,:]),
                         Const(df.k[i]),
@@ -355,7 +355,6 @@ end
 
         GammaK[i] = jacK.val
         grad_GammaK[i,:] .= jacK.derivs[1]
-
 
     end
 
