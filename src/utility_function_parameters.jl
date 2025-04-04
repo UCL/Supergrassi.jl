@@ -14,9 +14,9 @@
   - weight_{uk, eu, w}
 
 """
-function weights_by_region(elasticity::T,
+function parameters_by_region(elasticity::T,
                            log_price_uk::T,log_price_eu::T,log_price_world::T,
-                           quantity_uk::T,quantityeu::T,quantityworld::T) where {T <: Real}
+                           quantity_uk::T,quantity_eu::T,quantity_world::T) where {T <: Real}
 
     logP = log_price_index(elasticity, log_price_uk, log_price_eu, log_price_world, quantity_uk, quantity_eu, quantity_world)
 
@@ -29,9 +29,9 @@ function weights_by_region(elasticity::T,
 end
 
 """
-  Compute log of utility function parameters. See weights_by_region.
+  Compute log of utility function parameters. See parameters_by_region.
 """
-function log_weights_by_region(elasticity::T,
+function log_parameters_by_region(elasticity::T,
                                log_price_uk::T,log_price_eu::T,log_price_world::T,
                                quantity_uk::T,quantity_eu::T,quantity_world::T) where {T <: Real}
 
@@ -57,21 +57,21 @@ end
   - elasticity: [ϵ, χ1, χ2, η, ξ]
 
   # Outputs
-  - weights
+  - parameters
 """
-function total_weights(log_price_index::Vector{T}, quantity::Vector{T}, elasticity::T ) where {T <: Real}
+function total_parameters(log_price_index::Vector{T}, quantity::Vector{T}, elasticity::T ) where {T <: Real}
 
 
     length(log_price_index) == length(quantity) || error()
 
     logPBar = log_total_price_index(elasticity, log_price_index, quantity)
-    weights = Vector{T}(undef, length(log_price_index))
+    parameters = Vector{T}(undef, length(log_price_index))
 
     for i in axes(log_price_index,1)
-        weights[i] = weight_kernel(quantity[i], exp(log_price_index[i] - logPBar), elasticity)
+        parameters[i] = weight_kernel(quantity[i], exp(log_price_index[i] - logPBar), elasticity)
     end
 
-    return weights
+    return parameters
 
 end
 
@@ -132,25 +132,25 @@ end
 
 """
   Compute utility function parameters (γ) by region considered in the model for the firms production function.
-  This is a wrapper around weights_by_region, but here we have to consider inputs to each firm from each firm
+  This is a wrapper around parameters_by_region, but here we have to consider inputs to each firm from each firm
   which increases the dimension of the parameter array.
 
   Matlab code reference ComputeTheta.m lines 257-259
 """
-function firms_weights_by_region(elasticity::T,
+function firms_parameters_by_region(elasticity::T,
                                  log_price_uk::Vector{T},log_price_eu::Vector{T},log_price_world::Vector{T},
                                  input_uk::Matrix{T},input_eu::Matrix{T},input_world::Matrix{T}) where {T <: Real}
 
-    weights = Array{Float64}(undef, length(log_price_uk), length(log_price_uk), 3)
+    parameters = Array{Float64}(undef, length(log_price_uk), length(log_price_uk), 3)
 
     for i in axes(input_uk, 1)
         for j in axes(input_uk, 2)
-            weights[i,j,:] .= weights_by_region(elasticity, log_price_uk[j], log_price_eu[j], log_price_world[j],
+            parameters[i,j,:] .= parameters_by_region(elasticity, log_price_uk[j], log_price_eu[j], log_price_world[j],
                                                 input_uk[i,j], input_eu[i,j], input_world[i,j])
         end
     end
 
-    return weights
+    return parameters
 
 end
 
@@ -159,19 +159,19 @@ end
 
   Matlab code reference ComputeTheta.m line 251
 """
-function total_input_weights(log_price_index::Vector{T}, input::Vector{T},
+function total_input_parameters(log_price_index::Vector{T}, input::Vector{T},
                             capital::T, demand0::T, output::T, labor::T, log_wages::T, elasticity::T, tau::T) where T
 
     length(log_price_index) == length(input) || error()
     tauP = tauPdMu(elasticity, log_price_index, input, capital, demand0, output, labor, log_wages, tau)
 
-    weights = Vector{T}(undef, length(log_price_index))
+    parameters = Vector{T}(undef, length(log_price_index))
 
     for i in axes(log_price_index,1)
-        weights[i] = weight_kernel(input[i], exp(log_price_index[i])/tauP, elasticity)
+        parameters[i] = weight_kernel(input[i], exp(log_price_index[i])/tauP, elasticity)
     end
 
-    return weights
+    return parameters
 
 end
 
@@ -180,7 +180,7 @@ end
 
   Matlab code reference ComputeTheta.m line 249
 """
-function total_labor_weights(log_price_index::Vector{T}, input::Vector{T},
+function total_labor_parameters(log_price_index::Vector{T}, input::Vector{T},
                             capital::T, demand0::T, output::T, labor::T, log_wages::T, elasticity::T, tau::T) where T
 
     length(log_price_index) == length(input) || error()
@@ -194,7 +194,7 @@ end
 
   Matlab code reference ComputeTheta.m line 254
 """
-function total_capital_weights(log_price_index::Vector{T}, input::Vector{T},
+function total_capital_parameters(log_price_index::Vector{T}, input::Vector{T},
                             capital::T, demand0::T, output::T, labor::T, log_wages::T, elasticity::T, tau::T) where T
 
     length(log_price_index) == length(input) || error()
