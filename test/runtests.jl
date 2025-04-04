@@ -3,9 +3,9 @@ using Test
 using Enzyme
 using CSV, DataFrames
 
-@testset "Supergrassi.jl" begin
-    # Write your tests here.
-end
+# @testset "Supergrassi.jl" begin
+#     # Write your tests here.
+# end
 
 n = 16
 elasticity_a = 2.0
@@ -257,7 +257,111 @@ end
 
     df = CSV.read("../data/1d_data_for_firm_production.csv", DataFrame)
     df2d = CSV.read("../data/2d_data_for_firm_production.csv", DataFrame)
-    
+
+    gammaM_ref = reshape(df2d.gammaM, (n,n))
+    gammaMUK_ref = reshape(df2d.gammaMUK, (n,n))
+    gammaMEU_ref = reshape(df2d.gammaMEU, (n,n))
+    gammaMW_ref = reshape(df2d.gammaMW, (n,n))
+
+    m = reshape(df2d.m, (n,n))
+    mUK = reshape(df2d.mUK, (n,n))
+    mEU = reshape(df2d.mEU, (n,n))
+    mW = reshape(df2d.mW, (n,n))
+
+    gammaM = zeros(n,n,6)
+    grad_gammaM = zeros(n,n,6)
+
+    mask = fill(true, n,n)
+    ind = [12 16 96 112 208 209 224 241 242 243 244 245 246 247 248 249 250 251 252 253 254 255 256]
+    mask[ind] .= false
+
+    for i in axes(gammaMUK_ref, 1)
+        for j in axes(gammaMUK_ref, 2)
+            if (mask[i,j])
+                gammaM[i,j,:] .= Supergrassi.consumption_weights(xi_a, df.logP_uk[j], df.logP_eu[j], df.logP_w[j],
+                                                                 mUK[i,j], mEU[i,j], mW[i,j])
+                grad_gammaM[i,j,:] .= gradient(Forward,
+                                               Supergrassi.consumption_weights,
+                                               Const(xi_a),
+                                               df.logP_uk[j],
+                                               Const(df.logP_eu[j]),
+                                               Const(df.logP_w[j]),
+                                               Const(mUK[i,j]),
+                                               Const(mEU[i,j]),
+                                               Const(mW[i,j]))[2]
+
+            end
+        end
+    end
+
+
+    @test isapprox(gammaM[:,:,1], gammaMUK_ref, atol = tol)
+    @test isapprox(gammaM[:,:,2], gammaMEU_ref, atol = tol)
+    @test isapprox(gammaM[:,:,3], gammaMW_ref, atol = tol)
+
+    GammaM = zeros(n,n)
+    GammaH = zeros(n)
+    GammaK = zeros(n)
+    grad_GammaM = zeros(n,n,n)
+    grad_GammaH = zeros(n,n)
+    grad_GammaK = zeros(n,n)
+
+    for i in axes(m,1)
+
+        logP = Supergrassi.log_price_index.(xi_a,df.logP_uk,df.logP_eu,df.logP_w,mUK[i,:],mEU[i,:],mW[i,:])
+        logP[isinf.(logP)] .= 0.0
+
+        jacM = jacobian(ForwardWithPrimal,
+                        Supergrassi.total_input_weight,
+                        logP,
+                        Const(m[i,:]),
+                        Const(df.k[i]),
+                        Const(df.k0[i]),
+                        Const(df.y[i]),
+                        Const(df.h[i]),
+                        Const(df.logW[i]),
+                        Const(xi),
+                        Const(df.tau[i]))
+
+        GammaM[i,:] .= jacM.val
+        grad_GammaM[i,:,:] .= jacM.derivs[1]
+
+        jacH = jacobian(ForwardWithPrimal,
+                        Supergrassi.total_labor_weight,
+                        logP,
+                        Const(m[i,:]),
+                        Const(df.k[i]),
+                        Const(df.k0[i]),
+                        Const(df.y[i]),
+                        Const(df.h[i]),
+                        Const(df.logW[i]),
+                        Const(xi),
+                        Const(df.tau[i]))
+
+        GammaH[i] = jacH.val
+        grad_GammaH[i,:] .= jacH.derivs[1]
+
+        jacK = jacobian(ForwardWithPrimal,
+                        Supergrassi.total_capital_weight,
+                        logP,
+                        Const(m[i,:]),
+                        Const(df.k[i]),
+                        Const(df.k0[i]),
+                        Const(df.y[i]),
+                        Const(df.h[i]),
+                        Const(df.logW[i]),
+                        Const(xi),
+                        Const(df.tau[i]))
+
+        GammaK[i] = jacK.val
+        grad_GammaK[i,:] .= jacK.derivs[1]
+
+
+    end
+
+    @test isapprox(GammaM, gammaM_ref, atol = tol)
+    @test isapprox(GammaH, df.gammaH, atol = tol)
+    @test isapprox(GammaK, df.gammaK, atol = tol)
 end
 
 @testset "Intermediate goods price index" begin

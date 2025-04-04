@@ -38,11 +38,7 @@ function log_total_price_index(elasticity::T, log_price_index::Vector{T}, consum
 
     # Abbreviated LogPBar in papers and Matlab code
 
-    s = 0.0
-    for i in axes(log_price_index,1)
-        s += consumption[i] ^ (1.0 / elasticity) * exp((elasticity - 1.0) * log_price_index[i] / elasticity)
-    end
-
+    s = sum_kernel(consumption, log_price_index, elasticity)
     weight = elasticity/(elasticity - 1.0) * log(s)
 
     return weight
@@ -84,14 +80,25 @@ function log_beta_tilde(log_price_index::Vector{T}, consumption::Vector{T},
 
 end
 
-function weight_kernel(a::T, b::T, elasticity::T) where T
+function weight_kernel(a::T, b::T, elasticity::T) where {T <: Real}
 
     return a / b ^ (1.0 - elasticity)
 
 end
 
-function log_weight_kernel(a::T, b::T, elasticity::T) where T
+function log_weight_kernel(a::T, b::T, elasticity::T) where {T <: Real}
 
     return log(a) + (elasticity - 1.0) * log(b)
 
+end
+
+function sum_kernel(var::Vector{T}, logP::Vector{T}, elasticity::T) where {T <: Real}
+
+    s = 0.0
+    for i in axes(logP,1)
+        s += var[i] ^ (1.0 / elasticity) * exp((elasticity - 1.0) * logP[i] / elasticity)
+    end
+
+    return s
+    
 end
