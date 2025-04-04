@@ -1,8 +1,20 @@
 using DataFrames
 using Statistics
 
+
+safe_parse_float(x) = x isa AbstractString ? parse(Float64, x) : x
+
+
 function select_year(data::DataFrame, year::Int64)
-    return data[data.year .== year, 4:end]
+    rr = data[data.year .== year, 4:end]
+
+    for col in names(rr)
+        if eltype(rr[!, col]) <: AbstractString
+            rr[!, col] = parse.(Float64, rr[!, col])
+        end
+    end
+
+    return rr
 end
 
 function combine_dataframe_row_wise(data::DataFrame, func::Function)
