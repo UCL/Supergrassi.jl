@@ -302,18 +302,19 @@ end
     GammaM = zeros(n,n)
     GammaH = zeros(n)
     GammaK = zeros(n)
+    mu = zeros(n)
     grad_GammaM = zeros(n,n,n)
     grad_GammaH = zeros(n,n)
     grad_GammaK = zeros(n,n)
 
     for i in axes(m,1)
 
-        logP = Supergrassi.log_price_index.(xi_a,df.logP_uk,df.logP_eu,df.logP_w,mUK[i,:],mEU[i,:],mW[i,:])
-        logP[isinf.(logP)] .= 0.0
+        logPm = Supergrassi.log_price_index.(xi_a,df.logP_uk,df.logP_eu,df.logP_w,mUK[i,:],mEU[i,:],mW[i,:])
+        logPm[isinf.(logPm)] .= 0.0
 
         jacM = jacobian(ForwardWithPrimal,
                         Supergrassi.total_input_parameters,
-                        logP,
+                        logPm,
                         Const(m[i,:]),
                         Const(df.k[i]),
                         Const(df.k0[i]),
@@ -328,7 +329,7 @@ end
 
         jacH = jacobian(ForwardWithPrimal,
                         Supergrassi.total_labor_parameters,
-                        logP,
+                        logPm,
                         Const(m[i,:]),
                         Const(df.k[i]),
                         Const(df.k0[i]),
@@ -343,7 +344,7 @@ end
 
         jacK = jacobian(ForwardWithPrimal,
                         Supergrassi.total_capital_parameters,
-                        logP,
+                        logPm,
                         Const(m[i,:]),
                         Const(df.k[i]),
                         Const(df.k0[i]),
@@ -356,11 +357,16 @@ end
         GammaK[i] = jacK.val
         grad_GammaK[i,:] .= jacK.derivs[1]
 
+        mu[i] = Supergrassi.productivity_shock_mean(xi, df.logP_uk[i], logPm, m[i,:], df.k[i], df.k0[i],
+                                                    df.y[i], df.h[i], df.logW[i], df.tau[i])
+        
     end
 
     @test isapprox(GammaM, gammaM_ref, atol = tol)
     @test isapprox(GammaH, df.gammaH, atol = tol)
     @test isapprox(GammaK, df.gammaK, atol = tol)
+
+    @test isapprox(mu, df.mu, atol = tol)
 end
 
 @testset "Intermediate goods price index" begin

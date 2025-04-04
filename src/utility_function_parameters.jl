@@ -227,11 +227,25 @@ function sum_kernel(var::Vector{T}, logP::Vector{T}, elasticity::T) where {T <: 
     
 end
 
-function logTauPdMu(elasticity::T, log_price_index::Vector{T}, input::Vector{T}, capital::T, demand0::T, output::T, labor::T, wages::T, tau::T) where {T <: Real}
+"""
+  Compute the productivity shock mean μ
+"""
+function productivity_shock_mean(elasticity::T, log_price_uk::T, log_price_index::Vector{T}, input::Vector{T}, capital::T, demand0::T, output::T, labor::T, log_wages::T, tau::T) where {T <: Real}
+
+    tauP = tauPdMu(elasticity, log_price_index, input, capital, demand0, output, labor, log_wages, tau)
+    return tauP / ((1-tau) * exp(log_price_uk))
+
+    # logTauP = logTauPdMu(elasticity, log_price_index, input, capital, demand0, output, labor, log_wages, tau)
+    # logMu = logTauP - log(1.0 - tau) - log_price_uk
+    # return exp(logMu)
+    
+end
+
+function logTauPdMu(elasticity::T, log_price_index::Vector{T}, input::Vector{T}, capital::T, demand0::T, output::T, labor::T, log_wages::T, tau::T) where {T <: Real}
 
     s = Supergrassi.sum_kernel(input, log_price_index, elasticity)
     k = capital_fun(capital, tau, output, demand0, elasticity)
-    h = labor_fun(labor, wages, elasticity)
+    h = labor_fun(labor, log_wages, elasticity)
 
     return elasticity / ( elasticity - 1.0 ) * log(s + k + h)
 
