@@ -1,98 +1,101 @@
+"""
+  Compute utility function parameters by region considered in the model (uk, eu, rest of world).
+  Parameters of this type appear in multiple utility functions in the paper, and are annotated
+  (at least) α, β1, β2, γ and ρ.
+
+  This is refactored from the Matlab code in e.g. ComputeTheta lines 62-64
+
+  # Arguments
+   - elasticity [ϵ, χ1, χ2, η, ξ]
+   - log_price_{uk, eu, w} [log(p)]
+   - quantity_{uk, eu, w} [f, x1, x2, I, m]
+
+  # Outputs
+  - weight_{uk, eu, w}
+
+"""
 function weights_by_region(elasticity::T,
                            log_price_uk::T,log_price_eu::T,log_price_world::T,
-                           consumption_uk::T,consumption_eu::T,consumption_world::T) where {T <: Real}
+                           quantity_uk::T,quantityeu::T,quantityworld::T) where {T <: Real}
 
-    # Inputs
-    # elasticity # parms.epsilon_a
-    # log_price_{uk, eu, w} # logPd, parms.logP{eu,w}
-    # consumption_{uk, eu, w} #data.fValue{UK, EU, W}
+    logP = log_price_index(elasticity, log_price_uk, log_price_eu, log_price_world, quantity_uk, quantity_eu, quantity_world)
 
-    # Outputs
-    # weight_{uk, eu, w}
-
-    logP = log_price_index(elasticity, log_price_uk, log_price_eu, log_price_world, consumption_uk, consumption_eu, consumption_world)
-
-    weight_uk = consumption_uk * exp((elasticity - 1.0) * (log_price_uk - logP))
-    weight_eu = consumption_eu * exp((elasticity - 1.0) * (log_price_eu - logP))
-    weight_world = consumption_world * exp((elasticity - 1.0) * (log_price_world - logP))
+    weight_uk = quantity_uk * exp((elasticity - 1.0) * (log_price_uk - logP))
+    weight_eu = quantity_eu * exp((elasticity - 1.0) * (log_price_eu - logP))
+    weight_world = quantity_world * exp((elasticity - 1.0) * (log_price_world - logP))
 
     return weight_uk, weight_eu, weight_world
 
 end
 
+"""
+  Compute log of utility function parameters. See weights_by_region.
+"""
 function log_weights_by_region(elasticity::T,
                                log_price_uk::T,log_price_eu::T,log_price_world::T,
-                               consumption_uk::T,consumption_eu::T,consumption_world::T) where {T <: Real}
+                               quantity_uk::T,quantity_eu::T,quantity_world::T) where {T <: Real}
 
-    # Inputs
-    # elasticity # parms.epsilon_a
-    # log_price_{uk, eu, w} # logPd, parms.logP{eu,w}
-    # consumption_{uk, eu, w} #data.fValue{UK, EU, W}
+    logP = log_price_index(elasticity, log_price_uk, log_price_eu, log_price_world, quantity_uk, quantity_eu, quantity_world)
 
-    # Outputs
-    # log(weight_{uk, eu, w})
-
-    logP = log_price_index(elasticity, log_price_uk, log_price_eu, log_price_world, consumption_uk, consumption_eu, consumption_world)
-
-    log_weight_uk = log(consumption_uk) + (elasticity - 1.0) * (log_price_uk - logP)
-    log_weight_eu = log(consumption_eu)  + (elasticity - 1.0) * (log_price_eu - logP)
-    log_weight_world = log(consumption_world) + (elasticity - 1.0) * (log_price_world - logP)
+    log_weight_uk = log(quantity_uk) + (elasticity - 1.0) * (log_price_uk - logP)
+    log_weight_eu = log(quantity_eu)  + (elasticity - 1.0) * (log_price_eu - logP)
+    log_weight_world = log(quantity_world) + (elasticity - 1.0) * (log_price_world - logP)
 
     return log_weight_uk, log_weight_eu, log_weight_world
 
 end
 
-function total_weights(log_price_index::Vector{T}, consumption::Vector{T}, elasticity::T ) where {T <: Real}
+"""
+  Compute the total utility function parameter. Parameters of this type appear in multiple utility function
+  in the paper, and are annotated (at least) α, β1, β2, γ and ρ.
 
-    # Both e.g. parms.beta1 and parms.beta1Tilde are of this form.
-    # in beta1, consumption = data.x1Value and log_total_price_index = LogPX1Bar
-    # in beta1Tilde, consumption = EX1/E1Tilde and log_total_price_index = LogPX1Bar + parms.fx_EUR.
-    # TODO: Think about if this should be separated into different functions
-    # TODO: Check if this is still true
+  This is refactored from the Matlab code in e.g. ComputeTheta.m line 59
 
-    length(log_price_index) == length(consumption) || error()
+  # Arguments
+  - log_price_index: price index computed by log_price_index()
+  - quantity: total quantity [f, x1, x2, I, m]
+  - elasticity: [ϵ, χ1, χ2, η, ξ]
 
-    logPBar = log_total_price_index(elasticity, log_price_index, consumption)
+  # Outputs
+  - weights
+"""
+function total_weights(log_price_index::Vector{T}, quantity::Vector{T}, elasticity::T ) where {T <: Real}
+
+
+    length(log_price_index) == length(quantity) || error()
+
+    logPBar = log_total_price_index(elasticity, log_price_index, quantity)
     weights = Vector{T}(undef, length(log_price_index))
 
     for i in axes(log_price_index,1)
-        weights[i] = weight_kernel(consumption[i], exp(log_price_index[i] - logPBar), elasticity)
+        weights[i] = weight_kernel(quantity[i], exp(log_price_index[i] - logPBar), elasticity)
     end
 
     return weights
 
 end
 
-function log_eu_expenditure_on_uk_exports(log_price_index::Vector{T}, consumption::Vector{T},
+"""
+  Compute the share of EU expenditure on UK exports, defined in section 2.2.1 of the main paper.
+"""
+function log_eu_expenditure_on_uk_exports(log_price_index::Vector{T}, quantity::Vector{T},
                                           Ex::T, ETilde::T, ePx::T, PTilde::T, elasticity::T,
                                           elasticity_tilde::T) where {T <: Real}
 
-    length(log_price_index) == length(consumption) || error()
-    logPBar = log_total_price_index(elasticity, log_price_index, consumption)
+    length(log_price_index) == length(quantity) || error()
+    logPBar = log_total_price_index(elasticity, log_price_index, quantity)
 
     return log_weight_kernel(Ex/ETilde, exp(logPBar) * ePx / PTilde, elasticity_tilde)
 
 end
 
-function log_price_index(elasticity::T,
-                         log_price_uk::T, log_price_eu::T, log_price_world::T,
-                         demand_uk::T, demand_eu::T, demand_world::T) where {T <: Real}
-
-    # Abbreviated logP in papers and Matlab code
-
-    return elasticity / (elasticity - 1.0) * log(
-        demand_uk ^ (1.0/elasticity) * exp((elasticity - 1.0) * log_price_uk / elasticity) +
-        demand_eu ^ (1.0/elasticity) * exp((elasticity - 1.0) * log_price_eu / elasticity) +
-        demand_world  ^ (1.0/elasticity) * exp((elasticity - 1.0) * log_price_world  / elasticity)
-    )
-
-end
-
+"""
+  Compute the the consumer price index defined in equation 2.3 of the main paper as \bar{p}.
+  Matlab code reference e.g. ComputeTheta.m line 49.
+"""
 function price_index(elasticity::T,
                      log_price_uk::T, log_price_eu::T, log_price_world::T,
                      demand_uk::T, demand_eu::T, demand_world::T) where {T <: Real}
-
-    # Abbreviated logP in papers and Matlab code
 
     return (
         demand_uk ^ (1.0/elasticity) * exp((elasticity - 1.0) * log_price_uk / elasticity) +
@@ -102,29 +105,41 @@ function price_index(elasticity::T,
 
 end
 
+function log_price_index(elasticity::T,
+                         log_price_uk::T, log_price_eu::T, log_price_world::T,
+                         demand_uk::T, demand_eu::T, demand_world::T) where {T <: Real}
 
-function log_total_price_index(elasticity::T, log_price_index::Vector{T}, consumption::Vector{T}) where {T <: Real}
+    return elasticity / (elasticity - 1.0) * log(
+        demand_uk ^ (1.0/elasticity) * exp((elasticity - 1.0) * log_price_uk / elasticity) +
+        demand_eu ^ (1.0/elasticity) * exp((elasticity - 1.0) * log_price_eu / elasticity) +
+        demand_world  ^ (1.0/elasticity) * exp((elasticity - 1.0) * log_price_world  / elasticity)
+    )
 
-    # Abbreviated LogPBar in papers and Matlab code
+end
 
-    s = sum_kernel(consumption, log_price_index, elasticity)
+"""
+  Compute the consumer price index defined in equation 2.7 of the main paper as \bar{P}.
+  Matlab code reference e.g. ComputeTheta.m line 58.
+"""
+function log_total_price_index(elasticity::T, log_price_index::Vector{T}, quantity::Vector{T}) where {T <: Real}
+
+    s = sum_kernel(quantity, log_price_index, elasticity)
     weight = elasticity/(elasticity - 1.0) * log(s)
 
     return weight
 
 end
 
+"""
+  Compute utility function parameters (γ) by region considered in the model for the firms production function.
+  This is a wrapper around weights_by_region, but here we have to consider inputs to each firm from each firm
+  which increases the dimension of the parameter array.
+
+  Matlab code reference ComputeTheta.m lines 257-259
+"""
 function firms_weights_by_region(elasticity::T,
                                  log_price_uk::Vector{T},log_price_eu::Vector{T},log_price_world::Vector{T},
                                  input_uk::Matrix{T},input_eu::Matrix{T},input_world::Matrix{T}) where {T <: Real}
-
-    # Inputs
-    # elasticity # parms.xi_a
-    # log_price_{uk, eu, w} # logPd, parms.logP{eu,w}
-    # input_{uk, eu, w} #data.mValue{UK, EU, W}
-
-    # Outputs
-    # weights{uk, eu, w}
 
     weights = Array{Float64}(undef, length(log_price_uk), length(log_price_uk), 3)
 
@@ -139,6 +154,11 @@ function firms_weights_by_region(elasticity::T,
 
 end
 
+"""
+  Compute the total parameter (γM) for the firms input utility function.
+
+  Matlab code reference ComputeTheta.m line 251
+"""
 function total_input_weights(log_price_index::Vector{T}, input::Vector{T},
                             capital::T, demand0::T, output::T, labor::T, log_wages::T, elasticity::T, tau::T) where T
 
@@ -155,6 +175,11 @@ function total_input_weights(log_price_index::Vector{T}, input::Vector{T},
 
 end
 
+"""
+  Compute the total parameter (γH) for the firms labor utility function.
+
+  Matlab code reference ComputeTheta.m line 249
+"""
 function total_labor_weights(log_price_index::Vector{T}, input::Vector{T},
                             capital::T, demand0::T, output::T, labor::T, log_wages::T, elasticity::T, tau::T) where T
 
@@ -164,6 +189,11 @@ function total_labor_weights(log_price_index::Vector{T}, input::Vector{T},
 
 end
 
+"""
+  Compute the total parameter (γK) for the firms capital utility function.
+
+  Matlab code reference ComputeTheta.m line 254
+"""
 function total_capital_weights(log_price_index::Vector{T}, input::Vector{T},
                             capital::T, demand0::T, output::T, labor::T, log_wages::T, elasticity::T, tau::T) where T
 
