@@ -379,3 +379,5 @@ end
     @test isapprox(pdYBar, df.pdYBar, atol = tol)
 
 end
+
+include("test_filepath_creation.jl")
