@@ -124,9 +124,7 @@ end
 function log_total_price_index(elasticity::T, log_price_index::Vector{T}, quantity::Vector{T}) where {T <: Real}
 
     s = sum_kernel(quantity, log_price_index, elasticity)
-    weight = elasticity/(elasticity - 1.0) * log(s)
-
-    return weight
+    return elasticity/(elasticity - 1.0) * log(s)
 
 end
 
