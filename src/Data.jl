@@ -78,6 +78,7 @@ struct Data
     model_results::DataFrame
 
     merge_codes_105::DataFrame
+    merge_codes_64::DataFrame
 
     others::DataFrame
 
@@ -106,8 +107,9 @@ struct Data
         assets = data_struct["assets"]
         model_results = data_struct["model_results"]
         merge_codes_105 = data_struct["merge_codes_105"]
+        merge_codes_64 = data_struct["merge_codes_64"]
 
-        return new(household, industry, input_output, imports, depreciation, risk_free_rate, assets, model_results, merge_codes_105, others)
+        return new(household, industry, input_output, imports, depreciation, risk_free_rate, assets, model_results, merge_codes_105, merge_codes_64, others)
     end
 
 end

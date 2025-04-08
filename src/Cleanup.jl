@@ -78,3 +78,27 @@ function cleanup(data::Data, year::Int64)
 
     return CleanData(low_income, high_income, capital_current_year, capital_next_year, data.others, industry_names)
 end
+
+function create_map_105_to_64(data::Data)
+
+    initial_industry_names = data.merge_codes_105[!, :name]
+    index_table = data.merge_codes_105[!, :sic64]
+    final_industry_names = data.merge_codes_64[!, :x2][2:end]
+
+    println("Initial industry names: ", length(initial_industry_names))
+    println("Final industry names: ", length(final_industry_names))
+
+    map_105_to_64 = Dict{String, String}()
+
+    for i in eachindex(initial_industry_names)
+        initial_name = initial_industry_names[i]
+        final_name = final_industry_names[index_table[i]]
+
+        if initial_name != final_name
+            map_105_to_64[initial_name] = final_name
+        end
+    end
+    
+    return map_105_to_64
+
+end
