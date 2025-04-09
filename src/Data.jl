@@ -43,7 +43,15 @@ struct InputOutput
         limits = settings["excel_limits"]["input_output"]
 
         input_output_matrix = raw_data[limits["row_range"][1]:limits["row_range"][2], limits["matrix_cols"][1]:limits["matrix_cols"][2]]
-        industry_names = Array(raw_data[limits["industry_names_row"], limits["matrix_cols"][1]:limits["matrix_cols"][2]])
+        temp_industry_names = Array(raw_data[limits["industry_names_row"], limits["matrix_cols"][1]:limits["matrix_cols"][2]])
+
+        industry_names = Array{String, 1}(undef, length(temp_industry_names))
+        for i in eachindex(temp_industry_names)
+            industry_name = temp_industry_names[i]
+            industry_name = split(industry_name, "CPA_")[2]
+            industry_names[i] = industry_name
+
+        end
 
         final_consumption = Array(raw_data[limits["row_range"][1]:limits["row_range"][2], limits["final_consumption_col"]])
         gross_fixed_capital_formation = Array(raw_data[limits["row_range"][1]:limits["row_range"][2], limits["gross_fixed_capital_formation_col"]])
