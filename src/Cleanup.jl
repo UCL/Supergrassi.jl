@@ -21,16 +21,16 @@ function combine_dataframe_row_wise(data::DataFrame, func::Function)
     return combine(data, names(data, Real) .=> func, renamecols=false)
 end
 
-function get_rows(data::DataFrame, row_names::String, col_names::Array{String, 1}, mapping::Dict{String, String})
-    rr = data[data.x2 .== row_names, 4:end]
+function get_rows(data::DataFrame, row_names::String, col_names::Array{String, 1}, mapping::Dict{String, Int64})
+    rr = data[data.x2 .== row_names, 3:end]
 
-    # Remove trailing spaces from column names
-    col_names = strip.(col_names)
+    # # Remove trailing spaces from column names
+    # col_names = strip.(col_names)
     rename!(rr, col_names)
 
-    for map in mapping
-        println("Mapping: ", map)
-    end    # rr = reduce_columns_by_group(rr, mapping)
+    @show rr[!, :B05]
+    rr = reduce_columns_by_group(rr, mapping)
+    @show rr[!, "4"]
 
     return rr
 end
@@ -53,7 +53,7 @@ struct CleanData
     compensation_employees::DataFrame
     gross_operating_surplus_and_mixed_income::DataFrame
 
-    function CleanData(low_income::DataFrame, high_income::DataFrame, mean_capital_current_year::DataFrame, mean_capital_next_year::DataFrame, others::DataFrame, industry_names::Array{String, 1}, mapping_105_to_64::Dict{String, String})
+    function CleanData(low_income::DataFrame, high_income::DataFrame, mean_capital_current_year::DataFrame, mean_capital_next_year::DataFrame, others::DataFrame, industry_names::Array{String, 1}, mapping_105_to_64::Dict{String, Int64})
         high_income_share = high_income ./ (high_income .+ low_income)
         low_income_share = low_income ./ (high_income .+ low_income)
 
@@ -90,22 +90,19 @@ end
 
 function create_map_105_to_64(data::Data)
 
-    initial_industry_names = data.merge_codes_105[!, :name]
-    index_table = data.merge_codes_105[!, :sic64]
-    final_industry_names = data.merge_codes_64[!, :x2][2:end]
+    initial_industry_names = data.merge_codes_105[!, :sic105]
+    final_industry_names = data.merge_codes_105[!, :sic64]
 
-    println("Initial industry names: ", length(initial_industry_names))
-    println("Final industry names: ", length(final_industry_names))
 
-    map_105_to_64 = Dict{String, String}()
+    println("Initial industry names: ", initial_industry_names)
+    println("Final industry names: ", final_industry_names)
+
+    map_105_to_64 = Dict{String, Int64}()
 
     for i in eachindex(initial_industry_names)
         initial_name = initial_industry_names[i]
-        final_name = final_industry_names[index_table[i]]
-
-        if initial_name != final_name
-            map_105_to_64[initial_name] = final_name
-        end
+        final_name = final_industry_names[i]
+        map_105_to_64[initial_name] = final_name
     end
     
     return map_105_to_64
@@ -114,9 +111,9 @@ end
 
 using DataFrames
 
-function reduce_columns_by_group(df::DataFrame, mapping::Dict{String, String})
+function reduce_columns_by_group(df::DataFrame, mapping::Dict{String, Int64})
     # Group old columns by new name
-    grouped = Dict{String, Vector{Symbol}}()
+    grouped = Dict{Int64, Vector{Symbol}}()
     for (old, new) in mapping
         push!(get!(grouped, new, Vector{Symbol}()), Symbol(old))
     end
@@ -124,12 +121,7 @@ function reduce_columns_by_group(df::DataFrame, mapping::Dict{String, String})
     # Sum columns per group
     new_cols = Dict{Symbol, Vector{eltype(df[!, 1])}}()
     for (new_name, old_syms) in grouped
-        println("New name: ", new_name)
-        println("Old symbols: ", old_syms)
-
         new_cols[Symbol(new_name)] = sum(eachcol(df[!, old_syms]))
-
-        println("Success")
     end
 
     return DataFrame(new_cols)
