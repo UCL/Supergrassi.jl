@@ -2,7 +2,7 @@
 # settings = read_settings(settings_path)
 # filepaths = check_file_availability(settings)
 # data = read_data(filepaths, settings)
-clean = cleanup(data,settings["constants"]["data_year"])
+clean = CleanData(data,settings["constants"]["data_year"])
 
 
 println("Yaay")

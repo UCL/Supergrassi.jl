@@ -99,10 +99,20 @@ struct CleanData
     compensation_employees::DataFrame
     gross_operating_surplus_and_mixed_income::DataFrame
 
-    export_world::DataFrame
+
+    final_consumption::DataFrame
+    gross_fixed_capital_formation::DataFrame
+
+    delta_v_value_uk::DataFrame
+
+    exports_eu_to_uk::DataFrame
+    export_world_to_uk::DataFrame
+
+    total_use::DataFrame
+
+    services_export::DataFrame
 
     function CleanData(data::Data, year::Int64)
-    # function CleanData(low_income::DataFrame, high_income::DataFrame, mean_capital_current_year::DataFrame, mean_capital_next_year::DataFrame, others::DataFrame, industry_names::Array{String, 1}, mapping_105_to_64::Dict{String, String}, export_world_to_uk::Array{Number, 1}, export_eu_to_uk::Array{Number, 1})
 
 
 
@@ -118,19 +128,11 @@ struct CleanData
         capital_next_year = select_year(data.industry.capital, year + 1)
         mean_capital_next_year = combine_dataframe_row_wise(capital_next_year, mean)
 
+        ################################################################
+
         industry_names = data.input_output.industry_names
 
         mapping_105_to_64 = create_map_105_to_64(data)
-
-        export_world_to_uk = data.input_output.export_world_to_uk
-        # export_eu_to_uk = data.input_output.exports_eu_to_uk
-
-
-
-
-        high_income_share = high_income ./ (high_income .+ low_income)
-        low_income_share = low_income ./ (high_income .+ low_income)
-
 
         ######################################
         tax_products = clean_rows(data.others, "Taxes less subsidies on products", industry_names, mapping_105_to_64)
@@ -139,10 +141,27 @@ struct CleanData
         gross_operating_surplus_and_mixed_income = clean_rows(data.others, "Gross operating surplus and mixed income", industry_names, mapping_105_to_64)
         #######################################
 
-        export_world = clean_vector(export_world_to_uk, industry_names, mapping_105_to_64)
+        final_consumption = clean_vector(data.input_output.final_consumption, industry_names, mapping_105_to_64)
+        gross_fixed_captital_formation = clean_vector(data.input_output.gross_fixed_capital_formation, industry_names, mapping_105_to_64)
+        delta_v_value_uk = clean_vector(data.input_output.delta_v_value_uk, industry_names, mapping_105_to_64)
+        export_eu = clean_vector(data.input_output.exports_eu_to_uk, industry_names, mapping_105_to_64)
+        export_world = clean_vector(data.input_output.export_world_to_uk, industry_names, mapping_105_to_64)
+        total_use = clean_vector(data.input_output.total_use, industry_names, mapping_105_to_64)
+        services_export = clean_vector(data.input_output.services_export, industry_names, mapping_105_to_64)
 
 
-        return new(low_income, high_income, low_income_share, high_income_share, mean_capital_current_year, mean_capital_next_year, tax_products, tax_production, compensation_employees, gross_operating_surplus_and_mixed_income, export_world)
+        nms = names(tax_products)
+
+        low_income = DataFrame(low_income, nms)
+        high_income = DataFrame(high_income, nms)
+        mean_capital_current_year = DataFrame(mean_capital_current_year, nms)
+        mean_capital_next_year = DataFrame(mean_capital_current_year, nms)
+
+        high_income_share = high_income ./ (high_income .+ low_income)
+        low_income_share = low_income ./ (high_income .+ low_income)
+
+
+        return new(low_income, high_income, low_income_share, high_income_share, mean_capital_current_year, mean_capital_next_year, tax_products, tax_production, compensation_employees, gross_operating_surplus_and_mixed_income, final_consumption, gross_fixed_captital_formation, delta_v_value_uk, export_eu, export_world, total_use, services_export)
         
     end
 
