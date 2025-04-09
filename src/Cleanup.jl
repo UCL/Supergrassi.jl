@@ -25,9 +25,18 @@ function clean_rows(data::DataFrame, row_names::String, col_names::Array{String,
     # col_names = strip.(col_names)
     rename!(rr, col_names)
 
-    @show rr[!, :B05]
+    # @show rr[!, :B05]
     rr = reduce_columns_by_group(rr, mapping)
-    @show rr[!,  :SIC_64_4]
+    # @show rr[!,  :SIC_64_4]
+
+    return rr
+end
+
+function clean_vector(data::Vector{<:Number}, industry_names::Array{String, 1}, mapping::Dict{String, String})
+    # Create a DataFrame from the vector
+    df = DataFrame([data], :auto)
+    df = DataFrame(permutedims(df), industry_names)
+    rr = reduce_columns_by_group(df, mapping)
 
     return rr
 end
@@ -50,7 +59,10 @@ struct CleanData
     compensation_employees::DataFrame
     gross_operating_surplus_and_mixed_income::DataFrame
 
-    function CleanData(low_income::DataFrame, high_income::DataFrame, mean_capital_current_year::DataFrame, mean_capital_next_year::DataFrame, others::DataFrame, industry_names::Array{String, 1}, mapping_105_to_64::Dict{String, String})
+    export_world::DataFrame
+
+
+    function CleanData(low_income::DataFrame, high_income::DataFrame, mean_capital_current_year::DataFrame, mean_capital_next_year::DataFrame, others::DataFrame, industry_names::Array{String, 1}, mapping_105_to_64::Dict{String, String}, export_world_to_uk::Array{Number, 1}, export_eu_to_uk::Array{Number, 1})
         high_income_share = high_income ./ (high_income .+ low_income)
         low_income_share = low_income ./ (high_income .+ low_income)
 
@@ -62,8 +74,10 @@ struct CleanData
         gross_operating_surplus_and_mixed_income = clean_rows(others, "Gross operating surplus and mixed income", industry_names, mapping_105_to_64)
         #######################################
 
+        export_world = clean_vector(export_world_to_uk, industry_names, mapping_105_to_64)
 
-        return new(low_income, high_income, low_income_share, high_income_share, mean_capital_current_year, mean_capital_next_year, tax_products, tax_production, compensation_employees, gross_operating_surplus_and_mixed_income)
+
+        return new(low_income, high_income, low_income_share, high_income_share, mean_capital_current_year, mean_capital_next_year, tax_products, tax_production, compensation_employees, gross_operating_surplus_and_mixed_income, export_world)
         
     end
 
@@ -86,7 +100,10 @@ function cleanup(data::Data, year::Int64)
 
     mapping_105_to_64 = create_map_105_to_64(data)
 
-    return CleanData(low_income, high_income, capital_current_year, capital_next_year, data.others, industry_names, mapping_105_to_64)
+    export_world_to_uk = data.input_output.export_world_to_uk
+    export_eu_to_uk = data.input_output.exports_eu_to_uk
+
+    return CleanData(low_income, high_income, capital_current_year, capital_next_year, data.others, industry_names, mapping_105_to_64, export_world_to_uk, export_eu_to_uk)
 end
 
 function create_map_105_to_64(data::Data)
