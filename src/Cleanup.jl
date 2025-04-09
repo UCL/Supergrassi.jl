@@ -2,6 +2,46 @@ using DataFrames
 using Statistics
 
 
+function create_map_105_to_64(data::Data)
+
+    initial_industry_names = data.merge_codes_105[!, :sic105]
+    final_industry_names = data.merge_codes_105[!, :sic64]
+
+
+    println("Initial industry names: ", initial_industry_names)
+    println("Final industry names: ", final_industry_names)
+
+    map_105_to_64 = Dict{String, String}()
+
+    for i in eachindex(initial_industry_names)
+        initial_name = initial_industry_names[i]
+        final_name = final_industry_names[i]
+        map_105_to_64[initial_name] = "SIC_64_" * string(final_name)
+    end
+    
+    return map_105_to_64
+
+end
+
+using DataFrames
+
+function reduce_columns_by_group(df::DataFrame, mapping::Dict{String, String})
+    # Group old columns by new name
+    grouped = Dict{String, Vector{Symbol}}()
+    for (old, new) in mapping
+        push!(get!(grouped, new, Vector{Symbol}()), Symbol(old))
+    end
+
+    # Sum columns per group
+    new_cols = Dict{Symbol, Vector{eltype(df[!, 1])}}()
+    for (new_name, old_syms) in grouped
+        new_cols[Symbol(new_name)] = sum(eachcol(df[!, old_syms]))
+    end
+
+    return DataFrame(new_cols)
+end
+
+
 function select_year(data::DataFrame, year::Int64)
     rr = data[data.year .== year, 4:end]
 
@@ -61,17 +101,42 @@ struct CleanData
 
     export_world::DataFrame
 
+    function CleanData(data::Data, year::Int64)
+    # function CleanData(low_income::DataFrame, high_income::DataFrame, mean_capital_current_year::DataFrame, mean_capital_next_year::DataFrame, others::DataFrame, industry_names::Array{String, 1}, mapping_105_to_64::Dict{String, String}, export_world_to_uk::Array{Number, 1}, export_eu_to_uk::Array{Number, 1})
 
-    function CleanData(low_income::DataFrame, high_income::DataFrame, mean_capital_current_year::DataFrame, mean_capital_next_year::DataFrame, others::DataFrame, industry_names::Array{String, 1}, mapping_105_to_64::Dict{String, String}, export_world_to_uk::Array{Number, 1}, export_eu_to_uk::Array{Number, 1})
+
+
+        low_income = select_year(data.household.income.low, year)
+        low_income = combine_dataframe_row_wise(low_income, sum)
+
+        high_income = select_year(data.household.income.high, year)
+        high_income = combine_dataframe_row_wise(high_income, sum)
+
+        capital_current_year = select_year(data.industry.capital, year)
+        mean_capital_current_year = combine_dataframe_row_wise(capital_current_year, mean)
+
+        capital_next_year = select_year(data.industry.capital, year + 1)
+        mean_capital_next_year = combine_dataframe_row_wise(capital_next_year, mean)
+
+        industry_names = data.input_output.industry_names
+
+        mapping_105_to_64 = create_map_105_to_64(data)
+
+        export_world_to_uk = data.input_output.export_world_to_uk
+        # export_eu_to_uk = data.input_output.exports_eu_to_uk
+
+
+
+
         high_income_share = high_income ./ (high_income .+ low_income)
         low_income_share = low_income ./ (high_income .+ low_income)
 
 
         ######################################
-        tax_products = clean_rows(others, "Taxes less subsidies on products", industry_names, mapping_105_to_64)
-        tax_production = clean_rows(others, "Taxes less subsidies on production", industry_names, mapping_105_to_64)
-        compensation_employees = clean_rows(others, "Compensation of employees", industry_names, mapping_105_to_64)
-        gross_operating_surplus_and_mixed_income = clean_rows(others, "Gross operating surplus and mixed income", industry_names, mapping_105_to_64)
+        tax_products = clean_rows(data.others, "Taxes less subsidies on products", industry_names, mapping_105_to_64)
+        tax_production = clean_rows(data.others, "Taxes less subsidies on production", industry_names, mapping_105_to_64)
+        compensation_employees = clean_rows(data.others, "Compensation of employees", industry_names, mapping_105_to_64)
+        gross_operating_surplus_and_mixed_income = clean_rows(data.others, "Gross operating surplus and mixed income", industry_names, mapping_105_to_64)
         #######################################
 
         export_world = clean_vector(export_world_to_uk, industry_names, mapping_105_to_64)
@@ -81,66 +146,4 @@ struct CleanData
         
     end
 
-end
-
-function cleanup(data::Data, year::Int64)
-    low_income = select_year(data.household.income.low, year)
-    low_income = combine_dataframe_row_wise(low_income, sum)
-
-    high_income = select_year(data.household.income.high, year)
-    high_income = combine_dataframe_row_wise(high_income, sum)
-
-    capital_current_year = select_year(data.industry.capital, year)
-    capital_current_year = combine_dataframe_row_wise(capital_current_year, mean)
-
-    capital_next_year = select_year(data.industry.capital, year + 1)
-    capital_next_year = combine_dataframe_row_wise(capital_next_year, mean)
-
-    industry_names = data.input_output.industry_names
-
-    mapping_105_to_64 = create_map_105_to_64(data)
-
-    export_world_to_uk = data.input_output.export_world_to_uk
-    export_eu_to_uk = data.input_output.exports_eu_to_uk
-
-    return CleanData(low_income, high_income, capital_current_year, capital_next_year, data.others, industry_names, mapping_105_to_64, export_world_to_uk, export_eu_to_uk)
-end
-
-function create_map_105_to_64(data::Data)
-
-    initial_industry_names = data.merge_codes_105[!, :sic105]
-    final_industry_names = data.merge_codes_105[!, :sic64]
-
-
-    println("Initial industry names: ", initial_industry_names)
-    println("Final industry names: ", final_industry_names)
-
-    map_105_to_64 = Dict{String, String}()
-
-    for i in eachindex(initial_industry_names)
-        initial_name = initial_industry_names[i]
-        final_name = final_industry_names[i]
-        map_105_to_64[initial_name] = "SIC_64_" * string(final_name)
-    end
-    
-    return map_105_to_64
-
-end
-
-using DataFrames
-
-function reduce_columns_by_group(df::DataFrame, mapping::Dict{String, String})
-    # Group old columns by new name
-    grouped = Dict{String, Vector{Symbol}}()
-    for (old, new) in mapping
-        push!(get!(grouped, new, Vector{Symbol}()), Symbol(old))
-    end
-
-    # Sum columns per group
-    new_cols = Dict{Symbol, Vector{eltype(df[!, 1])}}()
-    for (new_name, old_syms) in grouped
-        new_cols[Symbol(new_name)] = sum(eachcol(df[!, old_syms]))
-    end
-
-    return DataFrame(new_cols)
 end
