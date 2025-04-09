@@ -53,6 +53,8 @@ struct InputOutput
 
         end
 
+        input_output_matrix = DataFrame(input_output_matrix, industry_names)
+
         final_consumption = Array(raw_data[limits["row_range"][1]:limits["row_range"][2], limits["final_consumption_col"]])
         gross_fixed_capital_formation = Array(raw_data[limits["row_range"][1]:limits["row_range"][2], limits["gross_fixed_capital_formation_col"]])
 
