@@ -1,4 +1,5 @@
 using DataFrames
+using Printf
 using Statistics
 
 
@@ -16,7 +17,8 @@ function create_map_105_to_64(data::Data)
     for i in eachindex(initial_industry_names)
         initial_name = initial_industry_names[i]
         final_name = final_industry_names[i]
-        map_105_to_64[initial_name] = "SIC_64_" * string(final_name)
+        map_105_to_64[initial_name] = "SIC_64_" * @sprintf("%03i", final_name)
+        # map_105_to_64[initial_name] = "SIC_64_" * string(final_name)
     end
     
     return map_105_to_64
@@ -86,7 +88,7 @@ function clean_matrix(data::DataFrame, industry_names::Array{String, 1}, mapping
 
     rr = reduce_columns_by_group(data, mapping)
     final_names = names(rr)
-    
+
     rr = DataFrame(permutedims(rr), industry_names)
 
     rr = reduce_columns_by_group(rr, mapping)
