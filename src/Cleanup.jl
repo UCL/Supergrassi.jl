@@ -81,6 +81,20 @@ function clean_vector(data::Vector{<:Number}, industry_names::Array{String, 1}, 
     return rr
 end
 
+function clean_matrix(data::DataFrame, industry_names::Array{String, 1}, mapping::Dict{String, String})
+
+
+    rr = reduce_columns_by_group(data, mapping)
+    final_names = names(rr)
+    
+    rr = DataFrame(permutedims(rr), industry_names)
+
+    rr = reduce_columns_by_group(rr, mapping)
+    rr = DataFrame(permutedims(rr), final_names)
+
+    return rr
+end
+
 
 struct CleanData
 
@@ -111,6 +125,8 @@ struct CleanData
     total_use::DataFrame
 
     services_export::DataFrame
+
+    import_export_matrix::DataFrame
 
     function CleanData(data::Data, year::Int64)
 
@@ -161,7 +177,9 @@ struct CleanData
         low_income_share = low_income ./ (high_income .+ low_income)
 
 
-        return new(low_income, high_income, low_income_share, high_income_share, mean_capital_current_year, mean_capital_next_year, tax_products, tax_production, compensation_employees, gross_operating_surplus_and_mixed_income, final_consumption, gross_fixed_captital_formation, delta_v_value_uk, export_eu, export_world, total_use, services_export)
+        import_export_matrix = clean_matrix(data.input_output.input_output_matrix, industry_names, mapping_105_to_64)
+
+        return new(low_income, high_income, low_income_share, high_income_share, mean_capital_current_year, mean_capital_next_year, tax_products, tax_production, compensation_employees, gross_operating_surplus_and_mixed_income, final_consumption, gross_fixed_captital_formation, delta_v_value_uk, export_eu, export_world, total_use, services_export, import_export_matrix)
         
     end
 
