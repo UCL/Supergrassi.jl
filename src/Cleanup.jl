@@ -18,16 +18,13 @@ function create_map_105_to_64(data::Data)
         initial_name = initial_industry_names[i]
         final_name = final_industry_names[i]
         map_105_to_64[initial_name] = "SIC_64_" * @sprintf("%03i", final_name)
-        # map_105_to_64[initial_name] = "SIC_64_" * string(final_name)
     end
     
     return map_105_to_64
 
 end
 
-using DataFrames
-
-function reduce_columns_by_group(df::DataFrame, mapping::Dict{String, String})
+function reduce_columns_by_group_sum(df::DataFrame, mapping::Dict{String, String})
     # Group old columns by new name
     grouped = Dict{String, Vector{Symbol}}()
     for (old, new) in mapping
@@ -63,13 +60,9 @@ end
 function clean_rows(data::DataFrame, row_names::String, col_names::Array{String, 1}, mapping::Dict{String, String})
     rr = data[data.x2 .== row_names, 3:end]
 
-    # # Remove trailing spaces from column names
-    # col_names = strip.(col_names)
     rename!(rr, col_names)
 
-    # @show rr[!, :B05]
-    rr = reduce_columns_by_group(rr, mapping)
-    # @show rr[!,  :SIC_64_4]
+    rr = reduce_columns_by_group_sum(rr, mapping)
 
     return rr
 end
@@ -78,7 +71,7 @@ function clean_vector(data::Vector{<:Number}, industry_names::Array{String, 1}, 
     # Create a DataFrame from the vector
     df = DataFrame([data], :auto)
     df = DataFrame(permutedims(df), industry_names)
-    rr = reduce_columns_by_group(df, mapping)
+    rr = reduce_columns_by_group_sum(df, mapping)
 
     return rr
 end
@@ -86,12 +79,12 @@ end
 function clean_matrix(data::DataFrame, industry_names::Array{String, 1}, mapping::Dict{String, String})
 
 
-    rr = reduce_columns_by_group(data, mapping)
+    rr = reduce_columns_by_group_sum(data, mapping)
     final_names = names(rr)
 
     rr = DataFrame(permutedims(rr), industry_names)
 
-    rr = reduce_columns_by_group(rr, mapping)
+    rr = reduce_columns_by_group_sum(rr, mapping)
     rr = DataFrame(permutedims(rr), final_names)
 
     return rr
