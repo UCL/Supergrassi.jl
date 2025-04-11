@@ -40,6 +40,25 @@ function reduce_columns_by_group_sum(df::DataFrame, mapping::Dict{String, String
     return DataFrame(new_cols)
 end
 
+function reduce_columns_by_group_weighted_mean(df::DataFrame, mapping::Dict{String, String}, weights::DataFrame)
+    # Group old columns by new name
+    grouped = Dict{String, Vector{Symbol}}()
+    for (old, new) in mapping
+        push!(get!(grouped, new, Vector{Symbol}()), Symbol(old))
+    end
+
+    dd = df .* weights
+
+    # Sum columns per group
+    new_cols = Dict{Symbol, Vector{eltype(df[!, 1])}}()
+    for (new_name, old_syms) in grouped
+        new_cols[Symbol(new_name)] = sum(eachcol(dd[!, old_syms])) / sum(eachcol(weights[!, old_syms]))
+    end
+
+    return DataFrame(new_cols)
+
+end
+
 
 function select_year(data::DataFrame, year::Int64)
     rr = data[data.year .== year, 4:end]
