@@ -24,6 +24,26 @@ function create_map_105_to_64(data::Data)
 
 end
 
+function create_map_64_to_16(data::Data)
+
+    initial_industry_names = data.merge_codes_64[2:end, :x1]
+    final_industry_names = data.merge_codes_64[2:end, :x7]
+
+    println("Initial industry names: ", initial_industry_names)
+    println("Final industry names: ", final_industry_names)
+
+    map_64_to_16 = Dict{String, String}()
+
+    for i in eachindex(initial_industry_names)
+        initial_name = "SIC_64_" * @sprintf("%03i", parse(Int64, initial_industry_names[i]))
+        final_name = final_industry_names[i]
+        map_64_to_16[initial_name] = final_name
+    end
+
+    return map_64_to_16
+
+end
+
 function reduce_columns_by_group_sum(df::DataFrame, mapping::Dict{String, String})
     # Group old columns by new name
     grouped = Dict{String, Vector{Symbol}}()
