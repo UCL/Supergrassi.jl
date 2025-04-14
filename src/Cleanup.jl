@@ -154,7 +154,7 @@ struct CleanData
     delta_v_value_uk::DataFrame
 
     exports_eu_to_uk::DataFrame
-    export_world_to_uk::DataFrame
+    exports_world_to_uk::DataFrame
 
     total_use::DataFrame
 
@@ -205,6 +205,9 @@ struct CleanData
 
         export_ratio_eu_vs_eu_and_world = DataFrame(export_eu ./ (export_eu .+ export_world))
         export_ratio_eu_vs_eu_and_world .= ifelse.(isnan.(export_ratio_eu_vs_eu_and_world), 0.5, export_ratio_eu_vs_eu_and_world)
+
+        export_eu = export_eu .+ export_ratio_eu_vs_eu_and_world .* services_export
+        export_world = export_world .+ (1 .- export_ratio_eu_vs_eu_and_world) .* services_export
 
 
         nms = names(tax_products)
