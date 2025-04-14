@@ -149,7 +149,7 @@ struct CleanData
 
 
     final_consumption::DataFrame
-    gross_fixed_capital_formation::DataFrame
+    gross_fixed_capital_formation::DataFrame  # Also called "payments to capital" in the code
 
     delta_v_value_uk::DataFrame
 
@@ -165,6 +165,9 @@ struct CleanData
     import_export_matrix::DataFrame
 
     depreciation::DataFrame
+
+    payments_to_low_skilled::DataFrame
+    payments_to_high_skilled::DataFrame
 
     function CleanData(data::Data, year::Int64)
 
@@ -211,6 +214,7 @@ struct CleanData
         export_eu = export_eu .+ export_ratio_eu_vs_eu_and_world .* services_export
         export_world = export_world .+ (1 .- export_ratio_eu_vs_eu_and_world) .* services_export
 
+        ##########################################
 
         nms = names(tax_products)
 
@@ -228,9 +232,12 @@ struct CleanData
         depreciation = DataFrame(data.depreciation)[!, string(year)]
         depreciation = DataFrame(permutedims(depreciation), nms)
 
-        println("Depreciation: ", depreciation)
+        #################################################
+
+        payments_to_low_skilled = (1 .- high_income_share) .* compensation_employees
+        payments_to_high_skilled = high_income_share .* compensation_employees
         
-        return new(low_income, high_income, low_income_share, high_income_share, mean_capital_current_year, mean_capital_next_year, tax_products, tax_production, compensation_employees, gross_operating_surplus_and_mixed_income, final_consumption, gross_fixed_captital_formation, delta_v_value_uk, export_eu, export_world, total_use, services_export, export_ratio_eu_vs_eu_and_world, import_export_matrix, depreciation)
+        return new(low_income, high_income, low_income_share, high_income_share, mean_capital_current_year, mean_capital_next_year, tax_products, tax_production, compensation_employees, gross_operating_surplus_and_mixed_income, final_consumption, gross_fixed_captital_formation, delta_v_value_uk, export_eu, export_world, total_use, services_export, export_ratio_eu_vs_eu_and_world, import_export_matrix, depreciation, payments_to_low_skilled, payments_to_high_skilled)
         
     end
 
