@@ -164,6 +164,8 @@ struct CleanData
 
     import_export_matrix::DataFrame
 
+    depreciation::DataFrame
+
     function CleanData(data::Data, year::Int64)
 
 
@@ -223,9 +225,12 @@ struct CleanData
 
         import_export_matrix = clean_matrix(data.input_output.input_output_matrix, industry_names, mapping_105_to_64)
 
-        
+        depreciation = DataFrame(data.depreciation)[!, string(year)]
+        depreciation = DataFrame(permutedims(depreciation), nms)
 
-        return new(low_income, high_income, low_income_share, high_income_share, mean_capital_current_year, mean_capital_next_year, tax_products, tax_production, compensation_employees, gross_operating_surplus_and_mixed_income, final_consumption, gross_fixed_captital_formation, delta_v_value_uk, export_eu, export_world, total_use, services_export, export_ratio_eu_vs_eu_and_world, import_export_matrix)
+        println("Depreciation: ", depreciation)
+        
+        return new(low_income, high_income, low_income_share, high_income_share, mean_capital_current_year, mean_capital_next_year, tax_products, tax_production, compensation_employees, gross_operating_surplus_and_mixed_income, final_consumption, gross_fixed_captital_formation, delta_v_value_uk, export_eu, export_world, total_use, services_export, export_ratio_eu_vs_eu_and_world, import_export_matrix, depreciation)
         
     end
 
