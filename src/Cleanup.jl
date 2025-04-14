@@ -160,6 +160,8 @@ struct CleanData
 
     services_export::DataFrame
 
+    export_ratio_eu_vs_eu_and_world::DataFrame
+
     import_export_matrix::DataFrame
 
     function CleanData(data::Data, year::Int64)
@@ -194,10 +196,15 @@ struct CleanData
         final_consumption = clean_vector(data.input_output.final_consumption, industry_names, mapping_105_to_64)
         gross_fixed_captital_formation = clean_vector(data.input_output.gross_fixed_capital_formation, industry_names, mapping_105_to_64)
         delta_v_value_uk = clean_vector(data.input_output.delta_v_value_uk, industry_names, mapping_105_to_64)
+        
         export_eu = clean_vector(data.input_output.exports_eu_to_uk, industry_names, mapping_105_to_64)
         export_world = clean_vector(data.input_output.export_world_to_uk, industry_names, mapping_105_to_64)
+        
         total_use = clean_vector(data.input_output.total_use, industry_names, mapping_105_to_64)
         services_export = clean_vector(data.input_output.services_export, industry_names, mapping_105_to_64)
+
+        export_ratio_eu_vs_eu_and_world = DataFrame(export_eu ./ (export_eu .+ export_world))
+        export_ratio_eu_vs_eu_and_world .= ifelse.(isnan.(export_ratio_eu_vs_eu_and_world), 0.5, export_ratio_eu_vs_eu_and_world)
 
 
         nms = names(tax_products)
@@ -213,7 +220,9 @@ struct CleanData
 
         import_export_matrix = clean_matrix(data.input_output.input_output_matrix, industry_names, mapping_105_to_64)
 
-        return new(low_income, high_income, low_income_share, high_income_share, mean_capital_current_year, mean_capital_next_year, tax_products, tax_production, compensation_employees, gross_operating_surplus_and_mixed_income, final_consumption, gross_fixed_captital_formation, delta_v_value_uk, export_eu, export_world, total_use, services_export, import_export_matrix)
+        
+
+        return new(low_income, high_income, low_income_share, high_income_share, mean_capital_current_year, mean_capital_next_year, tax_products, tax_production, compensation_employees, gross_operating_surplus_and_mixed_income, final_consumption, gross_fixed_captital_formation, delta_v_value_uk, export_eu, export_world, total_use, services_export, export_ratio_eu_vs_eu_and_world, import_export_matrix)
         
     end
 
