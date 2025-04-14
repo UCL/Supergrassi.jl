@@ -143,23 +143,16 @@ struct CleanData
 
     tax_products::DataFrame
     tax_production::DataFrame
-
     compensation_employees::DataFrame
     gross_operating_surplus_and_mixed_income::DataFrame
-
-
     final_consumption::DataFrame
     gross_fixed_capital_formation::DataFrame  # Also called "payments to capital" in the code
 
     delta_v_value_uk::DataFrame
-
     exports_eu_to_uk::DataFrame
     exports_world_to_uk::DataFrame
-
     total_use::DataFrame
-
     services_export::DataFrame
-
     export_ratio_eu_vs_eu_and_world::DataFrame
 
     import_export_matrix::DataFrame
