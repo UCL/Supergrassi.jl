@@ -1,6 +1,7 @@
 using DataFrames
 using Printf
 using Statistics
+using Dates
 
 
 function create_map_105_to_64(data::Data)
@@ -190,6 +191,8 @@ struct CleanData
     world_total_use::DataFrame
     world_services_export::DataFrame
 
+    R::Float64
+
     function CleanData(data::Data, year::Int64)
 
 
@@ -294,6 +297,17 @@ struct CleanData
         world_export_world = imports_export_world .* (1 - split_factor)
         world_total_use = imports_total_use .* (1 - split_factor)
         world_services_export = imports_services_export .* (1 - split_factor)
+
+        #############################################################
+
+        interest_rates = data.risk_free_rate[Dates.year.(data.risk_free_rate.date) .== year, 2:end]
+
+        for interest_rate in names(interest_rates)
+            interest_rates[!, interest_rate] = parse.(Float64, interest_rates[!, interest_rate])
+        end
+
+        R = 1 + exp(mean(log.(interest_rates[!, 1] / 100)))
+
         
         return new(
             low_income, 
@@ -342,6 +356,7 @@ struct CleanData
             world_export_world,
             world_total_use,
             world_services_export,
+            R,
             )
         
     end
