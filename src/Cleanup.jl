@@ -162,6 +162,16 @@ struct CleanData
     payments_to_low_skilled::DataFrame
     payments_to_high_skilled::DataFrame
 
+    imports_import_export_matrix::DataFrame
+    imports_final_consumption::DataFrame
+    imports_gross_fixed_capital_formation::DataFrame
+    imports_delta_v_value_uk::DataFrame
+    imports_export_eu::DataFrame
+    imports_export_world::DataFrame
+    imports_total_use::DataFrame
+    imports_services_export::DataFrame
+    imports_export_ratio_eu_vs_eu_and_world::DataFrame
+
     function CleanData(data::Data, year::Int64)
 
 
@@ -229,8 +239,54 @@ struct CleanData
 
         payments_to_low_skilled = (1 .- high_income_share) .* compensation_employees
         payments_to_high_skilled = high_income_share .* compensation_employees
+
+        #################################################
+
+        imports_import_export_matrix = clean_matrix(data.imports.input_output_matrix, industry_names, mapping_105_to_64)
+        imports_final_consumption = clean_vector(data.imports.final_consumption, industry_names, mapping_105_to_64)
+        imports_gross_fixed_capital_formation = clean_vector(data.imports.gross_fixed_capital_formation, industry_names, mapping_105_to_64)
+        imports_delta_v_value_uk = clean_vector(data.imports.delta_v_value_uk, industry_names, mapping_105_to_64)
+        imports_export_eu = clean_vector(data.imports.exports_eu_to_uk, industry_names, mapping_105_to_64)
+        imports_export_world = clean_vector(data.imports.export_world_to_uk, industry_names, mapping_105_to_64)
+        imports_total_use = clean_vector(data.imports.total_use, industry_names, mapping_105_to_64)
+        imports_services_export = clean_vector(data.imports.services_export, industry_names, mapping_105_to_64)
+        imports_export_ratio_eu_vs_eu_and_world = DataFrame(imports_export_eu ./ (imports_export_eu .+ imports_export_world))
+        imports_export_ratio_eu_vs_eu_and_world .= ifelse.(isnan.(imports_export_ratio_eu_vs_eu_and_world), 0.5, imports_export_ratio_eu_vs_eu_and_world)
+        imports_export_eu = imports_export_eu .+ imports_export_ratio_eu_vs_eu_and_world .* imports_services_export
+        imports_export_world = imports_export_world .+ (1 .- imports_export_ratio_eu_vs_eu_and_world) .* imports_services_export
         
-        return new(low_income, high_income, low_income_share, high_income_share, mean_capital_current_year, mean_capital_next_year, tax_products, tax_production, compensation_employees, gross_operating_surplus_and_mixed_income, final_consumption, gross_fixed_captital_formation, delta_v_value_uk, export_eu, export_world, total_use, services_export, export_ratio_eu_vs_eu_and_world, import_export_matrix, depreciation, payments_to_low_skilled, payments_to_high_skilled)
+        return new(
+            low_income, 
+            high_income, 
+            low_income_share, 
+            high_income_share, 
+            mean_capital_current_year, 
+            mean_capital_next_year, 
+            tax_products, tax_production, 
+            compensation_employees, 
+            gross_operating_surplus_and_mixed_income, 
+            final_consumption, 
+            gross_fixed_captital_formation, 
+            delta_v_value_uk, 
+            export_eu, 
+            export_world, 
+            total_use, 
+            services_export, 
+            export_ratio_eu_vs_eu_and_world, 
+            import_export_matrix, 
+            depreciation, 
+            payments_to_low_skilled, 
+            payments_to_high_skilled, 
+            imports_import_export_matrix,
+            imports_final_consumption,
+            imports_gross_fixed_capital_formation,
+            imports_delta_v_value_uk,
+            imports_export_eu,
+            imports_export_world,
+            imports_total_use,
+            imports_services_export,
+            imports_export_ratio_eu_vs_eu_and_world,
+            )
         
     end
 
