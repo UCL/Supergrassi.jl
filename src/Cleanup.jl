@@ -172,6 +172,24 @@ struct CleanData
     imports_services_export::DataFrame
     imports_export_ratio_eu_vs_eu_and_world::DataFrame
 
+    eu_import_export_matrix::DataFrame
+    eu_final_consumption::DataFrame
+    eu_gross_fixed_capital_formation::DataFrame
+    eu_delta_v_value_uk::DataFrame
+    eu_export_eu::DataFrame
+    eu_export_world::DataFrame
+    eu_total_use::DataFrame
+    eu_services_export::DataFrame
+
+    world_import_export_matrix::DataFrame
+    world_final_consumption::DataFrame
+    world_gross_fixed_capital_formation::DataFrame
+    world_delta_v_value_uk::DataFrame
+    world_export_eu::DataFrame
+    world_export_world::DataFrame
+    world_total_use::DataFrame
+    world_services_export::DataFrame
+
     function CleanData(data::Data, year::Int64)
 
 
@@ -254,6 +272,28 @@ struct CleanData
         imports_export_ratio_eu_vs_eu_and_world .= ifelse.(isnan.(imports_export_ratio_eu_vs_eu_and_world), 0.5, imports_export_ratio_eu_vs_eu_and_world)
         imports_export_eu = imports_export_eu .+ imports_export_ratio_eu_vs_eu_and_world .* imports_services_export
         imports_export_world = imports_export_world .+ (1 .- imports_export_ratio_eu_vs_eu_and_world) .* imports_services_export
+
+        ######################################################
+
+        split_factor = 0.5
+
+        eu_import_export_matrix = imports_import_export_matrix .* split_factor
+        eu_final_consumption = imports_final_consumption .* split_factor
+        eu_gross_fixed_capital_formation = imports_gross_fixed_capital_formation .* split_factor
+        eu_delta_v_value_uk = imports_delta_v_value_uk .* split_factor
+        eu_export_eu = imports_export_eu .* split_factor
+        eu_export_world = imports_export_world .* split_factor
+        eu_total_use = imports_total_use .* split_factor
+        eu_services_export = imports_services_export .* split_factor
+
+        world_import_export_matrix = imports_import_export_matrix .* (1 - split_factor)
+        world_final_consumption = imports_final_consumption .* (1 - split_factor)
+        world_gross_fixed_capital_formation = imports_gross_fixed_capital_formation .* (1 - split_factor)
+        world_delta_v_value_uk = imports_delta_v_value_uk .* (1 - split_factor)
+        world_export_eu = imports_export_eu .* (1 - split_factor)
+        world_export_world = imports_export_world .* (1 - split_factor)
+        world_total_use = imports_total_use .* (1 - split_factor)
+        world_services_export = imports_services_export .* (1 - split_factor)
         
         return new(
             low_income, 
@@ -286,6 +326,22 @@ struct CleanData
             imports_total_use,
             imports_services_export,
             imports_export_ratio_eu_vs_eu_and_world,
+            eu_import_export_matrix,
+            eu_final_consumption,
+            eu_gross_fixed_capital_formation,
+            eu_delta_v_value_uk,
+            eu_export_eu,
+            eu_export_world,
+            eu_total_use,
+            eu_services_export,
+            world_import_export_matrix,
+            world_final_consumption,
+            world_gross_fixed_capital_formation,
+            world_delta_v_value_uk,
+            world_export_eu,
+            world_export_world,
+            world_total_use,
+            world_services_export,
             )
         
     end
