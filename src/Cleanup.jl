@@ -131,6 +131,46 @@ function clean_matrix(data::DataFrame, industry_names::Array{String, 1}, mapping
 end
 
 
+function clean_assets_liabilities(data::Data, year::Int64)
+
+    # Step 1: Extract the relevant columns as strings
+    year_str = string(year)
+    assets_col = Symbol("total_assets_" * year_str)
+    liabilities_col = Symbol("total_liabilities_" * year_str)
+
+    # Step 2: Create a DataFrame from those columns
+    df_raw = DataFrame(
+        SIC64 = data.assets[!, :sic64],
+        Assets = data.assets[!, assets_col],
+        Liabilities = data.assets[!, liabilities_col],
+    )
+
+    # Step 3: Filter out rows with "NA"
+    df_clean = filter(row -> row.Assets != "NA" && row.Liabilities != "NA" && row.SIC64 != "NA", df_raw)
+
+    # Step 4: Convert strings to Float64
+    df_clean.Assets = parse.(Float64, df_clean.Assets)
+    df_clean.Liabilities = parse.(Float64, df_clean.Liabilities)
+
+    # Step 5: Compute Liabilities/Assets, handling Assets == 0
+    ratio = [a == 0.0 ? 0.0 : abs(l) / a for (l, a) in zip(df_clean.Liabilities, df_clean.Assets)]
+
+    # Step 6: Build final DataFrame and filter on ratio <= 1
+    df_final = DataFrame(
+        SIC64 = df_clean.SIC64,
+        Assets = df_clean.Assets,
+        Ratio = ratio
+    )
+
+    # Step 7: Drop rows where Ratio > 1
+    df_final = filter(row -> row.Ratio ≤ 1.0, df_final)
+
+    # display(df_final)
+
+    return df_final
+
+end
+
 struct CleanData
 
     low_income::DataFrame
@@ -192,6 +232,9 @@ struct CleanData
     world_services_export::DataFrame
 
     R::Float64
+
+    asset_liability_current_year::DataFrame
+    asset_liability_next_year::DataFrame
 
     function CleanData(data::Data, year::Int64)
 
@@ -308,6 +351,12 @@ struct CleanData
 
         R = 1 + exp(mean(log.(interest_rates[!, 1] / 100)))
 
+        #############################################################
+
+        asset_liability_current_year = clean_assets_liabilities(data, year)
+        asset_liability_next_year = clean_assets_liabilities(data, year + 1)
+
+
         
         return new(
             low_income, 
@@ -357,6 +406,8 @@ struct CleanData
             world_total_use,
             world_services_export,
             R,
+            asset_liability_current_year,
+            asset_liability_next_year,
             )
         
     end
