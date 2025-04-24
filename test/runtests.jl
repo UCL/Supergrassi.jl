@@ -21,12 +21,12 @@ tol = 1e-12
 
     for row in axes(alpha, 1)
         alpha[row,:] .= Supergrassi.parameters_by_region(elasticity_a,
-                                                      df.logP_uk[row],
-                                                      df.logP_eu[row],
-                                                      df.logP_w[row],
-                                                      df.f_uk[row],
-                                                      df.f_eu[row],
-                                                      df.f_w[row])
+                                                         df.logP_uk[row],
+                                                         df.logP_eu[row],
+                                                         df.logP_w[row],
+                                                         df.f_uk[row],
+                                                         df.f_eu[row],
+                                                         df.f_w[row])
         grad_log_alpha[row,:] .= gradient(Forward,
                                           Supergrassi.log_parameters_by_region,
                                           Const(elasticity_a),
@@ -43,19 +43,25 @@ tol = 1e-12
     alpha[mask,2:3] .= 0.0
     grad_log_alpha[mask,:] .= 0.0
 
-    @test isapprox(alpha[:,1], df.alpha_uk, atol = tol)
-    @test isapprox(alpha[:,2], df.alpha_eu, atol = tol)
-    @test isapprox(alpha[:,3], df.alpha_w, atol = tol)
-    @test isapprox(grad_log_alpha[:,1], df.dlogalpha_uk, atol = tol)
-    @test isapprox(grad_log_alpha[:,2], df.dlogalpha_eu, atol = tol)
-    @test isapprox(grad_log_alpha[:,3], df.dlogalpha_w, atol = tol)
-
     logPf = Supergrassi.log_price_index.(elasticity_a,df.logP_uk,df.logP_eu,df.logP_w,df.f_uk,df.f_eu,df.f_w)
     Alpha = jacobian(ForwardWithPrimal, Supergrassi.agg_parameters, logPf, Const(df.f), Const(elasticity))
 
-    @test isapprox(Alpha.val, df.alpha, atol = tol)
+    α = Supergrassi.UtilityFunctionParameters(alpha[:,1], alpha[:,2], alpha[:,3], Alpha.val)
 
-    α = UtilityFunctionParameters(alpha[:,1], alpha[:,2], alpha[:,3], Alpha.val)
+    # TODO: This should take Alpha.derivs[1] as the last argument, but the VecOrMat type does not seem to
+    #       accept a Matrix{Float64}. Since we can't test the jacobian at the moment, I've just replaced it
+    #       with a dummy undefined vector.
+    ∇α = Supergrassi.UtilityFunctionParameters(grad_log_alpha[:,1], grad_log_alpha[:,2], grad_log_alpha[:,3],
+                                               Vector{Float64}(undef, n))
+
+    @test isapprox(α.uk, df.alpha_uk, atol = tol)
+    @test isapprox(α.eu, df.alpha_eu, atol = tol)
+    @test isapprox(α.world, df.alpha_w, atol = tol)
+    @test isapprox(α.agg, df.alpha, atol = tol)
+
+    @test isapprox(∇α.uk, df.dlogalpha_uk, atol = tol)
+    @test isapprox(∇α.eu, df.dlogalpha_eu, atol = tol)
+    @test isapprox(∇α.world, df.dlogalpha_w, atol = tol)
 
 end
 

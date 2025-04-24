@@ -26,11 +26,11 @@ end
 # Below three functions calculate equations 4.1, 4.3 and 4.4 of main paper that describe the equilibrium
 # Equation 4.2 is the log_total_price_index in utility_function_paramerers.jl
 
-function market_clearing_price_index(log_price_uk::Vector{T}, zOC::Vector{T}, household_expenditure::T,
-                                     log_price_eu::Vector{T}, log_price_world::Vector{T},
-                                     consumption::Vector{T}, exports1::Vector{T}, exports2::Vector{T},
-                                     imports::Vector{T}, inputs::Vector{T},
-                                     ϵ::T, ζ1::T, ζ2::T, η::T, ξ::T) where T
+function market_clearing_price(log_price_uk::Vector{T}, zOC::Vector{T}, household_expenditure::T,
+                               log_price_eu::Vector{T}, log_price_world::Vector{T},
+                               consumption::Vector{T}, exports1::Vector{T}, exports2::Vector{T},
+                               imports::Vector{T}, inputs::Vector{T},
+                               ϵ::T, ζ1::T, ζ2::T, η::T, ξ::T) where T
     
     # Needs:
     # PdYBar: intermediate_goods_price_index()
@@ -98,7 +98,7 @@ function market_clearing_price_index(log_price_uk::Vector{T}, zOC::Vector{T}, ho
     
 end
 
-# EFd
+# EFd (logEF, E)
 function expenditure_by_region(param_region, param_agg, elasticity, elasticity_a, log_price_region, expenditure, logPf, logPBar)
 
     EF = log_expenditure_kernel(param_agg, expenditure, elasticity, logPf, logPBar)
@@ -107,6 +107,7 @@ function expenditure_by_region(param_region, param_agg, elasticity, elasticity_a
     
 end
 
+# LogEF (logPf, logPBar)
 function log_expenditure_kernel(param_agg, expenditure, elasticity, logPf, logPBar)
 
     return log(param_agg) + log(expenditure) + (1.0 - elasticity) * (logPf - logPBar)
@@ -116,14 +117,15 @@ end
 #logPf
 function log_price_by_commodity(param_uk, param_eu, param_w, price_uk, price_eu, price_w, elasticity)
     
-    return 1.0 / (1.0 - elasticity) * (param_uk * price_uk ^ (1 - elasticity)
+    return 1.0 / (1.0 - elasticity) * (
+        param_uk * price_uk ^ (1 - elasticity)
         + param_eu * price_eu ^ (1 - elasticity)
         + param_w * price_w ^ (1 - elasticity)
     )
     
 end
 
-#logPBar
+#logPBar (logPf)
 function log_agg_price(param_agg, log_final_price_by_commodity, elasticity)
 
     return 1.0 / (1.0 - elasticity) * log(sum(param_agg * exp((1.0 - elasticity) * log_final_price_by_commodity)))

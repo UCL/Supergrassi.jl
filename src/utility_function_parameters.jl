@@ -1,9 +1,9 @@
-struct UtilityFunctionParameters{T <: Vector{Real}}
+struct UtilityFunctionParameters{R <: Real, T <: VecOrMat{R}}
 
-    agg::T
     uk::T
     eu::T
     world::T
+    agg::T
 
 end
 
