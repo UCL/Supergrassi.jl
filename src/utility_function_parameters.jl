@@ -1,3 +1,12 @@
+struct UtilityFunctionParameters{T <: Vector{Real}}
+
+    agg::T
+    uk::T
+    eu::T
+    world::T
+
+end
+
 """
   Compute utility function parameters by region considered in the model (uk, eu, rest of world).
   Parameters of this type appear in multiple utility functions in the paper, and are annotated
@@ -46,25 +55,25 @@ function log_parameters_by_region(elasticity::T,
 end
 
 """
-  Compute the total utility function parameter. Parameters of this type appear in multiple utility function
+  Compute the aggregate utility function parameter. Parameters of this type appear in multiple utility function
   in the paper, and are annotated (at least) α, β1, β2, γ and ρ.
 
   This is refactored from the Matlab code in e.g. ComputeTheta.m line 59
 
   # Arguments
   - log_price_index: price index computed by log_price_index()
-  - quantity: total quantity [f, x1, x2, I, m]
+  - quantity: aggregate quantity [f, x1, x2, I, m]
   - elasticity: [ϵ, χ1, χ2, η, ξ]
 
   # Outputs
   - parameters
 """
-function total_parameters(log_price_index::Vector{T}, quantity::Vector{T}, elasticity::T ) where {T <: Real}
+function agg_parameters(log_price_index::Vector{T}, quantity::Vector{T}, elasticity::T ) where {T <: Real}
 
 
     length(log_price_index) == length(quantity) || error()
 
-    logPBar = log_total_price_index(elasticity, log_price_index, quantity)
+    logPBar = log_agg_price_index(elasticity, log_price_index, quantity)
     parameters = Vector{T}(undef, length(log_price_index))
 
     for i in axes(log_price_index,1)
@@ -83,7 +92,7 @@ function log_eu_expenditure_on_uk_exports(log_price_index::Vector{T}, quantity::
                                           elasticity_tilde::T) where {T <: Real}
 
     length(log_price_index) == length(quantity) || error()
-    logPBar = log_total_price_index(elasticity, log_price_index, quantity)
+    logPBar = log_agg_price_index(elasticity, log_price_index, quantity)
 
     return log_weight_kernel(Ex/ETilde, exp(logPBar) * ePx / PTilde, elasticity_tilde)
 
@@ -121,7 +130,7 @@ end
   Compute the consumer price index defined in equation 2.7 of the main paper as \bar{P}.
   Matlab code reference e.g. ComputeTheta.m line 58.
 """
-function log_total_price_index(elasticity::T, log_price_index::Vector{T}, quantity::Vector{T}) where {T <: Real}
+function log_agg_price_index(elasticity::T, log_price_index::Vector{T}, quantity::Vector{T}) where {T <: Real}
 
     s = sum_kernel(quantity, log_price_index, elasticity)
     return elasticity/(elasticity - 1.0) * log(s)
@@ -153,11 +162,11 @@ function firms_parameters_by_region(elasticity::T,
 end
 
 """
-  Compute the total parameter (γM) for the firms input utility function.
+  Compute the aggregate parameter (γM) for the firms input utility function.
 
   Matlab code reference ComputeTheta.m line 251
 """
-function total_input_parameters(log_price_index::Vector{T}, input::Vector{T},
+function agg_input_parameters(log_price_index::Vector{T}, input::Vector{T},
                             capital::T, demand0::T, output::T, labor::T, log_wages::T, elasticity::T, tau::T) where T
 
     length(log_price_index) == length(input) || error()
@@ -174,11 +183,11 @@ function total_input_parameters(log_price_index::Vector{T}, input::Vector{T},
 end
 
 """
-  Compute the total parameter (γH) for the firms labor utility function.
+  Compute the aggregate parameter (γH) for the firms labor utility function.
 
   Matlab code reference ComputeTheta.m line 249
 """
-function total_labor_parameters(log_price_index::Vector{T}, input::Vector{T},
+function agg_labor_parameters(log_price_index::Vector{T}, input::Vector{T},
                             capital::T, demand0::T, output::T, labor::T, log_wages::T, elasticity::T, tau::T) where T
 
     length(log_price_index) == length(input) || error()
@@ -188,11 +197,11 @@ function total_labor_parameters(log_price_index::Vector{T}, input::Vector{T},
 end
 
 """
-  Compute the total parameter (γK) for the firms capital utility function.
+  Compute the aggregate parameter (γK) for the firms capital utility function.
 
   Matlab code reference ComputeTheta.m line 254
 """
-function total_capital_parameters(log_price_index::Vector{T}, input::Vector{T},
+function agg_capital_parameters(log_price_index::Vector{T}, input::Vector{T},
                             capital::T, demand0::T, output::T, labor::T, log_wages::T, elasticity::T, tau::T) where T
 
     length(log_price_index) == length(input) || error()
@@ -222,7 +231,7 @@ function sum_kernel(var::Vector{T}, logP::Vector{T}, elasticity::T) where {T <: 
     end
 
     return s
-    
+
 end
 
 """
@@ -236,7 +245,7 @@ function productivity_shock_mean(elasticity::T, log_price_uk::T, log_price_index
     # logTauP = logTauPdMu(elasticity, log_price_index, input, capital, demand0, output, labor, log_wages, tau)
     # logMu = logTauP - log(1.0 - tau) - log_price_uk
     # return exp(logMu)
-    
+
 end
 
 function logTauPdMu(elasticity::T, log_price_index::Vector{T}, input::Vector{T}, capital::T, demand0::T, output::T, labor::T, log_wages::T, tau::T) where {T <: Real}

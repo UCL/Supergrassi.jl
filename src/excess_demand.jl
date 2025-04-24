@@ -47,42 +47,74 @@ function market_clearing_price_index(log_price_uk::Vector{T}, zOC::Vector{T}, ho
     # logEI: log(ρ) + log(PIBar) + log(KS/μI) + (1 - η) * (logPI - logPIBar)
     # logEM: log(γM) + (1 - ξ) * logPm - (1 - ξ) * logTauPdMu + logTauPdYBar
 
-    α_uk = parameters_by_region(ϵ, log_price_uk, log_price_eu, log_price_world,
-                                consumption.uk, consumption.eu, consumption.world)[1]
-    β1_uk = parameters_by_region(ζ1, log_price_uk, log_price_eu, log_price_world,
-                                exports1.uk, exports1.eu, exports1.world)[1]
-    β2_uk = parameters_by_region(ζ2, log_price_uk, log_price_eu, log_price_world,
-                                exports2.uk, exports2.eu, exports2.world)[1]
-    ρ_uk = parameters_by_region(η, log_price_uk, log_price_eu, log_price_world,
-                                imports.uk, imports.eu, imports.world)[1]
+    α_reg = parameters_by_region(ϵ, log_price_uk, log_price_eu, log_price_world,
+                                consumption.uk, consumption.eu, consumption.world)
+    β1_reg = parameters_by_region(ζ1, log_price_uk, log_price_eu, log_price_world,
+                                exports1.uk, exports1.eu, exports1.world)
+    β2_reg = parameters_by_region(ζ2, log_price_uk, log_price_eu, log_price_world,
+                                exports2.uk, exports2.eu, exports2.world)
+    ρ_reg = parameters_by_region(η, log_price_uk, log_price_eu, log_price_world,
+                                imports.uk, imports.eu, imports.world)
     
     PdYBar = intermediate_goods_price_index()
-    EF = α + log(household_expenditure) + (1 - ϵ) * (log_total_price_index - 1)
-    EFd = foo(α_uk, ϵ, EF, log_price_uk, log_total_price_index(ϵ_a, log_price_index(), consumption.total))
-    EX1d = foo(β1_uk, ζ1, EX1, log_price_uk, log_total_price_index(ζ1_a, log_price_index(), exports1.total))
-    EX2d = foo(β2_uk, ζ2, EX2, log_price_uk, log_total_price_index(ζ2_a, log_price_index(), exports2.total))
-    EId = foo(ρ_uk, η, EI, log_price_uk, log_total_price_index(η_a, log_price_index(), imports.total))
 
-    EMd = zeros(n,n)
-    for j in axes(log_price_uk,1)
-        γM_uk = parameters_by_region(ξ_a, log_price_uk, log_price_eu, log_price_world,
-                                     inputs.uk[:,j], inputs.eu[:,j], inputs.world[:,j])
-        EMd[j,:] = foo(γM_uk, ξ, EM, log_price_uk, log_total_price_index(ξ_a, log_price_index(), input))
-    end
+    # Household expenditure
+    logPf = log_price_by_commodity(α_reg[1], α_reg[2], α_reg[3], log_price_uk, log_price_eu, log_price_world, ϵ)
+    logPBar = log_agg_price(α, logPf, ϵ)
+    EFd = expenditure_by_region(α_reg[1], α_agg, ϵ, ϵ_a, log_price_uk, household_expenditure, logPf, logPBar)
+
+    # Expenditure on exports from eu
+    logPX1 = log(1.0 + τx1) + log_price_by_commodity(β1_reg[1], β1_reg[2], β1_reg[3],
+                                                   log_price_uk, log_price_eu, log_price_world, ζ1_a)
+    logPX1Bar = log_agg_price(β1, logPX1, ζ1)
+    logEX1Tilde = log_expenditure_kernel(β1Tilde, E1Tilde, ζ1Tilde, log(fx_EUR) + logPX1Bar, logP1Tilde)
+    EX1d = expenditure_by_region(β1_reg[1], β1_agg, ζ1, ζ1_a, log_price_uk, logEX1Tilde, logPX1, logPX1Bar)
+
+    # Expenditure on exports from rest of world
+    logPX2 = log(1.0 + τx2) + log_price_by_commodity(β2_reg[1], β2_reg[2], β2_reg[3],
+                                                   log_price_uk, log_price_eu, log_price_world, ζ2_a)
+    logPX2Bar = log_agg_price(β2, logPX2, ζ2)
+    logEX1Tilde = log_expenditure_kernel(β2Tilde, E2Tilde, ζ2Tilde, log(fx_EUR) + logPX2Bar, logP2Tilde)
+    EX2d = expenditure_by_region(β2_reg[1], β2_agg, ζ2, ζ2_a, log_price_uk, E2Tilde, logPX2, logPX2Bar)
+
+    # Investment expenditure
+    logPI = log_price_by_commodity(ρ_reg[1], ρ_reg[2], ρ_reg[3], log_price_uk, log_price_eu, log_price_world, η_a)
+    logPIBar = log_agg_price(ρ, logPI, η)
+    logPITilde = logPIBar + log(KS/μI) # TODO next, KS requires CapitalMarket.m
+    EId = expenditure_by_region(ρ_reg[1], ρ_agg, η, η_a, log_price_uk, logPITilde, logPI, logPIBar)
+
+    # # Production intermediates expenditure
+    # EMd = zeros(n,n)
+    # for j in axes(log_price_uk,1)
+    #     γM_reg = parameters_by_region(ξ_a, log_price_uk, log_price_eu, log_price_world,
+    #                                   inputs.uk[:,j], inputs.eu[:,j], inputs.world[:,j])
+    #     logPM = log_price_by_commodity(γM_reg[1,j], γM_reg[2,j], γM_reg[3,j],
+    #                                    log_price_uk[:,j], log_price_eu[:,j], log_price_world[:,j], ξ_a)
+    #     logTauPdYBar = ...
+    #     EMd[j,:] = expenditure_by_region(γM_reg[1], γM_agg, ξ, ξ_a, log_price_uk, ..., logPM)
+    # end
     
     return PdYBar + EFd + EX1d + EX2d + EId + EMd + DeltaV
     
 end
 
-#
-function foo(parameter, elasticity, pBarF, log_price_uk, log_agg_price_index)
+# EFd
+function expenditure_by_region(param_region, param_agg, elasticity, elasticity_a, log_price_region, expenditure, logPf, logPBar)
 
-    return parameter * exp(log(pBarF) + (1.0 - elasticity) * (log_price_uk - log_agg_price_index))
+    EF = log_expenditure_kernel(param_agg, expenditure, elasticity, logPf, logPBar)
+    EFd = param_region * exp(log(EF) + (1.0 - elasticity_a) * (log_price_region - logPf))
+    return EFd
+    
+end
+
+function log_expenditure_kernel(param_agg, expenditure, elasticity, logPf, logPBar)
+
+    return log(param_agg) + log(expenditure) + (1.0 - elasticity) * (logPf - logPBar)
     
 end
 
 #logPf
-function log_final_price_by_commodity(param_uk, param_eu, param_w, price_uk, price_eu, price_w, elasticity)
+function log_price_by_commodity(param_uk, param_eu, param_w, price_uk, price_eu, price_w, elasticity)
     
     return 1.0 / (1.0 - elasticity) * (param_uk * price_uk ^ (1 - elasticity)
         + param_eu * price_eu ^ (1 - elasticity)
@@ -92,9 +124,9 @@ function log_final_price_by_commodity(param_uk, param_eu, param_w, price_uk, pri
 end
 
 #logPBar
-function log_final_agg_price(param, log_final_price_by_commodity, elasticity)
+function log_agg_price(param_agg, log_final_price_by_commodity, elasticity)
 
-    return 1.0 / (1.0 - elasticity) * log(sum(param * exp((1.0 - elasticity) * log_final_price_by_commodity)))
+    return 1.0 / (1.0 - elasticity) * log(sum(param_agg * exp((1.0 - elasticity) * log_final_price_by_commodity)))
     
 end
 

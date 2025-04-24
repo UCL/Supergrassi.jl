@@ -51,9 +51,11 @@ tol = 1e-12
     @test isapprox(grad_log_alpha[:,3], df.dlogalpha_w, atol = tol)
 
     logPf = Supergrassi.log_price_index.(elasticity_a,df.logP_uk,df.logP_eu,df.logP_w,df.f_uk,df.f_eu,df.f_w)
-    Alpha = jacobian(ForwardWithPrimal, Supergrassi.total_parameters, logPf, Const(df.f), Const(elasticity))
+    Alpha = jacobian(ForwardWithPrimal, Supergrassi.agg_parameters, logPf, Const(df.f), Const(elasticity))
 
     @test isapprox(Alpha.val, df.alpha, atol = tol)
+
+    α = UtilityFunctionParameters(alpha[:,1], alpha[:,2], alpha[:,3], Alpha.val)
 
 end
 
@@ -93,7 +95,7 @@ end
     end
 
     logPf = Supergrassi.log_price_index.(elasticity_a,df.logP_uk,df.logP_eu,df.logP_w,df.x1_uk,df.x1_eu,df.x1_w)
-    Beta = jacobian(ForwardWithPrimal, Supergrassi.total_parameters, logPf, Const(df.x1), Const(elasticity))
+    Beta = jacobian(ForwardWithPrimal, Supergrassi.agg_parameters, logPf, Const(df.x1), Const(elasticity))
     grad_log_beta_tilde = gradient(ForwardWithPrimal,
                                    Supergrassi.log_eu_expenditure_on_uk_exports,
                                    logPf,
@@ -158,7 +160,7 @@ end
     end
 
     logPf = Supergrassi.log_price_index.(elasticity_a,df.logP_uk,df.logP_eu,df.logP_w,df.x2_uk,df.x2_eu,df.x2_w)
-    Beta = jacobian(ForwardWithPrimal, Supergrassi.total_parameters, logPf, Const(df.x2), Const(elasticity))
+    Beta = jacobian(ForwardWithPrimal, Supergrassi.agg_parameters, logPf, Const(df.x2), Const(elasticity))
     grad_log_beta2_tilde = gradient(ForwardWithPrimal,
                                    Supergrassi.log_eu_expenditure_on_uk_exports,
                                    logPf,
@@ -241,7 +243,7 @@ end
     @test isapprox(grad_log_rho[:,3], df.dlogrho_w, atol = tol)
 
     logPI = Supergrassi.log_price_index.(elasticity_a,df.logP_uk,df.logP_eu,df.logP_w,df.I_uk,df.I_eu,df.I_w)
-    Rho = jacobian(ForwardWithPrimal, Supergrassi.total_parameters, logPI[mask], Const(df.I[mask]), Const(elasticity))
+    Rho = jacobian(ForwardWithPrimal, Supergrassi.agg_parameters, logPI[mask], Const(df.I[mask]), Const(elasticity))
 
     Rho_out = zeros(n)
     Rho_out[mask] .= Rho.val
@@ -313,7 +315,7 @@ end
         logPm[isinf.(logPm)] .= 0.0
 
         jacM = jacobian(ForwardWithPrimal,
-                        Supergrassi.total_input_parameters,
+                        Supergrassi.agg_input_parameters,
                         logPm,
                         Const(m[i,:]),
                         Const(df.k[i]),
@@ -328,7 +330,7 @@ end
         grad_GammaM[i,:,:] .= jacM.derivs[1]
 
         jacH = jacobian(ForwardWithPrimal,
-                        Supergrassi.total_labor_parameters,
+                        Supergrassi.agg_labor_parameters,
                         logPm,
                         Const(m[i,:]),
                         Const(df.k[i]),
@@ -343,7 +345,7 @@ end
         grad_GammaH[i,:] .= jacH.derivs[1]
 
         jacK = jacobian(ForwardWithPrimal,
-                        Supergrassi.total_capital_parameters,
+                        Supergrassi.agg_capital_parameters,
                         logPm,
                         Const(m[i,:]),
                         Const(df.k[i]),
@@ -359,7 +361,7 @@ end
 
         mu[i] = Supergrassi.productivity_shock_mean(xi, df.logP_uk[i], logPm, m[i,:], df.k[i], df.k0[i],
                                                     df.y[i], df.h[i], df.logW[i], df.tau[i])
-        
+
     end
 
     @test isapprox(GammaM, gammaM_ref, atol = tol)
