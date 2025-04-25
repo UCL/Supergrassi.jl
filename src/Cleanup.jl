@@ -130,8 +130,7 @@ function clean_matrix(data::DataFrame, industry_names::Array{String, 1}, mapping
     return rr
 end
 
-
-function clean_assets_liabilities(data::Data, year::Int64, n_samples::Int64 = nrow(data.assets))
+function clean_assets_liabilities(assets::DataFrame, year::Int64, n_samples::Int64 = nrow(assets))
 
     # Step 1: Extract the relevant columns as strings
     year_str = string(year)
@@ -140,9 +139,9 @@ function clean_assets_liabilities(data::Data, year::Int64, n_samples::Int64 = nr
 
     # Step 2: Create a DataFrame from those columns
     df_raw = DataFrame(
-        SIC64 = data.assets[!, :sic64],
-        Assets = data.assets[!, assets_col],
-        Liabilities = data.assets[!, liabilities_col],
+        SIC64 = assets[!, :sic64],
+        Assets = assets[!, assets_col],
+        Liabilities = assets[!, liabilities_col],
     )
 
     # Step 3: Filter out rows with "NA"
@@ -173,7 +172,7 @@ function clean_assets_liabilities(data::Data, year::Int64, n_samples::Int64 = nr
         n = nrow(sdf)
         n > n_samples ? sdf[rand(1:n, n_samples), :] : sdf
     end
-
+    
     return limited
 
 end
@@ -358,10 +357,8 @@ struct CleanData
 
         #############################################################
 
-        asset_liability_current_year = clean_assets_liabilities(data, year, 1000)
-        asset_liability_next_year = clean_assets_liabilities(data, year + 1)
-
-
+        asset_liability_current_year = clean_assets_liabilities(data.assets, year, 1000)
+        asset_liability_next_year = clean_assets_liabilities(data.assets, year + 1)
         
         return new(
             low_income, 

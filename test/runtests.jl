@@ -6,3 +6,4 @@ using Test
 end
 
 include("test_filepath_creation.jl")
+include("test_assets_cleaning.jl")
