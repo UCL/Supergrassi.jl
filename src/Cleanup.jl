@@ -4,10 +4,10 @@ using Statistics
 using Dates
 
 
-function create_map_105_to_64(data::Data)
+function create_map_105_to_64(merge_codes::DataFrame)
 
-    initial_industry_names = data.merge_codes_105[!, :sic105]
-    final_industry_names = data.merge_codes_105[!, :sic64]
+    initial_industry_names = merge_codes[!, :sic105]
+    final_industry_names = merge_codes[!, :sic64]
 
 
     println("Initial industry names: ", initial_industry_names)
@@ -25,10 +25,10 @@ function create_map_105_to_64(data::Data)
 
 end
 
-function create_map_64_to_16(data::Data)
+function create_map_64_to_16(merge_codes::DataFrame)
 
-    initial_industry_names = data.merge_codes_64[2:end, :x1]
-    final_industry_names = data.merge_codes_64[2:end, :x7]
+    initial_industry_names = merge_codes[2:end, :x1]
+    final_industry_names = merge_codes[2:end, :x7]
 
     println("Initial industry names: ", initial_industry_names)
     println("Final industry names: ", final_industry_names)
@@ -74,10 +74,6 @@ function reduce_columns_by_group_weighted_mean(df::DataFrame, mapping::Dict{Stri
     new_cols = Dict{Symbol, Vector{eltype(df[!, 1])}}()
 
     for (new_name, old_syms) in grouped
-        @show new_name
-        @show old_syms
-        @show sum(eachcol(dd[!, old_syms]))
-        @show sum(eachcol(weights[!, old_syms]))
         new_cols[Symbol(new_name)] = sum(eachcol(dd[!, old_syms])) ./ sum(eachcol(weights[!, old_syms]))
     end
 
@@ -265,7 +261,7 @@ struct CleanData
 
         industry_names = data.input_output.industry_names
 
-        mapping_105_to_64 = create_map_105_to_64(data)
+        mapping_105_to_64 = create_map_105_to_64(data.merge_codes_105)
 
         ######################################
         tax_products = clean_rows(data.others, "Taxes less subsidies on products", industry_names, mapping_105_to_64)
