@@ -131,7 +131,7 @@ function clean_matrix(data::DataFrame, industry_names::Array{String, 1}, mapping
 end
 
 
-function clean_assets_liabilities(data::Data, year::Int64, n_samples::Int64 = 1000)
+function clean_assets_liabilities(data::Data, year::Int64, n_samples::Int64 = nrow(data.assets))
 
     # Step 1: Extract the relevant columns as strings
     year_str = string(year)
@@ -167,7 +167,7 @@ function clean_assets_liabilities(data::Data, year::Int64, n_samples::Int64 = 10
 
     # display(df_final)
 
-    # Step 8: Limit to 1000 rows per SIC64
+    # Step 8: Limit to n_samples rows per SIC64
     grouped = groupby(df_final, :SIC64)
     limited = combine(grouped) do sdf
         n = nrow(sdf)
@@ -244,8 +244,6 @@ struct CleanData
     asset_liability_next_year::DataFrame
 
     function CleanData(data::Data, year::Int64)
-
-
 
         low_income = select_year(data.household.income.low, year)
         low_income = combine_dataframe_row_wise(low_income, sum)
@@ -360,7 +358,7 @@ struct CleanData
 
         #############################################################
 
-        asset_liability_current_year = clean_assets_liabilities(data, year)
+        asset_liability_current_year = clean_assets_liabilities(data, year, 1000)
         asset_liability_next_year = clean_assets_liabilities(data, year + 1)
 
 
