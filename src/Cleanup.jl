@@ -20,7 +20,7 @@ function create_map_105_to_64(data::Data)
         final_name = final_industry_names[i]
         map_105_to_64[initial_name] = "SIC_64_" * @sprintf("%03i", final_name)
     end
-    
+
     return map_105_to_64
 
 end
@@ -72,8 +72,13 @@ function reduce_columns_by_group_weighted_mean(df::DataFrame, mapping::Dict{Stri
 
     # Sum columns per group
     new_cols = Dict{Symbol, Vector{eltype(df[!, 1])}}()
+
     for (new_name, old_syms) in grouped
-        new_cols[Symbol(new_name)] = sum(eachcol(dd[!, old_syms])) / sum(eachcol(weights[!, old_syms]))
+        @show new_name
+        @show old_syms
+        @show sum(eachcol(dd[!, old_syms]))
+        @show sum(eachcol(weights[!, old_syms]))
+        new_cols[Symbol(new_name)] = sum(eachcol(dd[!, old_syms])) ./ sum(eachcol(weights[!, old_syms]))
     end
 
     return DataFrame(new_cols)
@@ -172,7 +177,7 @@ function clean_assets_liabilities(assets::DataFrame, year::Int64, n_samples::Int
         n = nrow(sdf)
         n > n_samples ? sdf[rand(1:n, n_samples), :] : sdf
     end
-    
+
     return limited
 
 end
@@ -272,10 +277,10 @@ struct CleanData
         final_consumption = clean_vector(data.input_output.final_consumption, industry_names, mapping_105_to_64)
         gross_fixed_captital_formation = clean_vector(data.input_output.gross_fixed_capital_formation, industry_names, mapping_105_to_64)
         delta_v_value_uk = clean_vector(data.input_output.delta_v_value_uk, industry_names, mapping_105_to_64)
-        
+
         export_eu = clean_vector(data.input_output.exports_eu_to_uk, industry_names, mapping_105_to_64)
         export_world = clean_vector(data.input_output.export_world_to_uk, industry_names, mapping_105_to_64)
-        
+
         total_use = clean_vector(data.input_output.total_use, industry_names, mapping_105_to_64)
         services_export = clean_vector(data.input_output.services_export, industry_names, mapping_105_to_64)
 
@@ -359,29 +364,29 @@ struct CleanData
 
         asset_liability_current_year = clean_assets_liabilities(data.assets, year, 1000)
         asset_liability_next_year = clean_assets_liabilities(data.assets, year + 1)
-        
+
         return new(
-            low_income, 
-            high_income, 
-            low_income_share, 
-            high_income_share, 
-            mean_capital_current_year, 
-            mean_capital_next_year, 
-            tax_products, tax_production, 
-            compensation_employees, 
-            gross_operating_surplus_and_mixed_income, 
-            final_consumption, 
-            gross_fixed_captital_formation, 
-            delta_v_value_uk, 
-            export_eu, 
-            export_world, 
-            total_use, 
-            services_export, 
-            export_ratio_eu_vs_eu_and_world, 
-            import_export_matrix, 
-            depreciation, 
-            payments_to_low_skilled, 
-            payments_to_high_skilled, 
+            low_income,
+            high_income,
+            low_income_share,
+            high_income_share,
+            mean_capital_current_year,
+            mean_capital_next_year,
+            tax_products, tax_production,
+            compensation_employees,
+            gross_operating_surplus_and_mixed_income,
+            final_consumption,
+            gross_fixed_captital_formation,
+            delta_v_value_uk,
+            export_eu,
+            export_world,
+            total_use,
+            services_export,
+            export_ratio_eu_vs_eu_and_world,
+            import_export_matrix,
+            depreciation,
+            payments_to_low_skilled,
+            payments_to_high_skilled,
             imports_import_export_matrix,
             imports_final_consumption,
             imports_gross_fixed_capital_formation,
@@ -411,7 +416,7 @@ struct CleanData
             asset_liability_current_year,
             asset_liability_next_year,
             )
-        
+
     end
 
 end
