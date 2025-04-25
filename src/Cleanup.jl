@@ -131,7 +131,7 @@ function clean_matrix(data::DataFrame, industry_names::Array{String, 1}, mapping
 end
 
 
-function clean_assets_liabilities(data::Data, year::Int64)
+function clean_assets_liabilities(data::Data, year::Int64, n_samples::Int64 = 1000)
 
     # Step 1: Extract the relevant columns as strings
     year_str = string(year)
@@ -167,7 +167,14 @@ function clean_assets_liabilities(data::Data, year::Int64)
 
     # display(df_final)
 
-    return df_final
+    # Step 8: Limit to 1000 rows per SIC64
+    grouped = groupby(df_final, :SIC64)
+    limited = combine(grouped) do sdf
+        n = nrow(sdf)
+        n > n_samples ? sdf[rand(1:n, n_samples), :] : sdf
+    end
+
+    return limited
 
 end
 
