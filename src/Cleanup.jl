@@ -81,6 +81,18 @@ function reduce_columns_by_group_weighted_mean(df::DataFrame, mapping::Dict{Stri
 
 end
 
+function group_dataframes(dfs, col_names, industry_names)
+
+    dd = DataFrame([industry_names], ["industry"])
+    for (df, col) in zip(dfs, col_names)
+
+        dd[!,col] = Float64.(permutedims(df).x1)
+
+    end
+
+    return dd
+
+end
 
 function select_year(data::DataFrame, year::Int64)
     rr = data[data.year .== year, 4:end]
@@ -180,63 +192,31 @@ end
 
 struct CleanData
 
-    low_income::DataFrame
-    high_income::DataFrame
-
-    low_income_share::DataFrame
-    high_income_share::DataFrame
-
-    mean_capital_current_year::DataFrame
-    mean_capital_next_year::DataFrame
-
-    tax_products::DataFrame
-    tax_production::DataFrame
-    compensation_employees::DataFrame
-    gross_operating_surplus_and_mixed_income::DataFrame
-    final_consumption::DataFrame
-    gross_fixed_capital_formation::DataFrame  # Also called "payments to capital" in the code
-
-    delta_v_value_uk::DataFrame
-    exports_eu_to_uk::DataFrame
-    exports_world_to_uk::DataFrame
-    total_use::DataFrame
-    services_export::DataFrame
-    export_ratio_eu_vs_eu_and_world::DataFrame
-
-    import_export_matrix::DataFrame
-
+    income::DataFrame
+    income_share::DataFrame
+    payments::DataFrame
     depreciation::DataFrame
 
-    payments_to_low_skilled::DataFrame
-    payments_to_high_skilled::DataFrame
+    mean_capital::DataFrame
 
-    imports_import_export_matrix::DataFrame
-    imports_final_consumption::DataFrame
-    imports_gross_fixed_capital_formation::DataFrame
-    imports_delta_v_value_uk::DataFrame
-    imports_export_eu::DataFrame
-    imports_export_world::DataFrame
-    imports_total_use::DataFrame
-    imports_services_export::DataFrame
-    imports_export_ratio_eu_vs_eu_and_world::DataFrame
+    total_use::DataFrame
+    consumption::DataFrame
+    capital_formation::DataFrame
+    delta_v::DataFrame
+    export_eu::DataFrame
+    export_world::DataFrame
+    services_export::DataFrame
 
-    eu_import_export_matrix::DataFrame
-    eu_final_consumption::DataFrame
-    eu_gross_fixed_capital_formation::DataFrame
-    eu_delta_v_value_uk::DataFrame
-    eu_export_eu::DataFrame
-    eu_export_world::DataFrame
-    eu_total_use::DataFrame
-    eu_services_export::DataFrame
+    import_export_matrix::DataFrame
+    import_export_matrix_eu::DataFrame
+    import_export_matrix_world::DataFrame
+    import_export_matrix_imports::DataFrame
 
-    world_import_export_matrix::DataFrame
-    world_final_consumption::DataFrame
-    world_gross_fixed_capital_formation::DataFrame
-    world_delta_v_value_uk::DataFrame
-    world_export_eu::DataFrame
-    world_export_world::DataFrame
-    world_total_use::DataFrame
-    world_services_export::DataFrame
+    tax::DataFrame
+    compensation::DataFrame
+    gross_operating_surplus_and_mixed_income::DataFrame
+    gross_fixed_capital_formation::DataFrame  # Also called "payments to capital" in the code
+    export_ratio::DataFrame
 
     R::Float64
 
@@ -244,6 +224,12 @@ struct CleanData
     asset_liability_next_year::DataFrame
 
     function CleanData(data::Data, year::Int64)
+
+        ################################################################
+
+        industry_names = data.input_output.industry_names
+
+        mapping_105_to_64 = create_map_105_to_64(data.merge_codes_105)
 
         low_income = select_year(data.household.income.low, year)
         low_income = combine_dataframe_row_wise(low_income, sum)
@@ -257,12 +243,6 @@ struct CleanData
         capital_next_year = select_year(data.industry.capital, year + 1)
         mean_capital_next_year = combine_dataframe_row_wise(capital_next_year, mean)
 
-        ################################################################
-
-        industry_names = data.input_output.industry_names
-
-        mapping_105_to_64 = create_map_105_to_64(data.merge_codes_105)
-
         ######################################
         tax_products = clean_rows(data.others, "Taxes less subsidies on products", industry_names, mapping_105_to_64)
         tax_production = clean_rows(data.others, "Taxes less subsidies on production", industry_names, mapping_105_to_64)
@@ -271,13 +251,13 @@ struct CleanData
         #######################################
 
         final_consumption = clean_vector(data.input_output.final_consumption, industry_names, mapping_105_to_64)
-        gross_fixed_captital_formation = clean_vector(data.input_output.gross_fixed_capital_formation, industry_names, mapping_105_to_64)
+        gross_fixed_capital_formation = clean_vector(data.input_output.gross_fixed_capital_formation, industry_names, mapping_105_to_64)
         delta_v_value_uk = clean_vector(data.input_output.delta_v_value_uk, industry_names, mapping_105_to_64)
 
         export_eu = clean_vector(data.input_output.exports_eu_to_uk, industry_names, mapping_105_to_64)
         export_world = clean_vector(data.input_output.export_world_to_uk, industry_names, mapping_105_to_64)
 
-        total_use = clean_vector(data.input_output.total_use, industry_names, mapping_105_to_64)
+        total_use_uk = clean_vector(data.input_output.total_use, industry_names, mapping_105_to_64)
         services_export = clean_vector(data.input_output.services_export, industry_names, mapping_105_to_64)
 
         export_ratio_eu_vs_eu_and_world = DataFrame(export_eu ./ (export_eu .+ export_world))
@@ -297,7 +277,6 @@ struct CleanData
 
         high_income_share = high_income ./ (high_income .+ low_income)
         low_income_share = low_income ./ (high_income .+ low_income)
-
 
         import_export_matrix = clean_matrix(data.input_output.input_output_matrix, industry_names, mapping_105_to_64)
 
@@ -361,57 +340,48 @@ struct CleanData
         asset_liability_current_year = clean_assets_liabilities(data.assets, year, 1000)
         asset_liability_next_year = clean_assets_liabilities(data.assets, year + 1)
 
+        #############################################################
+
+        col_names = names(low_income)
+        income = group_dataframes([low_income, high_income], ["low", "high"], col_names)
+        income_share = group_dataframes([low_income_share, high_income_share], ["low", "high"], col_names)
+        payments = group_dataframes([payments_to_low_skilled, payments_to_high_skilled], ["low", "high"], col_names)
+        mean_capital = group_dataframes([mean_capital_current_year, mean_capital_next_year], ["current", "next"], col_names)
+        tax = group_dataframes([tax_products, tax_production], ["products", "production"], col_names)
+        consumption = group_dataframes([final_consumption, eu_final_consumption, world_final_consumption, imports_final_consumption], ["uk", "eu", "world", "imports"], col_names)
+        delta_v = group_dataframes([delta_v_value_uk, eu_delta_v_value_uk, world_delta_v_value_uk, imports_delta_v_value_uk], ["uk", "eu", "world", "imports"], col_names)
+        export_to_eu = group_dataframes([export_eu, eu_export_eu, world_export_eu, imports_export_eu], ["uk", "eu", "world", "imports"], col_names)
+        export_to_world = group_dataframes([export_world, eu_export_world, world_export_world, imports_export_world], ["uk", "eu", "world", "imports"], col_names)
+        total_use = group_dataframes([total_use_uk, eu_total_use, world_total_use, imports_total_use], ["uk", "eu", "world", "imports"], col_names)
+        capital_formation = group_dataframes([gross_fixed_capital_formation, eu_gross_fixed_capital_formation,  world_gross_fixed_capital_formation, imports_gross_fixed_capital_formation], ["uk", "eu", "world", "imports"], col_names)
+        services_export = group_dataframes([services_export, eu_services_export, world_services_export, imports_services_export], ["uk", "eu", "world", "imports"], col_names)
+        export_ratio = group_dataframes([export_ratio_eu_vs_eu_and_world, imports_export_ratio_eu_vs_eu_and_world], ["uk", "imports"], col_names)
+        
         return new(
-            low_income,
-            high_income,
-            low_income_share,
-            high_income_share,
-            mean_capital_current_year,
-            mean_capital_next_year,
-            tax_products, tax_production,
+            income,
+            income_share,
+            payments,
+            depreciation,
+            mean_capital,
+            total_use,
+            consumption,
+            capital_formation,
+            delta_v,
+            export_to_eu,
+            export_to_world,
+            services_export,
+            import_export_matrix,
+            eu_import_export_matrix,
+            world_import_export_matrix,
+            imports_import_export_matrix,
+            tax,
             compensation_employees,
             gross_operating_surplus_and_mixed_income,
-            final_consumption,
-            gross_fixed_captital_formation,
-            delta_v_value_uk,
-            export_eu,
-            export_world,
-            total_use,
-            services_export,
-            export_ratio_eu_vs_eu_and_world,
-            import_export_matrix,
-            depreciation,
-            payments_to_low_skilled,
-            payments_to_high_skilled,
-            imports_import_export_matrix,
-            imports_final_consumption,
-            imports_gross_fixed_capital_formation,
-            imports_delta_v_value_uk,
-            imports_export_eu,
-            imports_export_world,
-            imports_total_use,
-            imports_services_export,
-            imports_export_ratio_eu_vs_eu_and_world,
-            eu_import_export_matrix,
-            eu_final_consumption,
-            eu_gross_fixed_capital_formation,
-            eu_delta_v_value_uk,
-            eu_export_eu,
-            eu_export_world,
-            eu_total_use,
-            eu_services_export,
-            world_import_export_matrix,
-            world_final_consumption,
-            world_gross_fixed_capital_formation,
-            world_delta_v_value_uk,
-            world_export_eu,
-            world_export_world,
-            world_total_use,
-            world_services_export,
+            gross_fixed_capital_formation,
+            export_ratio,
             R,
             asset_liability_current_year,
-            asset_liability_next_year,
-            )
+            asset_liability_next_year)
 
     end
 
