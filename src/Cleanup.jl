@@ -392,7 +392,8 @@ function clean_data(data::Data, year::Int64)
     total_use = group_dataframes([total_use_uk, eu_total_use, world_total_use, imports_total_use],
                                  ["uk", "eu", "world", "imports"], sic16,
                                  industries_in_cols, reduce_columns_by_group_sum, mapping_64_to_16)
-    capital_formation = group_dataframes([gross_fixed_capital_formation, eu_gross_fixed_capital_formation, world_gross_fixed_capital_formation, imports_gross_fixed_capital_formation],
+    capital_formation = group_dataframes([gross_fixed_capital_formation, eu_gross_fixed_capital_formation,
+                                          world_gross_fixed_capital_formation, imports_gross_fixed_capital_formation],
                                          ["uk", "eu", "world", "imports"], sic16,
                                          industries_in_cols, reduce_columns_by_group_sum, mapping_64_to_16)
     services_export = group_dataframes([services_export, eu_services_export, world_services_export, imports_services_export],
