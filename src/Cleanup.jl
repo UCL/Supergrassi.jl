@@ -200,22 +200,22 @@ struct CleanData
     mean_capital::DataFrame
 
     total_use::DataFrame
-    consumption::DataFrame
+    consumption::DataFrame # data.fValue
     capital_formation::DataFrame
-    delta_v::DataFrame
-    export_eu::DataFrame
-    export_world::DataFrame
-    services_export::DataFrame
+    delta_v::DataFrame # data.deltaVValue
+    export_eu::DataFrame # data.x1Value
+    export_world::DataFrame # data.x2Value
+    services_export::DataFrame # xServices
 
-    import_export_matrix::DataFrame
-    import_export_matrix_eu::DataFrame
-    import_export_matrix_world::DataFrame
-    import_export_matrix_imports::DataFrame
+    import_export_matrix::DataFrame # data.mValue
+    import_export_matrix_eu::DataFrame # data.mValueEU
+    import_export_matrix_world::DataFrame # data.mValueW
+    import_export_matrix_imports::DataFrame # data.mValueIMP
 
     tax::DataFrame
     compensation::DataFrame
-    gross_operating_surplus_and_mixed_income::DataFrame
-    gross_fixed_capital_formation::DataFrame  # Also called "payments to capital" in the code
+    gross_operating_surplus_and_mixed_income::DataFrame # data.kValue
+    gross_fixed_capital_formation::DataFrame  # data.IValueAlso called "payments to capital" in the code
     export_ratio::DataFrame
 
     R::Float64
