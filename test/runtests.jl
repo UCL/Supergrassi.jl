@@ -378,6 +378,8 @@ end
 
     @test isapprox(pdYBar, df.pdYBar, atol = tol)
 
+end
+
 using Aqua
 
 Aqua.test_all(Supergrassi)
