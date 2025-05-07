@@ -1,3 +1,15 @@
+function parameter_by_region(elasticity::T, quantity_region::T, logP_region::T, logP::T) where {T <: Real}
+
+    return quantity_region * exp((elasticity - 1) * (logP_region - logP))
+
+end
+
+function log_parameter_by_region(elasticity::T, quantity_region::T, logP_region::T, logP::T) where {T <: Real}
+
+    return log(quantity_region) + (elasticity - 1) * (logP_region - logP)
+
+end
+
 """
   Compute utility function parameters by region considered in the model (uk, eu, rest of world).
   Parameters of this type appear in multiple utility functions in the paper, and are annotated
@@ -20,9 +32,9 @@ function parameters_by_region(elasticity::T,
 
     logP = log_price_index(elasticity, log_price_uk, log_price_eu, log_price_world, quantity_uk, quantity_eu, quantity_world)
 
-    weight_uk = quantity_uk * exp((elasticity - 1.0) * (log_price_uk - logP))
-    weight_eu = quantity_eu * exp((elasticity - 1.0) * (log_price_eu - logP))
-    weight_world = quantity_world * exp((elasticity - 1.0) * (log_price_world - logP))
+    weight_uk = parameter_by_region(elasticity, quantity_uk, log_price_uk, logP)
+    weight_eu = parameter_by_region(elasticity, quantity_eu, log_price_eu, logP)
+    weight_world = parameter_by_region(elasticity, quantity_world, log_price_world, logP)
 
     return weight_uk, weight_eu, weight_world
 
@@ -37,9 +49,9 @@ function log_parameters_by_region(elasticity::T,
 
     logP = log_price_index(elasticity, log_price_uk, log_price_eu, log_price_world, quantity_uk, quantity_eu, quantity_world)
 
-    log_weight_uk = log(quantity_uk) + (elasticity - 1.0) * (log_price_uk - logP)
-    log_weight_eu = log(quantity_eu)  + (elasticity - 1.0) * (log_price_eu - logP)
-    log_weight_world = log(quantity_world) + (elasticity - 1.0) * (log_price_world - logP)
+    log_weight_uk = log_parameter_by_region(elasticity, quantity_uk, log_price_uk, logP)
+    log_weight_eu = log_parameter_by_region(elasticity, quantity_eu, log_price_eu, logP)
+    log_weight_world = log_parameter_by_region(elasticity, quantity_world, log_price_world, logP)
 
     return log_weight_uk, log_weight_eu, log_weight_world
 
@@ -224,7 +236,7 @@ function sum_kernel(var::Vector{T}, logP::Vector{T}, elasticity::T) where {T <: 
     end
 
     return s
-    
+
 end
 
 """
@@ -238,7 +250,7 @@ function productivity_shock_mean(elasticity::T, log_price_uk::T, log_price_index
     # logTauP = logTauPdMu(elasticity, log_price_index, input, capital, demand0, output, labor, log_wages, tau)
     # logMu = logTauP - log(1.0 - tau) - log_price_uk
     # return exp(logMu)
-    
+
 end
 
 function logTauPdMu(elasticity::T, log_price_index::Vector{T}, input::Vector{T}, capital::T, demand0::T, output::T, labor::T, log_wages::T, tau::T) where {T <: Real}
