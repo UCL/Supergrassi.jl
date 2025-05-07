@@ -4,14 +4,15 @@ using StatsBase
 using Dates
 
 
-function create_map_105_to_64(merge_codes::DataFrame)
+function create_map_105_to_64(merge_codes::DataFrame, verbose::Bool = false)
 
     initial_industry_names = merge_codes[!, :sic105]
     final_industry_names = merge_codes[!, :sic64]
 
-
-    println("Initial industry names: ", initial_industry_names)
-    println("Final industry names: ", final_industry_names)
+    if verbose
+        println("Initial industry names: ", initial_industry_names)
+        println("Final industry names: ", final_industry_names)
+    end
 
     map_105_to_64 = Dict{String, String}()
 
@@ -25,13 +26,15 @@ function create_map_105_to_64(merge_codes::DataFrame)
 
 end
 
-function create_map_64_to_16(merge_codes::DataFrame)
+function create_map_64_to_16(merge_codes::DataFrame, verbose::Bool = false)
 
     initial_industry_names = merge_codes[2:end, :x1]
     final_industry_names = merge_codes[2:end, :x7]
 
-    println("Initial industry names: ", initial_industry_names)
-    println("Final industry names: ", final_industry_names)
+    if verbose
+        println("Initial industry names: ", initial_industry_names)
+        println("Final industry names: ", final_industry_names)
+    end
 
     map_64_to_16 = Dict{String, String}()
 
