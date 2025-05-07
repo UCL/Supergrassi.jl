@@ -171,7 +171,7 @@ function total_input_parameters(log_price_index::Vector{T}, input::Vector{T},
     length(log_price_index) == length(input) || error()
     tauP = tauPdMu(elasticity, log_price_index, input, capital, demand0, output, labor, log_wages, tau)
 
-    return [weight_kernel(input[i], exp(log_price_index[i]) / tauP, elasticity) for in eachindex(input, log_price_index)]
+    return [weight_kernel(input[i], exp(log_price_index[i]) / tauP, elasticity) for i in eachindex(input, log_price_index)]
 
 end
 
