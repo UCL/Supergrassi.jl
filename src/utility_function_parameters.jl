@@ -65,13 +65,7 @@ function total_parameters(log_price_index::Vector{T}, quantity::Vector{T}, elast
     length(log_price_index) == length(quantity) || error()
 
     logPBar = log_total_price_index(elasticity, log_price_index, quantity)
-    parameters = Vector{T}(undef, length(log_price_index))
-
-    for i in axes(log_price_index,1)
-        parameters[i] = weight_kernel(quantity[i], exp(log_price_index[i] - logPBar), elasticity)
-    end
-
-    return parameters
+    return [parameters[i] = weight_kernel(quantity[i], exp(log_price_index[i] - logPBar), elasticity) for i in eachindex(quantity, log_price_index)]
 
 end
 
@@ -165,13 +159,7 @@ function total_input_parameters(log_price_index::Vector{T}, input::Vector{T},
     length(log_price_index) == length(input) || error()
     tauP = tauPdMu(elasticity, log_price_index, input, capital, demand0, output, labor, log_wages, tau)
 
-    parameters = Vector{T}(undef, length(log_price_index))
-
-    for i in axes(log_price_index,1)
-        parameters[i] = weight_kernel(input[i], exp(log_price_index[i])/tauP, elasticity)
-    end
-
-    return parameters
+    return [weight_kernel(input[i], exp(log_price_index[i]) / tauP, elasticity) for in eachindex(input, log_price_index)]
 
 end
 
@@ -218,12 +206,7 @@ end
 
 function sum_kernel(var::Vector{T}, logP::Vector{T}, elasticity::T) where {T <: Real}
 
-    s = 0.0
-    for i in axes(logP,1)
-        s += var[i] ^ (1.0 / elasticity) * exp((elasticity - 1.0) * logP[i] / elasticity)
-    end
-
-    return s
+    return sum(x -> x[1] ^ (1 / elasticity) * exp((elasticity - 1) * x[2] / elasticity), zip(var, logP))
     
 end
 
