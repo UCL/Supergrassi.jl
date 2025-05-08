@@ -28,7 +28,6 @@ jobs:
         version:
           - 'min' # Earliest julia version according to `Project.toml`
           - '1'
-          - 'pre'
         os:
           - ubuntu-latest
         arch:
