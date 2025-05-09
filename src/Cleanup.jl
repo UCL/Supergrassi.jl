@@ -288,6 +288,50 @@ function clean_1d_values(val, val_imp, map_64, map_16, names_105, names_16, spli
 end
 
 """
+Helper function for exports
+"""
+function correct_exports_with_services!(export_to_eu, export_to_world, services_export)
+
+    export_ratio_eu_vs_eu_and_world = export_to_eu ./ (export_to_eu .+ export_to_world)
+    export_ratio_eu_vs_eu_and_world .= ifelse.(isnan.(export_ratio_eu_vs_eu_and_world), 0.5, export_ratio_eu_vs_eu_and_world)
+
+    export_to_eu .= export_to_eu .+ export_ratio_eu_vs_eu_and_world .* services_export
+    export_to_world .= export_to_world .+ (1 .- export_ratio_eu_vs_eu_and_world) .* services_export
+
+end
+
+"""
+Exports need a special treatment because they are a sum of export and services_export data frames.
+Service export is scaled by the sum of eu and world exports.
+"""
+function clean_exports(input_output, imports, split, names_16, industries_in_cols, map_64, map_16)
+
+    eu = clean_vector(input_output.exports_eu_to_uk, input_output.industry_names, map_64)
+    world = clean_vector(input_output.export_world_to_uk, input_output.industry_names, map_64)
+    services = clean_vector(input_output.services_export, input_output.industry_names, map_64)
+
+    correct_exports_with_services!(eu, world, services)
+
+    eu_imp = clean_vector(imports.exports_eu_to_uk, imports.industry_names, map_64)
+    world_imp = clean_vector(imports.export_world_to_uk, imports.industry_names, map_64)
+    services_imp = clean_vector(imports.services_export, imports.industry_names, map_64)
+
+    correct_exports_with_services!(eu_imp, world_imp, services_imp)
+
+    exports_to_eu = group_dataframes([eu, eu_imp .* split, eu_imp .* (1 - split), eu_imp],
+                                     ["uk", "eu", "world", "imports"], names_16,
+                                     industries_in_cols, reduce_columns_by_group_sum, map_16)
+
+    exports_to_world = group_dataframes([world, world_imp .* split, world_imp .* (1 - split), world_imp],
+                                        ["uk", "eu", "world", "imports"], names_16,
+                                        industries_in_cols, reduce_columns_by_group_sum, map_16)
+
+    return exports_to_eu, exports_to_world
+
+end
+
+
+"""
 Function to process the household incomes and their derived data.
 """
 function clean_incomes(data::Data, year::Int64, map_64, map_16, names_105, names_64, names_16, industries_in_cols)
@@ -349,10 +393,9 @@ function clean_data(data::Data, year::Int64)
     total_use = clean_1d_values(data.input_output.total_use, data.imports.total_use, mapping_105_to_64, mapping_64_to_16, industry_names, aggregated_names, split, industries_in_cols)
     consumption = clean_1d_values(data.input_output.final_consumption, data.imports.final_consumption, mapping_105_to_64, mapping_64_to_16, industry_names, aggregated_names, split, industries_in_cols)
     delta_v = clean_1d_values(data.input_output.delta_v_value_uk, data.imports.delta_v_value_uk, mapping_105_to_64, mapping_64_to_16, industry_names, aggregated_names, split, industries_in_cols)
-    export_to_eu = clean_1d_values(data.input_output.exports_eu_to_uk, data.imports.exports_eu_to_uk, mapping_105_to_64, mapping_64_to_16, industry_names, aggregated_names, split, industries_in_cols)
-    export_to_world = clean_1d_values(data.input_output.export_world_to_uk, data.imports.export_world_to_uk, mapping_105_to_64, mapping_64_to_16, industry_names, aggregated_names, split, industries_in_cols)
     capital_formation = clean_1d_values(data.input_output.gross_fixed_capital_formation, data.imports.gross_fixed_capital_formation, mapping_105_to_64, mapping_64_to_16, industry_names, aggregated_names, split, industries_in_cols)
-    services_export = clean_1d_values(data.input_output.services_export, data.imports.services_export, mapping_105_to_64, mapping_64_to_16, industry_names, aggregated_names, split, industries_in_cols)
+
+    export_to_eu, export_to_world = clean_exports(data.input_output, data.imports, split, aggregated_names, industries_in_cols, mapping_105_to_64, mapping_64_to_16)
 
     import_export_matrix, eu_import_export_matrix, world_import_export_matrix, imports_import_export_matrix = clean_2d_values(data, split)
     income, income_share, payments = clean_incomes(data, year, mapping_105_to_64, mapping_64_to_16, industry_names, sic64, aggregated_names, industries_in_cols)
@@ -368,8 +411,9 @@ function clean_data(data::Data, year::Int64)
     mean_capital_next_year = merge_quarterly_data(data.industry.capital, year + 1, sic64, mean)
 
     mean_capital = group_dataframes([mean_capital_current_year, mean_capital_next_year],
-                                    ["current", "next"], aggregated_names, industries_in_cols, reduce_columns_by_group_sum, mapping_64_to_16)
-    
+                                    ["current", "next"], aggregated_names, industries_in_cols,
+                                    reduce_columns_by_group_sum, mapping_64_to_16)
+
     # Process data frames from the data struct.
     # These require other custom processing.
 
@@ -379,19 +423,6 @@ function clean_data(data::Data, year::Int64)
     interest_rates = data.risk_free_rate[Dates.year.(data.risk_free_rate.date) .== year, 2:end]
 
     sigma_bar = DataFrame(permutedims(data.model_results.sigma), sic64)
-
-    # Derive data frames from the processed data.
-
-    export_ratio_eu_vs_eu_and_world = export_to_eu.uk ./ (export_to_eu.uk .+ export_to_world.uk)
-    export_ratio_eu_vs_eu_and_world .= ifelse.(isnan.(export_ratio_eu_vs_eu_and_world), 0.5, export_ratio_eu_vs_eu_and_world)
-
-    export_eu = export_to_eu.uk .+ export_ratio_eu_vs_eu_and_world .* services_export.uk
-    export_world = export_to_world.uk .+ (1 .- export_ratio_eu_vs_eu_and_world) .* services_export.uk
-
-    imports_export_ratio_eu_vs_eu_and_world = export_to_eu.imports ./ (export_to_eu.imports .+ export_to_world.imports)
-    imports_export_ratio_eu_vs_eu_and_world .= ifelse.(isnan.(imports_export_ratio_eu_vs_eu_and_world), 0.5, imports_export_ratio_eu_vs_eu_and_world)
-    imports_export_eu = export_to_eu.imports .+ imports_export_ratio_eu_vs_eu_and_world .* services_export.imports
-    imports_export_world = export_to_world.imports .+ (1 .- imports_export_ratio_eu_vs_eu_and_world) .* services_export.imports
 
     parse_string_dataframe!(interest_rates, Float64)
     parse_string_dataframe!(sigma_bar, Float64, 0.0)
