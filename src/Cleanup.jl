@@ -281,9 +281,12 @@ function clean_1d_values(val, val_imp, map_64, map_16, names_105, names_16, spli
     val_eu = val_imports .* split_factor
     val_world = val_imports .* (1 - split_factor)
 
-    return group_dataframes([val_uk, val_eu, val_world, val_imports],
-                            ["uk", "eu", "world", "imports"], names_16,
-                            industries_in_cols, reduce_columns_by_group_sum, map_16)
+    df =  group_dataframes([val_uk, val_eu, val_world, val_imports],
+                           ["uk", "eu", "world", "imports"], names_16,
+                           industries_in_cols, reduce_columns_by_group_sum, map_16)
+
+    add_aggregate!(df)
+    return df
 
 end
 
@@ -326,6 +329,9 @@ function clean_exports(input_output, imports, split, names_16, industries_in_col
                                         ["uk", "eu", "world", "imports"], names_16,
                                         industries_in_cols, reduce_columns_by_group_sum, map_16)
 
+    add_aggregate!(exports_to_eu)
+    add_aggregate!(exports_to_world)
+
     return exports_to_eu, exports_to_world
 
 end
@@ -365,6 +371,12 @@ function merge_quarterly_data(df::DataFrame, year::Int64, industry_names, fun::F
     dd = combine_dataframe_row_wise(dd, fun)
     dd = DataFrame(dd, industry_names)
     return dd
+
+end
+
+function add_aggregate!(df::DataFrame)
+
+    df[!,:agg] = df.uk + df.eu + df.world
 
 end
 
