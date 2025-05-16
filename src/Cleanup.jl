@@ -271,8 +271,7 @@ function clean_2d_values(data::Data, split_factor::Float64)
 end
 
 """
-Function to process the values that are split between uk, eu, world and stored in vectors. This should include
-fValue, Ivalue, X1Value, X2Value
+Function to process the values that are split between uk, eu, world and stored in vectors.
 """
 function clean_1d_values(val, val_imp, map_64, map_16, names_105, names_16, split_factor, industries_in_cols)
 
@@ -305,7 +304,7 @@ end
 
 """
 Exports need a special treatment because they are a sum of export and services_export data frames.
-Service export is scaled by the sum of eu and world exports.
+Service export is scaled by the sum of eu and world exports. Further refactoring definitely possible here.
 """
 function clean_exports(input_output, imports, split, names_16, industries_in_cols, map_64, map_16)
 
