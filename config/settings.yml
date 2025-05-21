@@ -22,7 +22,7 @@ constants:
       eu: 247996.0 # data.EX1
       world: 319503.0 # data.EX2
     all_sources:
-      eu: 5307036.6 # data.E2
+      eu: 5307036.6 # data.E1
       world: 6204467.0 # data.E2
 
 flags:

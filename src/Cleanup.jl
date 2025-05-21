@@ -233,7 +233,39 @@ struct CleanData
 
 end
 
-function clean_data(data::Data, year::Int64)
+struct ExchangeRates
+    usd::Float64
+    eur::Float64
+end
+
+struct TotalImports
+    eu::Float64
+    world::Float64
+end
+
+struct Constants
+    data_year::Int64
+    exchange_rates::ExchangeRates
+
+    total_imports_from_uk::TotalImports
+    total_imports_from_all_sources::TotalImports
+end
+
+function clean_data(data::Data, settings::Dict{String, Any})
+
+    year::Int64 = settings["constants"]["data_year"]
+
+    exchange_rates = ExchangeRates(settings["constants"]["exchange_rates"]["usd"],
+                                   settings["constants"]["exchange_rates"]["eur"])
+
+    total_imports_from_uk = TotalImports(settings["constants"]["total_imports_from_uk"]["eu"],
+                                         settings["constants"]["total_imports_from_uk"]["world"])
+    total_imports_from_all_sources = TotalImports(settings["constants"]["total_imports_from_all_sources"]["eu"],
+                                                  settings["constants"]["total_imports_from_all_sources"]["world"])
+
+    constants = Constants(year, exchange_rates, total_imports_from_uk, total_imports_from_all_sources)
+
+
 
     ################################################################
 
