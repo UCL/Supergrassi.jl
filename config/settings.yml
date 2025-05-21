@@ -10,6 +10,20 @@ constants:
   first_date: "2020-01-01"
   # Last date to simulate
   last_date: "2025-10-01"
+  # split between eu and rest of world imports
+  imports_split: 0.5
+
+  exchange_rates:
+    usd: 1.2345 # data.fx_USD
+    eur: 1.1733 # data.fx_EUR
+
+  total_imports:
+    from_uk:
+      eu: 247996.0 # data.EX1
+      world: 319503.0 # data.EX2
+    from_all_sources:
+      eu: 5307036.6 # data.E1
+      world: 6204467.0 # data.E2
 
 flags:
   # Use data from mat files

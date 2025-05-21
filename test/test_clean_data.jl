@@ -11,7 +11,7 @@ using Test
     filepaths = check_file_availability(settings)
     data = read_data(filepaths, settings)
 
-    clean = Supergrassi.clean_data(data,settings["constants"]["data_year"])
+    clean = Supergrassi.clean_data(data,settings)
 
     df = CSV.read(joinpath(@__DIR__, "..", "data", "test_load_data.csv"), DataFrame)
 
