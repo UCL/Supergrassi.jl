@@ -273,7 +273,7 @@ end
 """
 Function to process the values that are split between uk, eu, world and stored in vectors.
 """
-function clean_1d_values(val, val_imp, map_64, map_16, names_105, names_16, split_factor, industries_in_cols)
+function clean_1d_values(val::Vector{Number}, val_imp::Vector{Number}, map_64::Dict{String, String}, map_16::Dict{String, String}, names_105::Vector, names_16::Vector, split_factor::Float64, industries_in_cols::Bool)
 
     val_uk = clean_vector(val, names_105, map_64)
     val_imports = clean_vector(val_imp, names_105, map_64)
@@ -292,7 +292,7 @@ end
 """
 Helper function for exports
 """
-function correct_exports_with_services!(export_to_eu, export_to_world, services_export)
+function correct_exports_with_services!(export_to_eu::DataFrame, export_to_world::DataFrame, services_export::DataFrame)
 
     export_ratio_eu_vs_eu_and_world = export_to_eu ./ (export_to_eu .+ export_to_world)
     export_ratio_eu_vs_eu_and_world .= ifelse.(isnan.(export_ratio_eu_vs_eu_and_world), 0.5, export_ratio_eu_vs_eu_and_world)
@@ -339,7 +339,7 @@ end
 """
 Function to process the household incomes and their derived data.
 """
-function clean_incomes(data::Data, year::Int64, map_64, map_16, names_105, names_64, names_16, industries_in_cols)
+function clean_incomes(data::Data, year::Int64, map_64::Dict{String, String}, map_16::Dict{String, String}, names_105::Vector, names_64::Vector, names_16::Vector, industries_in_cols::Bool)
 
     compensation_employees = clean_rows(data.others, "Compensation of employees", names_105, map_64)
 
@@ -364,7 +364,7 @@ function clean_incomes(data::Data, year::Int64, map_64, map_16, names_105, names
 
 end
 
-function merge_quarterly_data(df::DataFrame, year::Int64, industry_names, fun::Function)
+function merge_quarterly_data(df::DataFrame, year::Int64, industry_names::Vector, fun::Function)
 
     dd = select_year(df, year)
     dd = combine_dataframe_row_wise(dd, fun)
