@@ -11,6 +11,18 @@ constants:
   # Last date to simulate
   last_date: "2025-10-01"
 
+  exchange_rates:
+    usd: 1.2345 # data.fx_USD
+    eur: 1.1733 # data.fx_EUR
+
+  total_imports:
+    from_uk:
+      eu: 247996.0 # data.EX1
+      world: 319503.0 # data.EX2
+    all_sources:
+      eu: 5307036.6 # data.E2
+      world: 6204467.0 # data.E2
+
 flags:
   # Use data from mat files
   data_from_mat: false # Replace mat by better format
@@ -100,18 +112,6 @@ initial_params:
   beginning_price_of_capital: 1.0
   leverage_grid_resolution: 10
   assets_destroyed_in_bankrupcy: 0.12 # see Bernanke et al. page 1368
-
-  exchange_rates:
-    usd: 1.2345 # data.fx_USD
-    eur: 1.1733 # data.fx_EUR
-
-  total_imports:
-    from_uk:
-      eu: 247996.0 # data.EX1
-      world: 319503.0 # data.EX2
-    all_sources:
-      eu: 5307036.6 # data.E2
-      world: 6204467.0 # data.E2
 
 excel_limits:
   input_output:
