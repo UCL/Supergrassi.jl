@@ -4,14 +4,15 @@ using StatsBase
 using Dates
 
 
-function create_map_105_to_64(merge_codes::DataFrame)
+function create_map_105_to_64(merge_codes::DataFrame, verbose::Bool = false)
 
     initial_industry_names = merge_codes[!, :sic105]
     final_industry_names = merge_codes[!, :sic64]
 
-
-    println("Initial industry names: ", initial_industry_names)
-    println("Final industry names: ", final_industry_names)
+    if verbose
+        println("Initial industry names: ", initial_industry_names)
+        println("Final industry names: ", final_industry_names)
+    end
 
     map_105_to_64 = Dict{String, String}()
 
@@ -25,13 +26,15 @@ function create_map_105_to_64(merge_codes::DataFrame)
 
 end
 
-function create_map_64_to_16(merge_codes::DataFrame)
+function create_map_64_to_16(merge_codes::DataFrame, verbose::Bool = false)
 
     initial_industry_names = merge_codes[2:end, :x1]
     final_industry_names = merge_codes[2:end, :x7]
 
-    println("Initial industry names: ", initial_industry_names)
-    println("Final industry names: ", final_industry_names)
+    if verbose
+        println("Initial industry names: ", initial_industry_names)
+        println("Final industry names: ", final_industry_names)
+    end
 
     map_64_to_16 = Dict{String, String}()
 
@@ -45,7 +48,7 @@ function create_map_64_to_16(merge_codes::DataFrame)
 
 end
 
-function reduce_columns_by_group_sum(df::DataFrame, mapping::Dict{String, String})
+function reduce_columns_by_group_sum(df::DataFrame, mapping::Dict{String, String};)
 
     grouped = group_columns_by_new_name(mapping)
 
@@ -58,7 +61,7 @@ function reduce_columns_by_group_sum(df::DataFrame, mapping::Dict{String, String
     return DataFrame(new_cols)
 end
 
-function reduce_columns_by_group_weighted_mean(df::DataFrame, mapping::Dict{String, String}, weights::DataFrame)
+function reduce_columns_by_group_weighted_mean(df::DataFrame, mapping::Dict{String, String}; weights::DataFrame = DataFrame(ones(1,ncol(df)), names(df)))
 
     grouped = group_columns_by_new_name(mapping)
 
@@ -86,14 +89,14 @@ function group_columns_by_new_name(mapping::Dict{String, String})
 
 end
 
-function group_dataframes(dfs, col_names, industry_names, industries_on_cols = true, reduction_fun = nothing, reduction_map = nothing)
+function group_dataframes(dfs::AbstractArray, col_names::AbstractArray, industry_names::AbstractArray, industries_on_cols::Bool = true, reduction_fun::Function = nothing, mapping::Dict{String, String} = Dict(); kwargs...)
 
     dd = DataFrame([industry_names], ["industry"])
     for (df, col) in zip(dfs, col_names)
 
-        # Do data aggregation if reduction function and map are passed in
-        if (!isnothing(reduction_fun) & !isnothing(reduction_map))
-            df = reduction_fun(df, reduction_map)
+        # Do data aggregation if reduction function and maping are passed in
+        if (!isnothing(reduction_fun) & !isempty(mapping))
+            df = reduction_fun(df, mapping; kwargs...)
         end
 
         dd[!,col] = Float64.(permutedims(df).x1)
@@ -122,6 +125,16 @@ end
 
 function combine_dataframe_row_wise(data::DataFrame, func::Function)
     return combine(data, names(data, Real) .=> func, renamecols=false)
+end
+
+function parse_string_dataframe!(df::DataFrame, T::Type, default_val=nothing)
+
+    for v in names(df)
+        df[!,v] = tryparse.(T, df[!,v])
+        df[!,v] = replace(df[!,v], nothing => default_val)
+    end
+
+
 end
 
 function clean_rows(data::DataFrame, row_names::String, col_names::Array{String, 1}, mapping::Dict{String, String})
@@ -157,7 +170,7 @@ function clean_matrix(data::DataFrame, industry_names::Array{String, 1}, mapping
     return rr
 end
 
-function clean_assets_liabilities(assets::DataFrame, year::Int64, n_samples::Int64 = nrow(assets))
+function clean_assets_liabilities(assets::DataFrame, year::Int64, map_to_16::Dict{String, String}, n_samples::Int64 = nrow(assets))
 
     # Step 1: Extract the relevant columns as strings
     year_str = string(year)
@@ -200,7 +213,66 @@ function clean_assets_liabilities(assets::DataFrame, year::Int64, n_samples::Int
         n > n_samples ? sdf[rand(1:n, n_samples), :] : sdf
     end
 
+    limited.SIC16 = missings(String, nrow(limited))
+
+    for i in 1:nrow(limited)
+
+        limited[i,"SIC16"] = map_to_16["SIC_64_" * @sprintf("%03i", limited.SIC64[i])]
+
+    end
+
     return limited
+
+end
+
+struct InputMatrices
+
+    # These correspond to mValue matrices in the Matlab code
+
+    uk::DataFrame
+    eu::DataFrame
+    world::DataFrame
+    imports::DataFrame
+    agg::DataFrame
+
+end
+
+struct AssetsLiabilities
+
+    current_year::DataFrame
+    next_year::DataFrame
+
+end
+
+struct RegionalData
+
+    total_use::DataFrame # data.yValue
+    consumption::DataFrame # data.fValue
+    delta_v::DataFrame # data.deltaVValue
+    export_eu::DataFrame # data.x1Value
+    export_world::DataFrame # data.x2Value
+    capital_formation::DataFrame  # data.IValueAlso called "payments to capital" in the code
+    input_matrices::InputMatrices # data.mValue
+
+end
+
+struct HouseholdData
+
+    income::DataFrame
+    income_share::DataFrame
+    payments::DataFrame
+
+end
+
+struct IndustryData
+
+    depreciation::DataFrame
+    tax::DataFrame
+    capital::DataFrame
+    surplus::DataFrame
+    shock_stdev::DataFrame
+    assets_liabilities::AssetsLiabilities
+    regional::RegionalData
 
 end
 
@@ -208,20 +280,35 @@ struct CleanData
 
     average_interest::Float64
 
-    income::DataFrame # data.income_*
-    income_share::DataFrame # data.*_income_share
-    payments::DataFrame # data.hValue*
-    depreciation::DataFrame # data.depreciation
-    tax::DataFrame # data.taxValue*
-    mean_capital::DataFrame # data.k*
+    # income::DataFrame # data.income_*
+    # income_share::DataFrame # data.*_income_share
+    # payments::DataFrame # data.hValue*
+    # depreciation::DataFrame # data.depreciation
+    # tax::DataFrame # data.taxValue*
+    # mean_capital::DataFrame # data.k*
 
-    total_use::DataFrame # data.yValue
-    consumption::DataFrame # data.fValue
-    delta_v::DataFrame # data.deltaVValue
-    export_eu::DataFrame # data.x1Value
-    export_world::DataFrame # data.x2Value
-    operating_surplus::DataFrame # data.kValue
-    capital_formation::DataFrame  # data.IValueAlso called "payments to capital" in the code
+    # total_use::DataFrame # data.yValue
+    # consumption::DataFrame # data.fValue
+    # delta_v::DataFrame # data.deltaVValue
+    # export_eu::DataFrame # data.x1Value
+    # export_world::DataFrame # data.x2Value
+    # operating_surplus::DataFrame # data.kValue
+    # capital_formation::DataFrame  # data.IValueAlso called "payments to capital" in the code
+    # shock_stddev::DataFrame # data.sigmaBar
+
+    # input_matrices::InputMatrices
+    # assets_liabilities::AssetsLiabilities
+
+    # regional::RegionalData
+    household::HouseholdData
+    industry::IndustryData
+
+end
+
+"""
+Function to process the mValues stored in input_output_matrix:es in the data struct
+"""
+function clean_2d_values(data::Data, split_factor::Float64)
 
     import_export_matrix::DataFrame # data.mValue
     import_export_matrix_eu::DataFrame # data.mValueEU
@@ -270,194 +357,224 @@ function clean_data(data::Data, settings::Dict{String, Any})
     ################################################################
 
     industry_names = data.input_output.industry_names
-
     mapping_105_to_64 = create_map_105_to_64(data.merge_codes_105)
     mapping_64_to_16 = create_map_64_to_16(data.merge_codes_64)
 
-    low_income = select_year(data.household.income.low, year)
-    low_income = combine_dataframe_row_wise(low_income, sum)
+    import_export = clean_matrix(data.input_output.input_output_matrix, industry_names, mapping_105_to_64)
+    import_export = clean_matrix(import_export, names(import_export), mapping_64_to_16)
 
-    high_income = select_year(data.household.income.high, year)
-    high_income = combine_dataframe_row_wise(high_income, sum)
+    imports_import_export = clean_matrix(data.imports.input_output_matrix, industry_names, mapping_105_to_64)
+    imports_import_export = clean_matrix(imports_import_export, names(imports_import_export), mapping_64_to_16)
 
-    capital_current_year = select_year(data.industry.capital, year)
-    mean_capital_current_year = combine_dataframe_row_wise(capital_current_year, mean)
+    eu_import_export = imports_import_export .* split_factor
+    world_import_export = imports_import_export .* (1 - split_factor)
 
-    capital_next_year = select_year(data.industry.capital, year + 1)
-    mean_capital_next_year = combine_dataframe_row_wise(capital_next_year, mean)
+    return InputMatrices(import_export, eu_import_export, world_import_export, imports_import_export, import_export .+ eu_import_export .+ world_import_export)
 
-    ######################################
-    tax_products = clean_rows(data.others, "Taxes less subsidies on products", industry_names, mapping_105_to_64)
-    tax_production = clean_rows(data.others, "Taxes less subsidies on production", industry_names, mapping_105_to_64)
-    compensation_employees = clean_rows(data.others, "Compensation of employees", industry_names, mapping_105_to_64)
-    gross_operating_surplus_and_mixed_income = clean_rows(data.others, "Gross operating surplus and mixed income", industry_names, mapping_105_to_64)
-    #######################################
+end
 
-    final_consumption = clean_vector(data.input_output.final_consumption, industry_names, mapping_105_to_64)
-    gross_fixed_capital_formation = clean_vector(data.input_output.gross_fixed_capital_formation, industry_names, mapping_105_to_64)
-    delta_v_value_uk = clean_vector(data.input_output.delta_v_value_uk, industry_names, mapping_105_to_64)
+"""
+Function to process the values that are split between uk, eu, world and stored in vectors.
+"""
+function clean_1d_values(val::Vector{Number}, val_imp::Vector{Number}, map_64::Dict{String, String}, map_16::Dict{String, String}, names_105::Vector, names_16::Vector, split_factor::Float64, industries_in_cols::Bool)
 
-    export_eu = clean_vector(data.input_output.exports_eu_to_uk, industry_names, mapping_105_to_64)
-    export_world = clean_vector(data.input_output.export_world_to_uk, industry_names, mapping_105_to_64)
+    val_uk = clean_vector(val, names_105, map_64)
+    val_imports = clean_vector(val_imp, names_105, map_64)
+    val_eu = val_imports .* split_factor
+    val_world = val_imports .* (1 - split_factor)
 
-    total_use_uk = clean_vector(data.input_output.total_use, industry_names, mapping_105_to_64)
-    services_export = clean_vector(data.input_output.services_export, industry_names, mapping_105_to_64)
+    df =  group_dataframes([val_uk, val_eu, val_world, val_imports],
+                           ["uk", "eu", "world", "imports"], names_16,
+                           industries_in_cols, reduce_columns_by_group_sum, map_16)
 
-    export_ratio_eu_vs_eu_and_world = DataFrame(export_eu ./ (export_eu .+ export_world))
+    add_aggregate!(df)
+    return df
+
+end
+
+"""
+Helper function for exports
+"""
+function correct_exports_with_services!(export_to_eu::DataFrame, export_to_world::DataFrame, services_export::DataFrame)
+
+    export_ratio_eu_vs_eu_and_world = export_to_eu ./ (export_to_eu .+ export_to_world)
     export_ratio_eu_vs_eu_and_world .= ifelse.(isnan.(export_ratio_eu_vs_eu_and_world), 0.5, export_ratio_eu_vs_eu_and_world)
 
-    export_eu = export_eu .+ export_ratio_eu_vs_eu_and_world .* services_export
-    export_world = export_world .+ (1 .- export_ratio_eu_vs_eu_and_world) .* services_export
+    export_to_eu .= export_to_eu .+ export_ratio_eu_vs_eu_and_world .* services_export
+    export_to_world .= export_to_world .+ (1 .- export_ratio_eu_vs_eu_and_world) .* services_export
 
-    ##########################################
+end
 
-    nms = names(tax_products)
+"""
+Exports need a special treatment because they are a sum of export and services_export data frames.
+Service export is scaled by the sum of eu and world exports. Further refactoring definitely possible here.
+"""
+function clean_exports(input_output::InputOutput, imports::InputOutput, split::Float64, names_16::Vector, industries_in_cols::Bool, map_64::Dict{String, String}, map_16::Dict{String, String})
 
-    low_income = DataFrame(low_income, nms)
-    high_income = DataFrame(high_income, nms)
-    mean_capital_current_year = DataFrame(mean_capital_current_year, nms)
-    mean_capital_next_year = DataFrame(mean_capital_current_year, nms)
+    eu = clean_vector(input_output.exports_eu_to_uk, input_output.industry_names, map_64)
+    world = clean_vector(input_output.export_world_to_uk, input_output.industry_names, map_64)
+    services = clean_vector(input_output.services_export, input_output.industry_names, map_64)
+
+    correct_exports_with_services!(eu, world, services)
+
+    eu_imp = clean_vector(imports.exports_eu_to_uk, imports.industry_names, map_64)
+    world_imp = clean_vector(imports.export_world_to_uk, imports.industry_names, map_64)
+    services_imp = clean_vector(imports.services_export, imports.industry_names, map_64)
+
+    correct_exports_with_services!(eu_imp, world_imp, services_imp)
+
+    exports_to_eu = group_dataframes([eu, eu_imp .* split, eu_imp .* (1 - split), eu_imp],
+                                     ["uk", "eu", "world", "imports"], names_16,
+                                     industries_in_cols, reduce_columns_by_group_sum, map_16)
+
+    exports_to_world = group_dataframes([world, world_imp .* split, world_imp .* (1 - split), world_imp],
+                                        ["uk", "eu", "world", "imports"], names_16,
+                                        industries_in_cols, reduce_columns_by_group_sum, map_16)
+
+    add_aggregate!(exports_to_eu)
+    add_aggregate!(exports_to_world)
+
+    return exports_to_eu, exports_to_world
+
+end
+
+
+"""
+Function to process the household incomes and their derived data.
+"""
+function clean_incomes(data::Data, year::Int64, map_64::Dict{String, String}, map_16::Dict{String, String}, names_105::Vector, names_64::Vector, names_16::Vector, industries_in_cols::Bool)
+
+    compensation_employees = clean_rows(data.others, "Compensation of employees", names_105, map_64)
+
+    low_income = merge_quarterly_data(data.household.income.low, year, names_64, sum)
+    high_income = merge_quarterly_data(data.household.income.high, year, names_64, sum)
 
     high_income_share = high_income ./ (high_income .+ low_income)
     low_income_share = low_income ./ (high_income .+ low_income)
 
-    import_export_matrix = clean_matrix(data.input_output.input_output_matrix, industry_names, mapping_105_to_64)
-
-#    depreciation = DataFrame([nms data.depreciation[!, string(year)]], ["industry", "val"])
-    depreciation = DataFrame(data.depreciation)[!, string(year)]
-    depreciation = DataFrame(permutedims(depreciation), nms)
-
-    #################################################
-
     payments_to_low_skilled = (1 .- high_income_share) .* compensation_employees
     payments_to_high_skilled = high_income_share .* compensation_employees
 
-    #################################################
+    income = group_dataframes([low_income, high_income], ["low", "high"], names_16,
+                              industries_in_cols, reduce_columns_by_group_sum, map_16)
+    income_share = group_dataframes([low_income_share, high_income_share], ["low", "high"], names_16,
+                                    industries_in_cols, reduce_columns_by_group_sum, map_16)
+    payments = group_dataframes([payments_to_low_skilled, payments_to_high_skilled, compensation_employees],
+                                ["low", "high", "agg"], names_16, industries_in_cols, reduce_columns_by_group_sum,
+                                map_16)
 
-    imports_import_export_matrix = clean_matrix(data.imports.input_output_matrix, industry_names, mapping_105_to_64)
-    imports_final_consumption = clean_vector(data.imports.final_consumption, industry_names, mapping_105_to_64)
-    imports_gross_fixed_capital_formation = clean_vector(data.imports.gross_fixed_capital_formation, industry_names, mapping_105_to_64)
-    imports_delta_v_value_uk = clean_vector(data.imports.delta_v_value_uk, industry_names, mapping_105_to_64)
-    imports_export_eu = clean_vector(data.imports.exports_eu_to_uk, industry_names, mapping_105_to_64)
-    imports_export_world = clean_vector(data.imports.export_world_to_uk, industry_names, mapping_105_to_64)
-    imports_total_use = clean_vector(data.imports.total_use, industry_names, mapping_105_to_64)
-    imports_services_export = clean_vector(data.imports.services_export, industry_names, mapping_105_to_64)
-    imports_export_ratio_eu_vs_eu_and_world = DataFrame(imports_export_eu ./ (imports_export_eu .+ imports_export_world))
-    imports_export_ratio_eu_vs_eu_and_world .= ifelse.(isnan.(imports_export_ratio_eu_vs_eu_and_world), 0.5, imports_export_ratio_eu_vs_eu_and_world)
-    imports_export_eu = imports_export_eu .+ imports_export_ratio_eu_vs_eu_and_world .* imports_services_export
-    imports_export_world = imports_export_world .+ (1 .- imports_export_ratio_eu_vs_eu_and_world) .* imports_services_export
+    return HouseholdData(income, income_share, payments)
 
-    ######################################################
+end
 
-    split_factor = 0.5
+function merge_quarterly_data(df::DataFrame, year::Int64, industry_names::Vector, fun::Function)
 
-    eu_import_export_matrix = imports_import_export_matrix .* split_factor
-    eu_final_consumption = imports_final_consumption .* split_factor
-    eu_gross_fixed_capital_formation = imports_gross_fixed_capital_formation .* split_factor
-    eu_delta_v_value_uk = imports_delta_v_value_uk .* split_factor
-    eu_export_eu = imports_export_eu .* split_factor
-    eu_export_world = imports_export_world .* split_factor
-    eu_total_use = imports_total_use .* split_factor
-    eu_services_export = imports_services_export .* split_factor
+    dd = select_year(df, year)
+    dd = combine_dataframe_row_wise(dd, fun)
+    dd = DataFrame(dd, industry_names)
+    return dd
 
-    world_import_export_matrix = imports_import_export_matrix .* (1 - split_factor)
-    world_final_consumption = imports_final_consumption .* (1 - split_factor)
-    world_gross_fixed_capital_formation = imports_gross_fixed_capital_formation .* (1 - split_factor)
-    world_delta_v_value_uk = imports_delta_v_value_uk .* (1 - split_factor)
-    world_export_eu = imports_export_eu .* (1 - split_factor)
-    world_export_world = imports_export_world .* (1 - split_factor)
-    world_total_use = imports_total_use .* (1 - split_factor)
-    world_services_export = imports_services_export .* (1 - split_factor)
+end
 
-    #############################################################
+function add_aggregate!(df::DataFrame)
+
+    df[!,:agg] = df.uk + df.eu + df.world
+
+end
+
+"""
+Main function for data cleaning. Should take in a Data struct and return a CleanData struct.
+"""
+function clean_data(data::Data, year::Int64)
+
+    industry_names = data.input_output.industry_names
+    aggregated_names = unique(data.merge_codes_64.x7[2:end])
+
+    mapping_105_to_64 = create_map_105_to_64(data.merge_codes_105)
+    mapping_64_to_16 = create_map_64_to_16(data.merge_codes_64)
+
+    industries_in_cols = false
+    split = 0.5
+
+    # Clean dataframes from the data struct.
+    # These contain data from 105 industries, aggregate to 64 industries
+
+    tax_products = clean_rows(data.others, "Taxes less subsidies on products", industry_names, mapping_105_to_64)
+    sic64 = names(tax_products)
+    tax_production = clean_rows(data.others, "Taxes less subsidies on production", industry_names, mapping_105_to_64)
+    gross_operating_surplus_and_mixed_income = clean_rows(data.others, "Gross operating surplus and mixed income", industry_names, mapping_105_to_64)
+
+    total_use = clean_1d_values(data.input_output.total_use, data.imports.total_use, mapping_105_to_64, mapping_64_to_16, industry_names, aggregated_names, split, industries_in_cols)
+    consumption = clean_1d_values(data.input_output.final_consumption, data.imports.final_consumption, mapping_105_to_64, mapping_64_to_16, industry_names, aggregated_names, split, industries_in_cols)
+    delta_v = clean_1d_values(data.input_output.delta_v_value_uk, data.imports.delta_v_value_uk, mapping_105_to_64, mapping_64_to_16, industry_names, aggregated_names, split, industries_in_cols)
+    capital_formation = clean_1d_values(data.input_output.gross_fixed_capital_formation, data.imports.gross_fixed_capital_formation, mapping_105_to_64, mapping_64_to_16, industry_names, aggregated_names, split, industries_in_cols)
+
+    export_to_eu, export_to_world = clean_exports(data.input_output, data.imports, split, aggregated_names, industries_in_cols, mapping_105_to_64, mapping_64_to_16)
+
+    input_matrices = clean_2d_values(data, split)
+
+    regional = RegionalData(total_use,
+                            consumption,
+                            delta_v,
+                            export_to_eu,
+                            export_to_world,
+                            capital_formation,
+                            input_matrices)
+
+
+    household = clean_incomes(data, year, mapping_105_to_64, mapping_64_to_16, industry_names, sic64, aggregated_names, industries_in_cols)
+
+    asset_liability_current_year = clean_assets_liabilities(data.assets, year, mapping_64_to_16, 1000)
+    asset_liability_next_year = clean_assets_liabilities(data.assets, year + 1, mapping_64_to_16)
+
+    assets_liabilities = AssetsLiabilities(asset_liability_current_year,
+                                           asset_liability_next_year)
+    # Process dataframes from the data struct.
+    # These have quarterly data and are merged to yearly.
+    # Already contain data from 64 industries
+
+    mean_capital_current_year = merge_quarterly_data(data.industry.capital, year, sic64, mean)
+    mean_capital_next_year = merge_quarterly_data(data.industry.capital, year + 1, sic64, mean)
+
+    mean_capital = group_dataframes([mean_capital_current_year, mean_capital_next_year],
+                                    ["current_year", "next_year"], aggregated_names, industries_in_cols,
+                                    reduce_columns_by_group_sum, mapping_64_to_16)
+
+    # Process data frames from the data struct.
+    # These require other custom processing.
+
+    depreciation = DataFrame(data.depreciation)[!, string(year)]
+    depreciation = DataFrame(permutedims(depreciation), sic64)
 
     interest_rates = data.risk_free_rate[Dates.year.(data.risk_free_rate.date) .== year, 2:end]
 
-    for interest_rate in names(interest_rates)
-        interest_rates[!, interest_rate] = parse.(Float64, interest_rates[!, interest_rate])
-    end
+    sigma_bar = DataFrame(permutedims(data.model_results.sigma), sic64)
+
+    parse_string_dataframe!(interest_rates, Float64)
+    parse_string_dataframe!(sigma_bar, Float64, 0.0)
 
     R = 1 + geomean(interest_rates[!, 1] / 100)
-
-    #############################################################
-
-    asset_liability_current_year = clean_assets_liabilities(data.assets, year, 1000)
-    asset_liability_next_year = clean_assets_liabilities(data.assets, year + 1)
-
-    #############################################################
 
     # Join data it is split either by "low"/"high", or "uk"/"eu"/"world"/"imports"
     # Aggregate from 64 to 16 industries.
     # I did these in the same function to reduce the number of function calls
 
-    sic16 = unique(data.merge_codes_64.x7[2:end]) # TODO: Check the order stays correct
-    industries_in_cols = false
-
-    income = group_dataframes([low_income, high_income],
-                              ["low", "high"], sic16,
-                              industries_in_cols, reduce_columns_by_group_sum, mapping_64_to_16)
-    income_share = group_dataframes([low_income_share, high_income_share],
-                                    ["low", "high"], sic16,
-                                    industries_in_cols, reduce_columns_by_group_sum, mapping_64_to_16)
-    payments = group_dataframes([payments_to_low_skilled, payments_to_high_skilled, compensation_employees],
-                                ["low", "high", "agg"], sic16,
-                                industries_in_cols, reduce_columns_by_group_sum, mapping_64_to_16)
-    mean_capital = group_dataframes([mean_capital_current_year, mean_capital_next_year],
-                                    ["current", "next"], sic16,
-                                    industries_in_cols, reduce_columns_by_group_sum, mapping_64_to_16)
-    tax = group_dataframes([tax_products, tax_production],
-                           ["products", "production"], sic16,
+    tax = group_dataframes([tax_products, tax_production], ["products", "production"], aggregated_names,
                            industries_in_cols, reduce_columns_by_group_sum, mapping_64_to_16)
-    consumption = group_dataframes([final_consumption, eu_final_consumption,
-                                    world_final_consumption, imports_final_consumption],
-                                   ["uk", "eu", "world", "imports"], sic16,
-                                   industries_in_cols, reduce_columns_by_group_sum, mapping_64_to_16)
-    delta_v = group_dataframes([delta_v_value_uk, eu_delta_v_value_uk, world_delta_v_value_uk, imports_delta_v_value_uk],
-                               ["uk", "eu", "world", "imports"], sic16,
+    surplus = group_dataframes([gross_operating_surplus_and_mixed_income], ["val"], aggregated_names,
                                industries_in_cols, reduce_columns_by_group_sum, mapping_64_to_16)
-    export_to_eu = group_dataframes([export_eu, eu_export_eu, world_export_eu, imports_export_eu],
-                                    ["uk", "eu", "world", "imports"], sic16,
-                                    industries_in_cols, reduce_columns_by_group_sum, mapping_64_to_16)
-    export_to_world = group_dataframes([export_world, eu_export_world, world_export_world, imports_export_world],
-                                       ["uk", "eu", "world", "imports"], sic16,
-                                       industries_in_cols, reduce_columns_by_group_sum, mapping_64_to_16)
-    total_use = group_dataframes([total_use_uk, eu_total_use, world_total_use, imports_total_use],
-                                 ["uk", "eu", "world", "imports"], sic16,
-                                 industries_in_cols, reduce_columns_by_group_sum, mapping_64_to_16)
-    capital_formation = group_dataframes([gross_fixed_capital_formation, eu_gross_fixed_capital_formation,
-                                          world_gross_fixed_capital_formation, imports_gross_fixed_capital_formation],
-                                         ["uk", "eu", "world", "imports"], sic16,
-                                         industries_in_cols, reduce_columns_by_group_sum, mapping_64_to_16)
-    services_export = group_dataframes([services_export, eu_services_export, world_services_export, imports_services_export],
-                                       ["uk", "eu", "world", "imports"], sic16,
-                                       industries_in_cols, reduce_columns_by_group_sum, mapping_64_to_16)
-    surplus = group_dataframes([gross_operating_surplus_and_mixed_income],
-                               ["val"], sic16,
-                               industries_in_cols, reduce_columns_by_group_sum, mapping_64_to_16)
-    depreciation = group_dataframes([depreciation],
-                                    ["val"], sic16,
-                                    industries_in_cols, reduce_columns_by_group_sum, mapping_64_to_16)
+    depreciation = group_dataframes([depreciation], ["val"], aggregated_names, industries_in_cols, reduce_columns_by_group_weighted_mean, mapping_64_to_16, weights = mean_capital_current_year)
+
+    # total_use_uk before aggregation is needed as weights for sigma_bar
+    total_use_uk = clean_vector(data.input_output.total_use, industry_names, mapping_105_to_64)
+    sigma_bar = group_dataframes([sigma_bar], ["val"], aggregated_names, industries_in_cols, reduce_columns_by_group_weighted_mean, mapping_64_to_16, weights = total_use_uk)
+
+    industry = IndustryData(depreciation, tax, mean_capital, surplus, sigma_bar, assets_liabilities, regional)
 
     return CleanData(
         R,
-        income,
-        income_share,
-        payments,
-        depreciation,
-        tax,
-        mean_capital,
-        total_use,
-        consumption,
-        delta_v,
-        export_to_eu,
-    export_to_world,
-    surplus,
-    capital_formation,
-    import_export_matrix,
-    eu_import_export_matrix,
-    world_import_export_matrix,
-    imports_import_export_matrix,
-    asset_liability_current_year,
-    asset_liability_next_year)
+        household,
+        industry
+    )
 
 end
