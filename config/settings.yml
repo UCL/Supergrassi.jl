@@ -10,6 +10,8 @@ constants:
   first_date: "2020-01-01"
   # Last date to simulate
   last_date: "2025-10-01"
+  # split between eu and rest of world imports
+  imports_split: 0.5
 
   exchange_rates:
     usd: 1.2345 # data.fx_USD
