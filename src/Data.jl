@@ -1,15 +1,15 @@
 
-struct IncomeData
+struct RawIncomeData
     high::DataFrame
     low::DataFrame
 end
 
-struct HouseHoldData
-    income::IncomeData
-    hours::IncomeData
+struct RawHouseHoldData
+    income::RawIncomeData
+    hours::RawIncomeData
 end
 
-struct IndustryData
+struct RawIndustryData
     capital::DataFrame
     turnover::DataFrame
     inventory::DataFrame
@@ -75,8 +75,8 @@ end
 
 struct Data
 
-    household::HouseHoldData
-    industry::IndustryData
+    household::RawHouseHoldData
+    industry::RawIndustryData
 
     input_output::InputOutput
     imports::InputOutput
@@ -96,12 +96,12 @@ struct Data
 
     function Data(data_struct::Dict{String, DataFrame}, settings::Dict{String, Any})
 
-        household = HouseHoldData(
-            IncomeData(data_struct["hi_income"], data_struct["lo_income"]),
-            IncomeData(data_struct["hi_hours"], data_struct["lo_hours"])
+        household = RawHouseHoldData(
+            RawIncomeData(data_struct["hi_income"], data_struct["lo_income"]),
+            RawIncomeData(data_struct["hi_hours"], data_struct["lo_hours"])
         )     
 
-        industry = IndustryData(
+        industry = RawIndustryData(
             data_struct["capital"],
             data_struct["turnover"],
             data_struct["inventory"]

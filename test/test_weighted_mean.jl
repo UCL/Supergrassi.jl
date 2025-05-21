@@ -15,7 +15,7 @@ weights = DataFrame(ones(1,6),
 
 @testset "weighted mean" begin
 
-    df2 = Supergrassi.reduce_columns_by_group_weighted_mean(df, map_64, weights)
+    df2 = Supergrassi.reduce_columns_by_group_weighted_mean(df, map_64, weights = weights)
     @test nrow(df2) == 10
     @test ncol(df2) == 3
     @test isapprox((df.SIC_64_001 + df.SIC_64_002) / 2, df2.A)
