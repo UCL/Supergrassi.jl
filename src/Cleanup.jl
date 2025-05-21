@@ -170,7 +170,7 @@ function clean_matrix(data::DataFrame, industry_names::Array{String, 1}, mapping
     return rr
 end
 
-function clean_assets_liabilities(assets::DataFrame, year::Int64, n_samples::Int64 = nrow(assets))
+function clean_assets_liabilities(assets::DataFrame, year::Int64, map_to_16::Dict{String, String}, n_samples::Int64 = nrow(assets))
 
     # Step 1: Extract the relevant columns as strings
     year_str = string(year)
@@ -213,7 +213,27 @@ function clean_assets_liabilities(assets::DataFrame, year::Int64, n_samples::Int
         n > n_samples ? sdf[rand(1:n, n_samples), :] : sdf
     end
 
+    limited.SIC16 = missings(String, nrow(limited))
+
+    for i in 1:nrow(limited)
+
+        limited[i,"SIC16"] = map_to_16["SIC_64_" * @sprintf("%03i", limited.SIC64[i])]
+
+    end
+
     return limited
+
+end
+
+struct InputMatrices
+
+    # These correspond to mValue matrices in the Matlab code
+
+    uk::DataFrame
+    eu::DataFrame
+    world::DataFrame
+    imports::DataFrame
+    agg::DataFrame
 
 end
 
@@ -237,10 +257,7 @@ struct CleanData
     capital_formation::DataFrame  # data.IValueAlso called "payments to capital" in the code
     shock_stddev::DataFrame # data.sigmaBar
 
-    import_export_matrix::DataFrame # data.mValue
-    import_export_matrix_eu::DataFrame # data.mValueEU
-    import_export_matrix_world::DataFrame # data.mValueW
-    import_export_matrix_imports::DataFrame # data.mValueIMP
+    input_matrices::InputMatrices
 
     asset_liability_current_year::DataFrame
     asset_liability_next_year::DataFrame
@@ -249,7 +266,6 @@ end
 
 """
 Function to process the mValues stored in input_output_matrix:es in the data struct
-TODO: Pack outputs into a single object (preferably a DataFrame)
 """
 function clean_2d_values(data::Data, split_factor::Float64)
 
@@ -266,7 +282,7 @@ function clean_2d_values(data::Data, split_factor::Float64)
     eu_import_export = imports_import_export .* split_factor
     world_import_export = imports_import_export .* (1 - split_factor)
 
-    return import_export, eu_import_export, world_import_export, imports_import_export
+    return InputMatrices(import_export, eu_import_export, world_import_export, imports_import_export, import_export .+ eu_import_export .+ world_import_export)
 
 end
 
@@ -408,11 +424,11 @@ function clean_data(data::Data, year::Int64)
 
     export_to_eu, export_to_world = clean_exports(data.input_output, data.imports, split, aggregated_names, industries_in_cols, mapping_105_to_64, mapping_64_to_16)
 
-    import_export_matrix, eu_import_export_matrix, world_import_export_matrix, imports_import_export_matrix = clean_2d_values(data, split)
+    input_matrices = clean_2d_values(data, split)
     income, income_share, payments = clean_incomes(data, year, mapping_105_to_64, mapping_64_to_16, industry_names, sic64, aggregated_names, industries_in_cols)
 
-    asset_liability_current_year = clean_assets_liabilities(data.assets, year, 1000)
-    asset_liability_next_year = clean_assets_liabilities(data.assets, year + 1)
+    asset_liability_current_year = clean_assets_liabilities(data.assets, year, mapping_64_to_16, 1000)
+    asset_liability_next_year = clean_assets_liabilities(data.assets, year + 1, mapping_64_to_16)
 
     # Process dataframes from the data struct.
     # These have quarterly data and are merged to yearly.
@@ -470,10 +486,7 @@ function clean_data(data::Data, year::Int64)
     surplus,
     capital_formation,
     sigma_bar,
-    import_export_matrix,
-    eu_import_export_matrix,
-    world_import_export_matrix,
-    imports_import_export_matrix,
+    input_matrices,
     asset_liability_current_year,
     asset_liability_next_year)
 
