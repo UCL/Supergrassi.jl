@@ -478,19 +478,3 @@ function clean_data(data::Data, year::Int64)
     asset_liability_next_year)
 
 end
-
-function rescale_data(data::CleanData, scale::T) where {T <: Real}
-
-
-
-end
-
-function rescale_data(df::DataFrame, scale::T) where {T <: Real}
-
-    for c in eachcol(df)
-        if(eltype(c) <: Real)
-            c ./= scale
-        end
-    end
-
-end
