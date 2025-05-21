@@ -307,7 +307,7 @@ end
 Exports need a special treatment because they are a sum of export and services_export data frames.
 Service export is scaled by the sum of eu and world exports.
 """
-function clean_exports(input_output, imports, split, names_16, industries_in_cols, map_64, map_16)
+function clean_exports(input_output::InputOutput, imports::InputOutput, split::Float64, names_16::Vector, industries_in_cols::Bool, map_64::Dict{String, String}, map_16::Dict{String, String})
 
     eu = clean_vector(input_output.exports_eu_to_uk, input_output.industry_names, map_64)
     world = clean_vector(input_output.export_world_to_uk, input_output.industry_names, map_64)
