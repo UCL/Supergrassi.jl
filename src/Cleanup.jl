@@ -237,30 +237,71 @@ struct InputMatrices
 
 end
 
-struct CleanData
+struct AssetsLiabilities
 
-    average_interest::Float64
+    current_year::DataFrame
+    next_year::DataFrame
 
-    income::DataFrame # data.income_*
-    income_share::DataFrame # data.*_income_share
-    payments::DataFrame # data.hValue*
-    depreciation::DataFrame # data.depreciation
-    tax::DataFrame # data.taxValue*
-    mean_capital::DataFrame # data.k*
+end
+
+struct RegionalData
 
     total_use::DataFrame # data.yValue
     consumption::DataFrame # data.fValue
     delta_v::DataFrame # data.deltaVValue
     export_eu::DataFrame # data.x1Value
     export_world::DataFrame # data.x2Value
-    operating_surplus::DataFrame # data.kValue
     capital_formation::DataFrame  # data.IValueAlso called "payments to capital" in the code
-    shock_stddev::DataFrame # data.sigmaBar
+    input_matrices::InputMatrices # data.mValue
 
-    input_matrices::InputMatrices
+end
 
-    asset_liability_current_year::DataFrame
-    asset_liability_next_year::DataFrame
+struct HouseholdData
+
+    income::DataFrame
+    income_share::DataFrame
+    payments::DataFrame
+
+end
+
+struct IndustryData
+
+    depreciation::DataFrame
+    tax::DataFrame
+    capital::DataFrame
+    surplus::DataFrame
+    shock_stdev::DataFrame
+    assets_liabilities::AssetsLiabilities
+    regional::RegionalData
+
+end
+
+struct CleanData
+
+    average_interest::Float64
+
+    # income::DataFrame # data.income_*
+    # income_share::DataFrame # data.*_income_share
+    # payments::DataFrame # data.hValue*
+    # depreciation::DataFrame # data.depreciation
+    # tax::DataFrame # data.taxValue*
+    # mean_capital::DataFrame # data.k*
+
+    # total_use::DataFrame # data.yValue
+    # consumption::DataFrame # data.fValue
+    # delta_v::DataFrame # data.deltaVValue
+    # export_eu::DataFrame # data.x1Value
+    # export_world::DataFrame # data.x2Value
+    # operating_surplus::DataFrame # data.kValue
+    # capital_formation::DataFrame  # data.IValueAlso called "payments to capital" in the code
+    # shock_stddev::DataFrame # data.sigmaBar
+
+    # input_matrices::InputMatrices
+    # assets_liabilities::AssetsLiabilities
+
+    # regional::RegionalData
+    household::HouseholdData
+    industry::IndustryData
 
 end
 
@@ -376,7 +417,7 @@ function clean_incomes(data::Data, year::Int64, map_64::Dict{String, String}, ma
                                 ["low", "high", "agg"], names_16, industries_in_cols, reduce_columns_by_group_sum,
                                 map_16)
 
-    return income, income_share, payments
+    return HouseholdData(income, income_share, payments)
 
 end
 
@@ -425,11 +466,23 @@ function clean_data(data::Data, year::Int64)
     export_to_eu, export_to_world = clean_exports(data.input_output, data.imports, split, aggregated_names, industries_in_cols, mapping_105_to_64, mapping_64_to_16)
 
     input_matrices = clean_2d_values(data, split)
-    income, income_share, payments = clean_incomes(data, year, mapping_105_to_64, mapping_64_to_16, industry_names, sic64, aggregated_names, industries_in_cols)
+
+    regional = RegionalData(total_use,
+                            consumption,
+                            delta_v,
+                            export_to_eu,
+                            export_to_world,
+                            capital_formation,
+                            input_matrices)
+
+
+    household = clean_incomes(data, year, mapping_105_to_64, mapping_64_to_16, industry_names, sic64, aggregated_names, industries_in_cols)
 
     asset_liability_current_year = clean_assets_liabilities(data.assets, year, mapping_64_to_16, 1000)
     asset_liability_next_year = clean_assets_liabilities(data.assets, year + 1, mapping_64_to_16)
 
+    assets_liabilities = AssetsLiabilities(asset_liability_current_year,
+                                           asset_liability_next_year)
     # Process dataframes from the data struct.
     # These have quarterly data and are merged to yearly.
     # Already contain data from 64 industries
@@ -438,7 +491,7 @@ function clean_data(data::Data, year::Int64)
     mean_capital_next_year = merge_quarterly_data(data.industry.capital, year + 1, sic64, mean)
 
     mean_capital = group_dataframes([mean_capital_current_year, mean_capital_next_year],
-                                    ["current", "next"], aggregated_names, industries_in_cols,
+                                    ["current_year", "next_year"], aggregated_names, industries_in_cols,
                                     reduce_columns_by_group_sum, mapping_64_to_16)
 
     # Process data frames from the data struct.
@@ -470,24 +523,12 @@ function clean_data(data::Data, year::Int64)
     total_use_uk = clean_vector(data.input_output.total_use, industry_names, mapping_105_to_64)
     sigma_bar = group_dataframes([sigma_bar], ["val"], aggregated_names, industries_in_cols, reduce_columns_by_group_weighted_mean, mapping_64_to_16, weights = total_use_uk)
 
+    industry = IndustryData(depreciation, tax, mean_capital, surplus, sigma_bar, assets_liabilities, regional)
+
     return CleanData(
         R,
-        income,
-        income_share,
-        payments,
-        depreciation,
-        tax,
-        mean_capital,
-        total_use,
-        consumption,
-        delta_v,
-        export_to_eu,
-    export_to_world,
-    surplus,
-    capital_formation,
-    sigma_bar,
-    input_matrices,
-    asset_liability_current_year,
-    asset_liability_next_year)
+        household,
+        industry
+    )
 
 end
