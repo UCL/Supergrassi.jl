@@ -281,6 +281,7 @@ struct HouseholdData
     income_share::DataFrame
     payments::DataFrame
     hours::DataFrame
+    wages::DataFrame
 
 end
 
@@ -423,7 +424,9 @@ function clean_household(data::Data, year::Int64, map_64::Dict{String, String}, 
     hours = group_dataframes([low_hours, high_hours], ["low", "high"], names_16,
                              industries_in_cols, reduce_columns_by_group_sum, map_16)
 
-    return HouseholdData(income, income_share, payments, hours)
+    wages = DataFrame([names_16, payments.low ./ hours.low, payments.high ./ hours.high], ["industries", "low", "high"])
+
+    return HouseholdData(income, income_share, payments, hours, wages)
 
 end
 
@@ -448,10 +451,34 @@ https://github.com/UCL/Supergrassi/blob/main/code/matlab/macro_v2/DataCleaning/R
 """
 function rescale_data!(data::CleanData)
 
-    data.household.hours.low /= sum(data.household.hours.low)
-    data.household.hours.high /= sum(data.household.hours.high)
-    data.industry.capital.current_year /= sum(data.industry.capital.current_year)
-    data.industry.capital.next_year /= sum(data.industry.capital.current_year)
+    hours_low_scaling_factor = 1.0 / mean(data.household.hours.low)
+    hours_high_scaling_factor = 1.0 / mean(data.household.hours.high)
+    capital_scaling_factor = 1.0 / mean(data.industry.capital.current_year)
+    use_scaling_factor = 1.0 / mean(data.industry.regional.total_use.uk)
+    tax_scaling_factor = 1.0 ./ (data.industry.regional.total_use.uk .- (data.industry.tax.products .+ data.industry.tax.production))
+
+    data.household.hours.low *= hours_low_scaling_factor
+    data.household.hours.high *= hours_high_scaling_factor
+    data.industry.capital.next_year *= capital_scaling_factor
+    data.industry.capital.current_year *= capital_scaling_factor
+
+    data.industry.tax.products *= use_scaling_factor
+    data.industry.tax.production *= use_scaling_factor
+    data.household.payments.low *= use_scaling_factor
+    data.household.payments.high *= use_scaling_factor
+
+    data.household.payments.agg .*= tax_scaling_factor
+    data.industry.surplus.val .*= tax_scaling_factor
+
+    data.household.wages.low *= (use_scaling_factor / hours_low_scaling_factor)
+    data.household.wages.high *= (use_scaling_factor / hours_high_scaling_factor)
+
+    data.industry.regional.input_matrices.agg .*= tax_scaling_factor
+    
+    for col in [:uk, :eu, :world, :agg]
+        data.industry.regional.delta_v[!, col] .*= use_scaling_factor
+        data.industry.regional.total_use[!, col] .*= use_scaling_factor
+    end
 
     for name in unique(data.industry.assets_liabilities.current_year.SIC16)
         for df in [data.industry.assets_liabilities.current_year, data.industry.assets_liabilities.next_year]
@@ -471,7 +498,7 @@ function convert_to_ratio!(data::RegionalData)
 
         df = getfield(data, field)
 
-        if (field != :delta_v)
+        if (field != :delta_v && field != :total_use)
 
             convert_to_ratio!(df)
 
@@ -481,8 +508,27 @@ function convert_to_ratio!(data::RegionalData)
 
 end
 
+function convert_to_ratio!(data::HouseholdData)
+
+    for field in [:payments]
+
+        df = getfield(data, field)
+        scaling_factor = 1.0 ./ (df.low .+ df.high)
+
+        for col in [:low, :high]
+
+            df[!,col] .*= scaling_factor
+            replace!(df[!, col], NaN => 0.0)
+
+        end
+
+    end
+
+end
+
 """
 Convert regional vector data into fractions of the aggregate value
+Then renormalise the aggregate value by its sum
 Nans are replaced with 0's
 """
 function convert_to_ratio!(df::DataFrame)
@@ -491,6 +537,8 @@ function convert_to_ratio!(df::DataFrame)
         df[!, col] ./= df.agg
         replace!(df[!, col], NaN => 0.0)
     end
+
+    df.agg ./= sum(df.agg)
 
 end
 
@@ -523,7 +571,7 @@ function round_shares!(data::RegionalData, threshold::Float64 = 1e-4)
 
         df = getfield(data, field)
 
-        if (field != :delta_v)
+        if (field != :delta_v && field != :total_use)
 
             round_shares!(df, threshold)
 
@@ -616,6 +664,9 @@ function clean_data(data::Data, settings::Dict{String, Any})
     gross_operating_surplus_and_mixed_income = clean_rows(data.others, "Gross operating surplus and mixed income", industry_names, mapping_105_to_64)
 
     total_use = clean_1d_values(data.input_output.total_use, data.imports.total_use, mapping_105_to_64, mapping_64_to_16, industry_names, aggregated_names, split, industries_in_cols)
+    # ROW is not added to the aggregate value of total_use for some reason
+    total_use.agg .-= (total_use.eu .+ total_use.world)
+
     consumption = clean_1d_values(data.input_output.final_consumption, data.imports.final_consumption, mapping_105_to_64, mapping_64_to_16, industry_names, aggregated_names, split, industries_in_cols)
     delta_v = clean_1d_values(data.input_output.delta_v_value_uk, data.imports.delta_v_value_uk, mapping_105_to_64, mapping_64_to_16, industry_names, aggregated_names, split, industries_in_cols)
     capital_formation = clean_1d_values(data.input_output.gross_fixed_capital_formation, data.imports.gross_fixed_capital_formation, mapping_105_to_64, mapping_64_to_16, industry_names, aggregated_names, split, industries_in_cols)
@@ -694,8 +745,9 @@ end
 
 function postprocess_clean_data!(data::CleanData)
 
-    convert_to_ratio!(data.industry.regional)
-    round_shares!(data.industry.regional)
     rescale_data!(data)
+    convert_to_ratio!(data.industry.regional)
+    convert_to_ratio!(data.household)
+    round_shares!(data.industry.regional)
 
 end
