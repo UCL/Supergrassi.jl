@@ -280,6 +280,7 @@ struct HouseholdData
     income::DataFrame
     income_share::DataFrame
     payments::DataFrame
+    hours::DataFrame
 
 end
 
@@ -395,7 +396,7 @@ end
 """
 Function to process the household incomes and their derived data.
 """
-function clean_incomes(data::Data, year::Int64, map_64::Dict{String, String}, map_16::Dict{String, String}, names_105::Vector, names_64::Vector, names_16::Vector, industries_in_cols::Bool)
+function clean_household(data::Data, year::Int64, map_64::Dict{String, String}, map_16::Dict{String, String}, names_105::Vector, names_64::Vector, names_16::Vector, industries_in_cols::Bool)
 
     compensation_employees = clean_rows(data.others, "Compensation of employees", names_105, map_64)
 
@@ -408,6 +409,9 @@ function clean_incomes(data::Data, year::Int64, map_64::Dict{String, String}, ma
     payments_to_low_skilled = (1 .- high_income_share) .* compensation_employees
     payments_to_high_skilled = high_income_share .* compensation_employees
 
+    low_hours = merge_quarterly_data(data.household.hours.low, year, names_64, sum)
+    high_hours = merge_quarterly_data(data.household.hours.high, year, names_64, sum)
+
     income = group_dataframes([low_income, high_income], ["low", "high"], names_16,
                               industries_in_cols, reduce_columns_by_group_sum, map_16)
     income_share = group_dataframes([low_income_share, high_income_share], ["low", "high"], names_16,
@@ -416,7 +420,10 @@ function clean_incomes(data::Data, year::Int64, map_64::Dict{String, String}, ma
                                 ["low", "high", "agg"], names_16, industries_in_cols, reduce_columns_by_group_sum,
                                 map_16)
 
-    return HouseholdData(income, income_share, payments)
+    hours = group_dataframes([low_hours, high_hours], ["low", "high"], names_16,
+                             industries_in_cols, reduce_columns_by_group_sum, map_16)
+
+    return HouseholdData(income, income_share, payments, hours)
 
 end
 
@@ -432,6 +439,12 @@ end
 function add_aggregate!(df::DataFrame)
 
     df[!,:agg] = df.uk + df.eu + df.world
+
+end
+
+function rescale_data!(df::DataFrame, scale::Float64)
+
+
 
 end
 
@@ -486,7 +499,7 @@ function clean_data(data::Data, settings::Dict{String, Any})
                             input_matrices)
 
 
-    household = clean_incomes(data, year, mapping_105_to_64, mapping_64_to_16, industry_names, sic64, aggregated_names, industries_in_cols)
+    household = clean_household(data, year, mapping_105_to_64, mapping_64_to_16, industry_names, sic64, aggregated_names, industries_in_cols)
 
     asset_liability_current_year = clean_assets_liabilities(data.assets, year, mapping_64_to_16, 1000)
     asset_liability_next_year = clean_assets_liabilities(data.assets, year + 1, mapping_64_to_16)
