@@ -3,6 +3,25 @@ using Printf
 using StatsBase
 using Dates
 
+struct ExchangeRates
+    usd::Float64
+    eur::Float64
+end
+
+struct TotalImports
+    eu::Float64
+    world::Float64
+end
+
+struct Constants
+    data_year::Int64
+    exchange_rates::ExchangeRates
+    interest_rate::Float64
+
+    total_imports_from_uk::TotalImports
+    total_imports_from_all_sources::TotalImports
+end
+
 
 function create_map_105_to_64(merge_codes::DataFrame, verbose::Bool = false)
 
@@ -278,30 +297,9 @@ end
 
 struct CleanData
 
-    average_interest::Float64
-
-    # income::DataFrame # data.income_*
-    # income_share::DataFrame # data.*_income_share
-    # payments::DataFrame # data.hValue*
-    # depreciation::DataFrame # data.depreciation
-    # tax::DataFrame # data.taxValue*
-    # mean_capital::DataFrame # data.k*
-
-    # total_use::DataFrame # data.yValue
-    # consumption::DataFrame # data.fValue
-    # delta_v::DataFrame # data.deltaVValue
-    # export_eu::DataFrame # data.x1Value
-    # export_world::DataFrame # data.x2Value
-    # operating_surplus::DataFrame # data.kValue
-    # capital_formation::DataFrame  # data.IValueAlso called "payments to capital" in the code
-    # shock_stddev::DataFrame # data.sigmaBar
-
-    # input_matrices::InputMatrices
-    # assets_liabilities::AssetsLiabilities
-
-    # regional::RegionalData
     household::HouseholdData
     industry::IndustryData
+    constants::Constants
 
 end
 
@@ -324,6 +322,7 @@ function clean_2d_values(data::Data, split_factor::Float64)
     world_import_export = imports_import_export .* (1 - split_factor)
 
     return InputMatrices(import_export, eu_import_export, world_import_export, imports_import_export, import_export .+ eu_import_export .+ world_import_export)
+
 
 end
 
@@ -439,7 +438,18 @@ end
 """
 Main function for data cleaning. Should take in a Data struct and return a CleanData struct.
 """
-function clean_data(data::Data, year::Int64)
+function clean_data(data::Data, settings::Dict{String, Any})
+
+    year::Int64 = settings["constants"]["data_year"]
+
+    exchange_rates = ExchangeRates(settings["constants"]["exchange_rates"]["usd"],
+                                   settings["constants"]["exchange_rates"]["eur"])
+
+    total_imports_from_uk = TotalImports(settings["constants"]["total_imports"]["from_uk"]["eu"],
+                                         settings["constants"]["total_imports"]["from_uk"]["world"])
+    total_imports_from_all_sources = TotalImports(settings["constants"]["total_imports"]["from_all_sources"]["eu"],
+                                                  settings["constants"]["total_imports"]["from_all_sources"]["world"])
+
 
     industry_names = data.input_output.industry_names
     aggregated_names = unique(data.merge_codes_64.x7[2:end])
@@ -448,7 +458,7 @@ function clean_data(data::Data, year::Int64)
     mapping_64_to_16 = create_map_64_to_16(data.merge_codes_64)
 
     industries_in_cols = false
-    split = 0.5
+    split = settings["constants"]["imports_split"]
 
     # Clean dataframes from the data struct.
     # These contain data from 105 industries, aggregate to 64 industries
@@ -507,7 +517,7 @@ function clean_data(data::Data, year::Int64)
     parse_string_dataframe!(interest_rates, Float64)
     parse_string_dataframe!(sigma_bar, Float64, 0.0)
 
-    R = 1 + geomean(interest_rates[!, 1] / 100)
+    interest_rate = 1 + geomean(interest_rates[!, 1] / 100)
 
     # Join data it is split either by "low"/"high", or "uk"/"eu"/"world"/"imports"
     # Aggregate from 64 to 16 industries.
@@ -525,10 +535,12 @@ function clean_data(data::Data, year::Int64)
 
     industry = IndustryData(depreciation, tax, mean_capital, surplus, sigma_bar, assets_liabilities, regional)
 
+    constants = Constants(year, exchange_rates, interest_rate, total_imports_from_uk, total_imports_from_all_sources)
+
     return CleanData(
-        R,
         household,
-        industry
+        industry,
+        constants,
     )
 
 end
