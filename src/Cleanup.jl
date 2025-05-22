@@ -548,7 +548,7 @@ function round_shares!(df::DataFrame, threshold = 1e-4)
     # Rescale sum to 1, replace NaNs with 0
     for col in [:uk, :eu, :world]
         df[!, col] ./= df.uk + df.eu + df.world
-        replace(df[!, col], NaN => 0.0)
+        replace!(df[!, col], NaN => 0.0)
     end
 
 end
