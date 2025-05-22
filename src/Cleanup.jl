@@ -15,6 +15,7 @@ end
 
 struct Constants
     data_year::Int64
+    num_industries::Int64
     exchange_rates::ExchangeRates
     interest_rate::Float64
 
@@ -443,6 +444,146 @@ function add_aggregate!(df::DataFrame)
 end
 
 """
+Re-scale the data that does not get convereted into a ratio explicitly, following
+https://github.com/UCL/Supergrassi/blob/main/code/matlab/macro_v2/DataCleaning/RescaleData.m
+"""
+function rescale_data!(data::CleanData)
+
+    data.household.hours.low /= sum(data.household.hours.low)
+    data.household.hours.high /= sum(data.household.hours.high)
+    data.industry.capital.current_year /= sum(data.industry.capital.current_year)
+    data.industry.capital.next_year /= sum(data.industry.capital.current_year)
+
+    for name in unique(data.industry.assets_liabilities.current_year.SIC16)
+        for df in [data.industry.assets_liabilities.current_year, data.industry.assets_liabilities.next_year]
+            mask = df.SIC16 .== name
+            df.Assets[mask] ./= sum(df.Assets[mask])
+        end
+    end
+
+end
+
+"""
+Convert regional data into ratios of region / sum(regions)
+"""
+function convert_to_ratio!(data::RegionalData)
+
+    for field in fieldnames(RegionalData)
+
+        df = getfield(data, field)
+
+        if (field != :delta_v)
+
+            convert_to_ratio!(df)
+
+        end
+
+    end
+
+end
+
+"""
+Convert regional vector data into fractions of the aggregate value
+Nans are replaced with 0's
+"""
+function convert_to_ratio!(df::DataFrame)
+
+    for col in [:uk, :eu, :world]
+        df[!, col] ./= df.agg
+        replace!(df[!, col], NaN => 0.0)
+    end
+
+end
+
+"""
+Convert regional matrix data to fractions of the aggregate value
+Nans are replaced with 0's
+"""
+function convert_to_ratio!(data::InputMatrices)
+
+    for field in [:uk, :eu, :world]
+
+        df = getfield(data, field)
+        df ./= data.agg
+
+        for c in eachcol(df)
+            replace!(c, NaN => 0.0)
+        end
+
+    end
+
+end
+
+
+"""
+Round values below threshold in regional data to 0, then rescale so that regions sum to 1.
+"""
+function round_shares!(data::RegionalData, threshold::Float64 = 1e-4)
+
+    for field in fieldnames(RegionalData)
+
+        df = getfield(data, field)
+
+        if (field != :delta_v)
+
+            round_shares!(df, threshold)
+
+            if ( any(df.eu == 1.0) || any(df.world == 1.0) )
+                error("The EU and World shares must be less than 1.0")
+            end
+        end
+    end
+
+end
+
+"""
+Round shares in regional vector data
+"""
+function round_shares!(df::DataFrame, threshold = 1e-4)
+
+    # Set values below threshold to 0
+    for col in [:uk, :eu, :world]
+        df[!, col] = map(x -> x < threshold ? 0 : x, df[!, col])
+    end
+
+    # Rescale sum to 1, replace NaNs with 0
+    for col in [:uk, :eu, :world]
+        df[!, col] ./= df.uk + df.eu + df.world
+        replace(df[!, col], NaN => 0.0)
+    end
+
+end
+
+"""
+Round shares in regional matrix data
+"""
+function round_shares!(data::InputMatrices, threshold = 1e-4)
+
+    # Set values below threshold to 0
+    for field in [:uk, :eu, :world]
+
+        df = getfield(data, field)
+
+        for col in names(df)
+            df[!,col] = map(x -> x < threshold ? 0 : x, df[!, col])
+        end
+
+    end
+
+    # Rescale sum to 1, replace NaNs with 0
+    for field in [:uk, :eu, :world]
+
+        df = getfield(data, field)
+        df ./= data.uk .+ data.eu .+ data.world
+        for c in eachcol(df)
+            replace!(c, NaN => 0.0)
+        end
+
+    end
+
+end
+
+"""
 Main function for data cleaning. Should take in a Data struct and return a CleanData struct.
 """
 function clean_data(data::Data, settings::Dict{String, Any})
@@ -542,7 +683,7 @@ function clean_data(data::Data, settings::Dict{String, Any})
 
     industry = IndustryData(depreciation, tax, mean_capital, surplus, sigma_bar, assets_liabilities, regional)
 
-    constants = Constants(year, exchange_rates, interest_rate, total_imports_from_uk, total_imports_from_all_sources)
+    constants = Constants(year, length(aggregated_names), exchange_rates, interest_rate, total_imports_from_uk, total_imports_from_all_sources)
 
     return CleanData(
         household,
