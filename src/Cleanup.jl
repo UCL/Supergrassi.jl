@@ -15,7 +15,6 @@ end
 
 struct Constants
     data_year::Int64
-    num_industries::Int64
     exchange_rates::ExchangeRates
     interest_rate::Float64
 
@@ -683,7 +682,7 @@ function clean_data(data::Data, settings::Dict{String, Any})
 
     industry = IndustryData(depreciation, tax, mean_capital, surplus, sigma_bar, assets_liabilities, regional)
 
-    constants = Constants(year, length(aggregated_names), exchange_rates, interest_rate, total_imports_from_uk, total_imports_from_all_sources)
+    constants = Constants(year, exchange_rates, interest_rate, total_imports_from_uk, total_imports_from_all_sources)
 
     return CleanData(
         household,
