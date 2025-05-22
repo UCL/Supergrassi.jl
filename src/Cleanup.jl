@@ -442,12 +442,6 @@ function add_aggregate!(df::DataFrame)
 
 end
 
-function rescale_data!(df::DataFrame, scale::Float64)
-
-
-
-end
-
 """
 Main function for data cleaning. Should take in a Data struct and return a CleanData struct.
 """
