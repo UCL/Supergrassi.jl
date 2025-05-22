@@ -330,7 +330,7 @@ end
 """
 Function to process the values that are split between uk, eu, world and stored in vectors.
 """
-function clean_1d_values(val::Vector{Number}, val_imp::Vector{Number}, map_64::Dict{String, String}, map_16::Dict{String, String}, names_105::Vector, names_16::Vector, split_factor::Float64, industries_in_cols::Bool)
+function clean_1d_values(val::Vector{<:Number}, val_imp::Vector{<:Number}, map_64::Dict{String, String}, map_16::Dict{String, String}, names_105::Vector, names_16::Vector, split_factor::Float64, industries_in_cols::Bool)
 
     val_uk = clean_vector(val, names_105, map_64)
     val_imports = clean_vector(val_imp, names_105, map_64)
