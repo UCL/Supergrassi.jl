@@ -692,3 +692,11 @@ function clean_data(data::Data, settings::Dict{String, Any})
     )
 
 end
+
+function postprocess_clean_data!(data::CleanData)
+
+    convert_to_ratio!(data.industry.regional)
+    round_shares!(data.industry.regional)
+    rescale_data!(data)
+
+end
