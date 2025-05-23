@@ -5,7 +5,7 @@ using Test
 
 # This test assumes we have a data set available in input/uk_data
 
-path = "../config/settings.yml"
+path = joinpath(@__DIR__, "..", "config","settings.yml")
 settings_path = create_filepath(path)
 settings = read_settings(settings_path)
 filepaths = check_file_availability(settings)
@@ -32,10 +32,10 @@ m = Supergrassi.InputMatrices(DataFrame(reshape(df2d.mValueUK, (16, 16)), nms),
     @test isapprox(clean.industry.regional.delta_v.eu, df.DeltaVValueEU)
     @test isapprox(clean.industry.regional.delta_v.world, df.DeltaVValueW)
 
-    @test isapprox(clean.industry.regional.capital_formation.agg,  df.IValue)
-    @test isapprox(clean.industry.regional.capital_formation.uk,  df.IValueUK)
-    @test isapprox(clean.industry.regional.capital_formation.eu,  df.IValueEU)
-    @test isapprox(clean.industry.regional.capital_formation.world,  df.IValueW)
+    @test isapprox(clean.industry.regional.investment.agg,  df.IValue)
+    @test isapprox(clean.industry.regional.investment.uk,  df.IValueUK)
+    @test isapprox(clean.industry.regional.investment.eu,  df.IValueEU)
+    @test isapprox(clean.industry.regional.investment.world,  df.IValueW)
 
     @test isapprox(clean.industry.regional.consumption.agg,  df.fValue)
     @test isapprox(clean.industry.regional.consumption.uk,  df.fValueUK)
