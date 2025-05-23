@@ -5,18 +5,27 @@ using Test
 
 # This test assumes we have a data set available in input/uk_data
 
-@testset "Clean Data" begin
+path = "../config/settings.yml"
+settings_path = create_filepath(path)
+settings = read_settings(settings_path)
+filepaths = check_file_availability(settings)
+data = read_data(filepaths, settings)
 
-    path = "../config/settings.yml"
-    settings_path = create_filepath(path)
-    settings = read_settings(settings_path)
-    filepaths = check_file_availability(settings)
-    data = read_data(filepaths, settings)
+clean = Supergrassi.clean_data(data,settings)
+Supergrassi.postprocess_clean_data!(clean)
 
-    clean = Supergrassi.clean_data(data,settings)
-    Supergrassi.postprocess_clean_data!(clean)
+df = CSV.read(joinpath(@__DIR__, "..", "data", "test_load_data.csv"), DataFrame)
+df2d = CSV.read(joinpath(@__DIR__, "..", "data", "test_load_data_2d.csv"), DataFrame)
 
-    df = CSV.read(joinpath(@__DIR__, "..", "data", "test_load_data.csv"), DataFrame)
+nms = names(clean.industry.regional.input_matrices.uk)
+
+m = Supergrassi.InputMatrices(DataFrame(reshape(df2d.mValueUK, (16, 16)), nms),
+                              DataFrame(reshape(df2d.mValueEU, (16, 16)), nms),
+                              DataFrame(reshape(df2d.mValueW, (16, 16)), nms),
+                              DataFrame(reshape(df2d.mValueIMP, (16, 16)), nms),
+                              DataFrame(reshape(df2d.mValue, (16, 16)), nms))
+
+@testset "Clean 1d Data" begin
 
     @test isapprox(clean.industry.regional.delta_v.agg, df.DeltaVValue)
     @test isapprox(clean.industry.regional.delta_v.uk, df.DeltaVValueUK)
@@ -72,4 +81,13 @@ using Test
     @test isapprox(clean.industry.depreciation.val, df.depreciation)
     @test isapprox(clean.industry.shock_stdev.val, df.sigmaBar)
 
+end
+
+@testset "Clean 2d data" begin
+
+    @test isapprox(clean.industry.regional.input_matrices.uk, m.uk)
+    @test isapprox(clean.industry.regional.input_matrices.eu, m.eu)
+    @test isapprox(clean.industry.regional.input_matrices.world, m.world)
+    @test isapprox(clean.industry.regional.input_matrices.agg, m.agg)
+    
 end
