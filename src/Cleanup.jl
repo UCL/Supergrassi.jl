@@ -184,7 +184,6 @@ function clean_matrix(data::DataFrame, industry_names::Array{String, 1}, mapping
     rr = DataFrame(permutedims(rr), industry_names)
 
     rr = reduce_columns_by_group_sum(rr, mapping)
-    rr = DataFrame(permutedims(rr), final_names)
 
     return rr
 end
@@ -474,7 +473,7 @@ function rescale_data!(data::CleanData)
     data.household.wages.high *= (use_scaling_factor / hours_high_scaling_factor)
 
     data.industry.regional.input_matrices.agg .*= tax_scaling_factor
-    
+
     for col in [:uk, :eu, :world, :agg]
         data.industry.regional.delta_v[!, col] .*= use_scaling_factor
         data.industry.regional.total_use[!, col] .*= use_scaling_factor
@@ -593,10 +592,12 @@ function round_shares!(df::DataFrame, threshold = 1e-4)
         df[!, col] = map(x -> x < threshold ? 0 : x, df[!, col])
     end
 
-    # Rescale sum to 1, replace NaNs with 0
+    scaling_factor = df.uk + df.eu + df.world
+    # Rescale sum to 1
     for col in [:uk, :eu, :world]
-        df[!, col] ./= df.uk + df.eu + df.world
-        replace!(df[!, col], NaN => 0.0)
+        # Avoid divide by zeros by dividing by 1.0
+        replace!(scaling_factor, 0.0 => 1.0)
+        df[!, col] ./= scaling_factor
     end
 
 end
@@ -617,13 +618,15 @@ function round_shares!(data::InputMatrices, threshold = 1e-4)
 
     end
 
-    # Rescale sum to 1, replace NaNs with 0
-    for field in [:uk, :eu, :world]
+    scaling_factor = data.uk .+ data.eu .+ data.world
 
+    # Rescale sum to 1
+    for field in [:uk, :eu, :world]
         df = getfield(data, field)
-        df ./= data.uk .+ data.eu .+ data.world
-        for c in eachcol(df)
-            replace!(c, NaN => 0.0)
+        for (c,s) in zip(eachcol(df), eachcol(scaling_factor))
+            # Avoid divide by zeros by dividing by 1.0
+            replace!(s, 0.0 => 1.0)
+            c ./= s
         end
 
     end
@@ -745,9 +748,13 @@ end
 
 function postprocess_clean_data!(data::CleanData)
 
-    rescale_data!(data)
+    # Note: the order these are called in matters (Should be refactored)
+    #       That is because the aggregate values are used to normalise the
+    #       regional components, before the aggregate values themselves are normalised
     convert_to_ratio!(data.industry.regional)
-    convert_to_ratio!(data.household)
     round_shares!(data.industry.regional)
+    rescale_data!(data)
+    convert_to_ratio!(data.household)
+
 
 end
