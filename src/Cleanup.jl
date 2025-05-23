@@ -22,6 +22,14 @@ struct Constants
     total_imports_from_all_sources::TotalImports
 end
 
+struct Totals
+
+    savings::Float64 # E
+    investments::Float64 # ISum
+    imports::TotalImports # EX1, EX2
+
+end
+
 
 function create_map_105_to_64(merge_codes::DataFrame, verbose::Bool = false)
 
@@ -269,8 +277,9 @@ struct RegionalData
     delta_v::DataFrame # data.deltaVValue
     export_eu::DataFrame # data.x1Value
     export_world::DataFrame # data.x2Value
-    capital_formation::DataFrame  # data.IValueAlso called "payments to capital" in the code
+    investment::DataFrame  # data.IValue Also called "payments to capital" in the code
     input_matrices::InputMatrices # data.mValue
+    totals::Totals # data.{E, ISum, EX1, EX2}
 
 end
 
@@ -497,7 +506,7 @@ function convert_to_ratio!(data::RegionalData)
 
         df = getfield(data, field)
 
-        if (field != :delta_v && field != :total_use)
+        if (field != :delta_v && field != :total_use  && field != :totals)
 
             convert_to_ratio!(df)
 
@@ -560,7 +569,6 @@ function convert_to_ratio!(data::InputMatrices)
 
 end
 
-
 """
 Round values below threshold in regional data to 0, then rescale so that regions sum to 1.
 """
@@ -570,7 +578,7 @@ function round_shares!(data::RegionalData, threshold::Float64 = 1e-4)
 
         df = getfield(data, field)
 
-        if (field != :delta_v && field != :total_use)
+        if (field != :delta_v && field != :total_use  && field != :totals)
 
             round_shares!(df, threshold)
 
@@ -667,25 +675,33 @@ function clean_data(data::Data, settings::Dict{String, Any})
     gross_operating_surplus_and_mixed_income = clean_rows(data.others, "Gross operating surplus and mixed income", industry_names, mapping_105_to_64)
 
     total_use = clean_1d_values(data.input_output.total_use, data.imports.total_use, mapping_105_to_64, mapping_64_to_16, industry_names, aggregated_names, split, industries_in_cols)
+
     # ROW is not added to the aggregate value of total_use for some reason
     total_use.agg .-= (total_use.eu .+ total_use.world)
 
     consumption = clean_1d_values(data.input_output.final_consumption, data.imports.final_consumption, mapping_105_to_64, mapping_64_to_16, industry_names, aggregated_names, split, industries_in_cols)
     delta_v = clean_1d_values(data.input_output.delta_v_value_uk, data.imports.delta_v_value_uk, mapping_105_to_64, mapping_64_to_16, industry_names, aggregated_names, split, industries_in_cols)
-    capital_formation = clean_1d_values(data.input_output.gross_fixed_capital_formation, data.imports.gross_fixed_capital_formation, mapping_105_to_64, mapping_64_to_16, industry_names, aggregated_names, split, industries_in_cols)
+    investment = clean_1d_values(data.input_output.gross_fixed_capital_formation, data.imports.gross_fixed_capital_formation, mapping_105_to_64, mapping_64_to_16, industry_names, aggregated_names, split, industries_in_cols)
 
     export_to_eu, export_to_world = clean_exports(data.input_output, data.imports, split, aggregated_names, industries_in_cols, mapping_105_to_64, mapping_64_to_16)
 
     input_matrices = clean_2d_values(data, split)
+
+    # Store sums of some variables that are needed later.
+    # These variables get re-scaled to sum to 1 in the postprocessing step and this information gets otherwise lost.
+    total_vals = Totals(sum(consumption.agg) / mean(total_use.uk),
+                        sum(investment.agg) / mean(total_use.uk),
+                        TotalImports(sum(export_to_eu.agg) / mean(total_use.uk),
+                                     sum(export_to_world.agg) / mean(total_use.uk)))
 
     regional = RegionalData(total_use,
                             consumption,
                             delta_v,
                             export_to_eu,
                             export_to_world,
-                            capital_formation,
-                            input_matrices)
-
+                            investment,
+                            input_matrices,
+                            total_vals)
 
     household = clean_household(data, year, mapping_105_to_64, mapping_64_to_16, industry_names, sic64, aggregated_names, industries_in_cols)
 
