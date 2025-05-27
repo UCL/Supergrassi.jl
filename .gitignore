@@ -32,3 +32,6 @@ uk_data/
 
 # Dummy files
 dummy.jl
+
+# Emacs backups
+*~
