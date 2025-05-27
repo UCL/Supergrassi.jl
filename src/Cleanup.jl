@@ -517,6 +517,14 @@ function clean_data(data::Data, settings::Dict{String, Any})
     parse_string_dataframe!(interest_rates, Float64)
     parse_string_dataframe!(sigma_bar, Float64, 0.0)
 
+    zero_indices = settings["constants"]["zero_sigma_bar_industry_codes"]
+
+    for idx in zero_indices
+        if idx ≥ 1 && idx ≤ size(sigma_bar, 2)
+            sigma_bar[1, idx] = 0.0
+        end
+    end
+    
     interest_rate = 1 + geomean(interest_rates[!, 1] / 100)
 
     # Join data it is split either by "low"/"high", or "uk"/"eu"/"world"/"imports"
