@@ -9,22 +9,24 @@ const data_type_dict = Dict(
     "date" => String,
     "list" => Vector{Int64},
 )
+
 """
+    classify_dict(dict::Dict)
 
-    Classifies a dictionary type based on the types of its keys and values.
-    Used to create a typed dictionary from an untyped dictionary extracted from a YAML file.
+Classifies a dictionary type based on the types of its keys and values.
+Used to create a typed dictionary from an untyped dictionary extracted from a YAML file.
 
-    # Arguments
-    - `dict::Dict{Any, Any}`: The dictionary to classify.
+# Arguments
+- `dict::Dict{Any, Any}`: The dictionary to classify.
 
-    # Returns
-    - `Dict{key_type, value_type}`: The classified dictionary.
+# Returns
+- `Dict{key_type, value_type}`: The classified dictionary.
 
-    # Examples
-    ```julia
-    untyped_dict = YAML.load_file("settings.yaml")
-    typed_dict = classify_dict(dict)
-    ```
+# Examples
+```julia
+untyped_dict = YAML.load_file("settings.yaml")
+typed_dict = classify_dict(dict)
+```
 """
 function classify_dict(dict::Dict{Any, Any})
 
