@@ -1,6 +1,6 @@
 using YAML
 
-data_type_dict = Dict(
+const data_type_dict = Dict(
     "int" => Int64,
     "float" => Float64,
     "str" => String,
