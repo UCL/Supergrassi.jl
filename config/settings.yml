@@ -13,6 +13,13 @@ constants:
   # split between eu and rest of world imports
   imports_split: 0.5
 
+  zero_sigma_bar_industry_codes:
+    - 45
+    - 55
+    - 56
+    - 57
+    - 58
+
   exchange_rates:
     usd: 1.2345 # data.fx_USD
     eur: 1.1733 # data.fx_EUR

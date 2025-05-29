@@ -633,6 +633,22 @@ function round_shares!(data::InputMatrices, threshold = 1e-4)
 
 end
 
+function  clean_sigma_bar(sigma_data::Vector, zero_list::Vector{Int64}, sic64::Vector{String})
+
+    sigma_bar = DataFrame(permutedims(sigma_data), sic64)
+
+    parse_string_dataframe!(sigma_bar, Float64, 0.0)
+
+    for idx in zero_list
+        if idx ≥ 1 && idx ≤ size(sigma_bar, 2)
+            sigma_bar[1, idx] = 0.0
+        end
+    end
+
+    return sigma_bar
+
+end
+
 """
 Main function for data cleaning. Should take in a Data struct and return a CleanData struct.
 """
@@ -712,13 +728,11 @@ function clean_data(data::Data, settings::Dict{String, Any})
     depreciation = DataFrame(permutedims(depreciation), sic64)
 
     interest_rates = data.risk_free_rate[Dates.year.(data.risk_free_rate.date) .== year, 2:end]
-
-    sigma_bar = DataFrame(permutedims(data.model_results.sigma), sic64)
-
     parse_string_dataframe!(interest_rates, Float64)
-    parse_string_dataframe!(sigma_bar, Float64, 0.0)
-
     interest_rate = 1 + geomean(interest_rates[!, 1] / 100)
+
+    sigma_bar = clean_sigma_bar(data.model_results.sigma, settings["constants"]["zero_sigma_bar_industry_codes"], sic64)
+
 
     # Join data it is split either by "low"/"high", or "uk"/"eu"/"world"/"imports"
     # Aggregate from 64 to 16 industries.
