@@ -130,7 +130,7 @@ end
 
 """
 function check_file_availability(settings::Dict{<:Any, <:Any})
-    base_path = settings["files"]["input_dir"]
+    base_path = joinpath(@__DIR__, "..", settings["files"]["input_dir"])
     input_derived_dir = settings["files"]["input_derived_dir"]
     version = settings["version"]
     scenario = string(settings["files"]["scenario"])

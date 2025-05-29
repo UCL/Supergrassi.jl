@@ -10,6 +10,27 @@ constants:
   first_date: "2020-01-01"
   # Last date to simulate
   last_date: "2025-10-01"
+  # split between eu and rest of world imports
+  imports_split: 0.5
+
+  zero_sigma_bar_industry_codes:
+    - 45
+    - 55
+    - 56
+    - 57
+    - 58
+
+  exchange_rates:
+    usd: 1.2345 # data.fx_USD
+    eur: 1.1733 # data.fx_EUR
+
+  total_imports:
+    from_uk:
+      eu: 247996.0 # data.EX1
+      world: 319503.0 # data.EX2
+    from_all_sources:
+      eu: 5307036.6 # data.E1
+      world: 6204467.0 # data.E2
 
 flags:
   # Use data from mat files
@@ -41,6 +62,7 @@ files:
     base:
       input_output: "uk_input_output2019.xlsx"
       imports: "uk_input_output2019.xlsx"
+      others: "uk_input_output2019.xlsx"
       merge_codes_64: "mergeCodes64.xlsx"
       merge_codes_105: "mergeCodes105.csv"
 
@@ -126,9 +148,33 @@ excel_limits:
     services_export_col: 118
 
   imports:
+    sheet: "Imports use pxp"
+    top_left: "A1"
+    bottom_right: "DO120"
+
+    row_range: [7, 111]
+    matrix_cols: [3, 107]
+
+    industry_names_row: 4
+
+    final_consumption_col: 109
+
+    gross_fixed_capital_formation_col: 113
+
+    delta_v_value_uk_col_1: 114
+    delta_v_value_uk_col_2: 115
+
+    exports_eu_to_uk_col: 116
+    exports_world_to_uk_col: 117
+
+    total_use_col: 119
+
+    services_export_col: 118
+
+  others:
     sheet: "IOT"
-    top_left: "B7"
-    bottom_right: "DN111"
+    top_left: "A112"
+    bottom_right: "DC120"
 
   merge_codes_64:
     sheet: "Sheet1"
