@@ -454,8 +454,10 @@ function add_aggregate!(df::DataFrame)
 end
 
 """
+    rescale_data!(data::CleanData)
+
 Re-scale the data that does not get convereted into a ratio explicitly, following
-https://github.com/UCL/Supergrassi/blob/main/code/matlab/macro_v2/DataCleaning/RescaleData.m
+<https://github.com/UCL/Supergrassi/blob/main/code/matlab/macro_v2/DataCleaning/RescaleData.m>.
 """
 function rescale_data!(data::CleanData)
 
@@ -498,6 +500,8 @@ function rescale_data!(data::CleanData)
 end
 
 """
+    convert_to_ratio!(data::RegionalData)
+
 Convert regional data into ratios of region / sum(regions)
 """
 function convert_to_ratio!(data::RegionalData)
@@ -535,9 +539,11 @@ function convert_to_ratio!(data::HouseholdData)
 end
 
 """
-Convert regional vector data into fractions of the aggregate value
-Then renormalise the aggregate value by its sum
-Nans are replaced with 0's
+    convert_to_ratio!(df::DataFrame)
+
+Convert regional vector data into fractions of the aggregate value.
+Then renormalise the aggregate value by its sum.
+Nans are replaced with 0's.
 """
 function convert_to_ratio!(df::DataFrame)
 
@@ -551,6 +557,8 @@ function convert_to_ratio!(df::DataFrame)
 end
 
 """
+    convert_to_ratio!(data::InputMatrices)
+
 Convert regional matrix data to fractions of the aggregate value
 Nans are replaced with 0's
 """
@@ -570,6 +578,8 @@ function convert_to_ratio!(data::InputMatrices)
 end
 
 """
+    round_shares!(data::RegionalData, threshold::Float64 = 1e-4)
+
 Round values below threshold in regional data to 0, then rescale so that regions sum to 1.
 """
 function round_shares!(data::RegionalData, threshold::Float64 = 1e-4)
@@ -591,6 +601,8 @@ function round_shares!(data::RegionalData, threshold::Float64 = 1e-4)
 end
 
 """
+    round_shares!(df::DataFrame, threshold = 1e-4)
+
 Round shares in regional vector data
 """
 function round_shares!(df::DataFrame, threshold = 1e-4)
@@ -611,6 +623,8 @@ function round_shares!(df::DataFrame, threshold = 1e-4)
 end
 
 """
+    round_shares!(data::InputMatrices, threshold = 1e-4)
+
 Round shares in regional matrix data
 """
 function round_shares!(data::InputMatrices, threshold = 1e-4)
@@ -658,6 +672,8 @@ function  clean_sigma_bar(sigma_data::Vector, zero_list::Vector{Int64}, sic64::V
 end
 
 """
+    clean_data(data::Data, settings::Dict{String, Any})
+
 Main function for data cleaning. Should take in a Data struct and return a CleanData struct.
 """
 function clean_data(data::Data, settings::Dict{String, Any})
