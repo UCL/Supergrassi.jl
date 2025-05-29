@@ -33,15 +33,17 @@ end
 
 
 """
-    Reads a data file and returns a DataFrame.
+    read_data(file::String)
 
-    # Arguments
-    - `file::String`: The path to the file.
+Reads a data file and returns a DataFrame.
 
-    # Examples
-    ```julia
-    df = read_data("data.csv")
-    ```
+# Arguments
+- `file::String`: The path to the file.
+
+# Examples
+```julia
+df = read_data("data.csv")
+```
 """
 function read_data(file::String)
     
@@ -58,17 +60,19 @@ function read_data(file::String)
 end
 
 """
-    Reads a data file and returns a DataFrame.
+    read_data(file::String, sheet::String, range::String)
 
-    # Arguments
-    - `file::String`: The path to the file.
-    - `sheet::String`: The name of the sheet.
-    - `range::String`: The range of cells to read.
+Reads a data file and returns a DataFrame.
 
-    # Examples
-    ```julia
-    df = read_data("data.xlsx", "Sheet1", "A1:Z1000")
-    ```
+# Arguments
+- `file::String`: The path to the file.
+- `sheet::String`: The name of the sheet.
+- `range::String`: The range of cells to read.
+
+# Examples
+```julia
+df = read_data("data.xlsx", "Sheet1", "A1:Z1000")
+```
 """
 function read_data(file::String, sheet::String, range::String)
 
