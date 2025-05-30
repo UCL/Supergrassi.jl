@@ -2,6 +2,7 @@ module Supergrassi
 
 # Write your package code here.
 
+include("VariableStructure.jl")
 include("FilePathValidator.jl")
 include("FileReader.jl")
 include("ReadSettings.jl")
