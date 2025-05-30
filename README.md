@@ -20,75 +20,75 @@ data = read_data(filepaths, settings)
 ```mermaid
 classDiagram
     class CleanData {
-        household : **HouseholdData**
-        industry : **IndustryData**
-        constants : **Constants**
+        **household** : HouseholdData
+        **industry** : IndustryData
+        **constants** : Constants
     }
 
     class HouseholdData {
-        income : **DataFrame**
-        income_share : **DataFrame**
-        payments : **DataFrame**
-        hours : **DataFrame**
-        wages : **DataFrame**
+        **income** : DataFrame
+        **income_share** : DataFrame
+        **payments** : DataFrame
+        **hours** : DataFrame
+        **wages** : DataFrame
     }
 
     class IndustryData {
-        depreciation : **DataFrame**
-        tax : **DataFrame**
-        capital : **DataFrame**
-        surplus : **DataFrame**
-        shock_stdev : **DataFrame**
-        assets_liabilities : **AssetsLiabilities**
-        regional : **RegionalData**
+        **depreciation** : DataFrame
+        **tax** : DataFrame
+        **capital** : DataFrame
+        **surplus** : DataFrame
+        **shock_stdev** : DataFrame
+        **assets_liabilities** : AssetsLiabilities
+        **regional** : RegionalData
     }
 
     class RegionalData {
-        total_use : **DataFrame**
-        consumption : **DataFrame**
-        delta_v : **DataFrame**
-        export_eu : **DataFrame**
-        export_world : **DataFrame**
-        investment : **DataFrame**
-        input_matrices : **InputMatrices**
-        totals : **Totals**
+        **total_use** : DataFrame
+        **consumption** : DataFrame
+        **delta_v** : DataFrame
+        **export_eu** : DataFrame
+        **export_world** : DataFrame
+        **investment** : DataFrame
+        **input_matrices** : InputMatrices
+        **totals** : Totals
     }
 
     class InputMatrices {
-        uk : **DataFrame**
-        eu : **DataFrame**
-        world : **DataFrame**
-        imports : **DataFrame**
-        agg : **DataFrame**
+        **uk** : DataFrame
+        **eu** : DataFrame
+        **world** : DataFrame
+        **imports** : DataFrame
+        **agg** : DataFrame
     }
 
     class Totals {
-        savings : **Float64**
-        investments : **Float64**
-        imports : **TotalImports**
+        **savings** : Float64
+        **investments** : Float64
+        **imports** : TotalImports
     }
 
     class TotalImports {
-        eu : **Float64**
-        world : **Float64**
+        **eu** : Float64
+        **world** : Float64
     }
 
     class AssetsLiabilities {
-        current_year : **DataFrame**
-        next_year : **DataFrame**
+        **current_year** : DataFrame
+        **next_year** : DataFrame
     }
 
     class Constants {
-        data_year : **Int64**
-        exchange_rates : **ExchangeRates**
-        interest_rate : **Float64**
-        total_imports_from_uk : **TotalImports**
-        total_imports_from_all_sources : **TotalImports**
+        **data_year** : Int64
+        **exchange_rates** : ExchangeRates
+        **interest_rate** : Float64
+        **total_imports_from_uk** : TotalImports
+        **total_imports_from_all_sources** : TotalImports
     }
 
     class ExchangeRates {
-        usd : **Float64**
-        eur : **Float64**
+        **usd** : Float64
+        **eur** : Float64
     }
 
     CleanData --> HouseholdData
@@ -104,6 +104,4 @@ classDiagram
     Totals --> TotalImports
     Constants --> ExchangeRates
     Constants --> TotalImports
-
-
 ```
