@@ -51,7 +51,7 @@ function read_data(file::String)
         error("File not found: $file")
     end
 
-    if endwith(file, ".csv")
+    if endswith(file, ".csv")
         return read_csv(file)
     else
         error("Invalid file format: $file")
@@ -80,7 +80,7 @@ function read_data(file::String, sheet::String, range::String)
         error("File not found: $file")
     end
 
-    if !endwith(file, ".xlsx")
+    if !endswith(file, ".xlsx")
         error("Invalid file format: $file")
     end
 
@@ -94,9 +94,9 @@ function read_data(filepaths::Dict{String, FilePath}, settings::Dict{String, Any
     for (key, filepath) in filepaths
         println("Reading data from $(filepath.path)")
 
-        if endwith(filepath.path, ".csv")
+        if endswith(filepath.path, ".csv")
             data[key] = read_csv(filepath.path)
-        elseif endwith(filepath.path, ".xlsx")
+        elseif endswith(filepath.path, ".xlsx")
             sheet = settings["excel_limits"][key]["sheet"]
             top_left = settings["excel_limits"][key]["top_left"]
             bottom_right = settings["excel_limits"][key]["bottom_right"]
