@@ -1,6 +1,6 @@
 # Supergrassi.jl
 
-his is the reference documentation of [`Supergrassi.jl`](https://github.com/UCL/Supergrassi.jl).
+This is the reference documentation of [`Supergrassi.jl`](https://github.com/UCL/Supergrassi.jl).
 
 ## Index
 ```@index
