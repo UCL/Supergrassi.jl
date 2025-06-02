@@ -589,6 +589,28 @@ function generate_constants(data::Data, settings::Dict{String, Any})
 
 end
 
+struct CommonVariables
+    year::Int64
+    industry_names::Vector{String}
+    aggregated_names::Vector{String}
+    mapping_105_to_64::Dict{String, String}
+    mapping_64_to_16::Dict{String, String}
+
+    split::Float64
+    industries_in_cols::Bool
+
+    tax_products::DataFrame
+    tax_production::DataFrame
+    sic64::Vector{String}
+
+
+    exchange_rates::ExchangeRates
+    interest_rate::Float64
+
+    total_imports_from_uk::TotalImports
+    total_imports_from_all_sources::TotalImports
+end
+
 """
 Main function for data cleaning. Should take in a Data struct and return a CleanData struct.
 """
@@ -611,7 +633,6 @@ function clean_data(data::Data, settings::Dict{String, Any})
     tax_products = clean_rows(data.others, "Taxes less subsidies on products", industry_names, mapping_105_to_64)
     sic64 = names(tax_products)
     tax_production = clean_rows(data.others, "Taxes less subsidies on production", industry_names, mapping_105_to_64)
-    gross_operating_surplus_and_mixed_income = clean_rows(data.others, "Gross operating surplus and mixed income", industry_names, mapping_105_to_64)
 
     total_use = clean_1d_values(data.input_output.total_use, data.imports.total_use, mapping_105_to_64, mapping_64_to_16, industry_names, aggregated_names, split, industries_in_cols)
 
@@ -634,6 +655,13 @@ function clean_data(data::Data, settings::Dict{String, Any})
                                      sum(export_to_world.agg) / mean(total_use.uk)))
 
     household = clean_household(data, year, mapping_105_to_64, mapping_64_to_16, industry_names, sic64, aggregated_names, industries_in_cols)
+
+
+    ###################################################################################
+    ###################################################################################
+
+    gross_operating_surplus_and_mixed_income = clean_rows(data.others, "Gross operating surplus and mixed income", industry_names, mapping_105_to_64)
+
 
     regional = RegionalData(total_use,
         consumption,
