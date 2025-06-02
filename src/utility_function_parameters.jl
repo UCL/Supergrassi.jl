@@ -1,9 +1,15 @@
+"""
+  Compute an utility function parameter for a single region
+"""
 function parameter_by_region(elasticity::T, quantity_region::T, logP_region::T, logP::T) where {T <: Real}
 
     return quantity_region * exp((elasticity - 1) * (logP_region - logP))
 
 end
 
+"""
+  Compute log of an utility function parameter for a single region
+"""
 function log_parameter_by_region(elasticity::T, quantity_region::T, logP_region::T, logP::T) where {T <: Real}
 
     return log(quantity_region) + (elasticity - 1) * (logP_region - logP)
