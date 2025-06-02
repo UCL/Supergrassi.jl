@@ -621,7 +621,7 @@ function generate_constants(data::Data, settings::Dict{String, Any})
                                         nothing,
                                         nothing)
 
-    elastisities_struct = Elasiticities(production_elasticity,
+    elasticities_struct = Elasiticities(production_elasticity,
                                  world_export_demand_elasticity,
                                  eu_export_demand_elasticity,
                                  consumption_elasticity,
