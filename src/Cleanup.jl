@@ -546,7 +546,7 @@ function round_shares!(data::InputMatrices, threshold = 1e-4)
         df = getfield(data, field)
 
         for col in names(df)
-            df[!,col] = map(x -> x < threshold ? 0 : x, df[!, col])
+            df[!,col] = map(x -> x < threshold ? 0.0 : x, df[!, col])
         end
 
     end
