@@ -633,20 +633,20 @@ function clean_data(data::Data, settings::Dict{String, Any})
                         TotalImports(sum(export_to_eu.agg) / mean(total_use.uk),
                                      sum(export_to_world.agg) / mean(total_use.uk)))
 
-    regional = RegionalData(total_use,
-                            consumption,
-                            delta_v,
-                            export_to_eu,
-                            export_to_world,
-                            investment,
-                            input_matrices,
-                            total_vals)
-
     household = clean_household(data, year, mapping_105_to_64, mapping_64_to_16, industry_names, sic64, aggregated_names, industries_in_cols)
+
+    regional = RegionalData(total_use,
+        consumption,
+        delta_v,
+        export_to_eu,
+        export_to_world,
+        investment,
+        input_matrices,
+        total_vals
+        )
 
     asset_liability_current_year = clean_assets_liabilities(data.assets, year, mapping_64_to_16, 1000)
     asset_liability_next_year = clean_assets_liabilities(data.assets, year + 1, mapping_64_to_16)
-
     assets_liabilities = AssetsLiabilities(asset_liability_current_year,
                                            asset_liability_next_year)
     # Process dataframes from the data struct.
@@ -655,7 +655,6 @@ function clean_data(data::Data, settings::Dict{String, Any})
 
     mean_capital_current_year = merge_quarterly_data(data.industry.capital, year, sic64, mean)
     mean_capital_next_year = merge_quarterly_data(data.industry.capital, year + 1, sic64, mean)
-
     mean_capital = group_dataframes([mean_capital_current_year, mean_capital_next_year],
                                     ["current_year", "next_year"], aggregated_names, industries_in_cols,
                                     reduce_columns_by_group_sum, mapping_64_to_16)
@@ -665,8 +664,12 @@ function clean_data(data::Data, settings::Dict{String, Any})
 
     depreciation = DataFrame(data.depreciation)[!, string(year)]
     depreciation = DataFrame(permutedims(depreciation), sic64)
+    depreciation = group_dataframes([depreciation], ["val"], aggregated_names, industries_in_cols, reduce_columns_by_group_weighted_mean, mapping_64_to_16, weights = mean_capital_current_year)
+
+    total_use_uk = clean_vector(data.input_output.total_use, industry_names, mapping_105_to_64)
 
     sigma_bar = clean_sigma_bar(data.model_results.sigma, settings["constants"]["zero_sigma_bar_industry_codes"], sic64)
+    sigma_bar = group_dataframes([sigma_bar], ["val"], aggregated_names, industries_in_cols, reduce_columns_by_group_weighted_mean, mapping_64_to_16, weights = total_use_uk)
 
     # Join data it is split either by "low"/"high", or "uk"/"eu"/"world"/"imports"
     # Aggregate from 64 to 16 industries.
@@ -676,11 +679,8 @@ function clean_data(data::Data, settings::Dict{String, Any})
                            industries_in_cols, reduce_columns_by_group_sum, mapping_64_to_16)
     surplus = group_dataframes([gross_operating_surplus_and_mixed_income], ["val"], aggregated_names,
                                industries_in_cols, reduce_columns_by_group_sum, mapping_64_to_16)
-    depreciation = group_dataframes([depreciation], ["val"], aggregated_names, industries_in_cols, reduce_columns_by_group_weighted_mean, mapping_64_to_16, weights = mean_capital_current_year)
 
     # total_use_uk before aggregation is needed as weights for sigma_bar
-    total_use_uk = clean_vector(data.input_output.total_use, industry_names, mapping_105_to_64)
-    sigma_bar = group_dataframes([sigma_bar], ["val"], aggregated_names, industries_in_cols, reduce_columns_by_group_weighted_mean, mapping_64_to_16, weights = total_use_uk)
 
     industry = IndustryData(depreciation, tax, mean_capital, surplus, sigma_bar, assets_liabilities, regional)
 
