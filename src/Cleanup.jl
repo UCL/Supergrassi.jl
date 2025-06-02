@@ -631,7 +631,7 @@ function generate_constants(data::Data, settings::Dict{String, Any})
     parse_string_dataframe!(interest_rates, Float64)
     interest_rate = 1 + geomean(interest_rates[!, 1] / 100)
                                               
-    return Constants(year, exchange_rates, interest_rate, total_imports_from_uk, total_imports_from_all_sources, elastisities_struct)
+    return Constants(year, exchange_rates, interest_rate, total_imports_from_uk, total_imports_from_all_sources, elasticities_struct)
 
 end
 
