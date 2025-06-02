@@ -10,6 +10,21 @@ struct TotalImports
     world::Float64
 end
 
+struct Elasticity
+    substitution::Float64
+    armington::Float64
+    substitution_uk_other::Union{Float64, Nothing}
+    skill_substitution::Union{Float64, Nothing}
+end
+
+struct Elasiticities
+    production::Elasticity
+    world_export_demand::Elasticity
+    eu_export_demand::Elasticity
+    consumption::Elasticity
+    investment::Elasticity
+end
+
 struct Constants
     data_year::Int64
     exchange_rates::ExchangeRates
@@ -17,6 +32,8 @@ struct Constants
 
     total_imports_from_uk::TotalImports
     total_imports_from_all_sources::TotalImports
+
+    elasticities::Elasiticities
 end
 
 struct Totals

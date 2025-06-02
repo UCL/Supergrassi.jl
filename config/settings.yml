@@ -13,6 +13,13 @@ constants:
   # split between eu and rest of world imports
   imports_split: 0.5
 
+  elasticities:
+    consumption: [3.0, 2.0]
+    eu_export_demand: [3.0, 2.0, 2.0]
+    rest_of_world_export_demand: [3.0, 2.0, 2.0]
+    production: [0.4, 0.75, 2.0]
+    investment: [0.4, 2.0]
+
   zero_sigma_bar_industry_codes:
     - 45
     - 55
@@ -38,18 +45,6 @@ flags:
 
   # Random initial values for parameters
   random_initial_values: false
-
-elasticities:
-  consumption:
-    - [3.0, 2.0]
-  eu_export_demand:
-    - [3.0, 2.0, 2.0]
-  rest_of_world_export_demand:
-    - [3.0, 2.0, 2.0]
-  production:
-    - [0.4, 0.75, 2.0]
-  investment:
-    - [0.4, 2.0]
 
 files:
   input_dir: input/uk_data
