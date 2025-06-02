@@ -3,34 +3,6 @@ using Printf
 using StatsBase
 using Dates
 
-struct ExchangeRates
-    usd::Float64
-    eur::Float64
-end
-
-struct TotalImports
-    eu::Float64
-    world::Float64
-end
-
-struct Constants
-    data_year::Int64
-    exchange_rates::ExchangeRates
-    interest_rate::Float64
-
-    total_imports_from_uk::TotalImports
-    total_imports_from_all_sources::TotalImports
-end
-
-struct Totals
-
-    savings::Float64 # E
-    investments::Float64 # ISum
-    imports::TotalImports # EX1, EX2
-
-end
-
-
 function create_map_105_to_64(merge_codes::DataFrame, verbose::Bool = false)
 
     initial_industry_names = merge_codes[!, :sic105]
@@ -251,67 +223,6 @@ function clean_assets_liabilities(assets::DataFrame, year::Int64, map_to_16::Dic
 
 end
 
-struct InputMatrices
-
-    # These correspond to mValue matrices in the Matlab code
-
-    uk::DataFrame
-    eu::DataFrame
-    world::DataFrame
-    imports::DataFrame
-    agg::DataFrame
-
-end
-
-struct AssetsLiabilities
-
-    current_year::DataFrame
-    next_year::DataFrame
-
-end
-
-struct RegionalData
-
-    total_use::DataFrame # data.yValue
-    consumption::DataFrame # data.fValue
-    delta_v::DataFrame # data.deltaVValue
-    export_eu::DataFrame # data.x1Value
-    export_world::DataFrame # data.x2Value
-    investment::DataFrame  # data.IValue Also called "payments to capital" in the code
-    input_matrices::InputMatrices # data.mValue
-    totals::Totals # data.{E, ISum, EX1, EX2}
-
-end
-
-struct HouseholdData
-
-    income::DataFrame
-    income_share::DataFrame
-    payments::DataFrame
-    hours::DataFrame
-    wages::DataFrame
-
-end
-
-struct IndustryData
-
-    depreciation::DataFrame
-    tax::DataFrame
-    capital::DataFrame
-    surplus::DataFrame
-    shock_stdev::DataFrame
-    assets_liabilities::AssetsLiabilities
-    regional::RegionalData
-
-end
-
-struct CleanData
-
-    household::HouseholdData
-    industry::IndustryData
-    constants::Constants
-
-end
 
 """
 Function to process the mValues stored in input_output_matrix:es in the data struct
@@ -671,12 +582,7 @@ function  clean_sigma_bar(sigma_data::Vector, zero_list::Vector{Int64}, sic64::V
 
 end
 
-"""
-    clean_data(data::Data, settings::Dict{String, Any})
-
-Main function for data cleaning. Should take in a Data struct and return a CleanData struct.
-"""
-function clean_data(data::Data, settings::Dict{String, Any})
+function generate_constants(data::Data, settings::Dict{String, Any})
 
     year::Int64 = settings["constants"]["data_year"]
 
@@ -688,6 +594,22 @@ function clean_data(data::Data, settings::Dict{String, Any})
     total_imports_from_all_sources = TotalImports(settings["constants"]["total_imports"]["from_all_sources"]["eu"],
                                                   settings["constants"]["total_imports"]["from_all_sources"]["world"])
 
+    interest_rates = data.risk_free_rate[Dates.year.(data.risk_free_rate.date) .== year, 2:end]
+    parse_string_dataframe!(interest_rates, Float64)
+    interest_rate = 1 + geomean(interest_rates[!, 1] / 100)
+                                              
+    return Constants(year, exchange_rates, interest_rate, total_imports_from_uk, total_imports_from_all_sources)
+
+end
+
+"""
+    clean_data(data::Data, settings::Dict{String, Any})
+
+Main function for data cleaning. Should take in a Data struct and return a CleanData struct.
+"""
+function clean_data(data::Data, settings::Dict{String, Any})
+
+    year::Int64 = settings["constants"]["data_year"]
 
     industry_names = data.input_output.industry_names
     aggregated_names = unique(data.merge_codes_64.x7[2:end])
@@ -704,7 +626,6 @@ function clean_data(data::Data, settings::Dict{String, Any})
     tax_products = clean_rows(data.others, "Taxes less subsidies on products", industry_names, mapping_105_to_64)
     sic64 = names(tax_products)
     tax_production = clean_rows(data.others, "Taxes less subsidies on production", industry_names, mapping_105_to_64)
-    gross_operating_surplus_and_mixed_income = clean_rows(data.others, "Gross operating surplus and mixed income", industry_names, mapping_105_to_64)
 
     total_use = clean_1d_values(data.input_output.total_use, data.imports.total_use, mapping_105_to_64, mapping_64_to_16, industry_names, aggregated_names, split, industries_in_cols)
 
@@ -726,20 +647,27 @@ function clean_data(data::Data, settings::Dict{String, Any})
                         TotalImports(sum(export_to_eu.agg) / mean(total_use.uk),
                                      sum(export_to_world.agg) / mean(total_use.uk)))
 
-    regional = RegionalData(total_use,
-                            consumption,
-                            delta_v,
-                            export_to_eu,
-                            export_to_world,
-                            investment,
-                            input_matrices,
-                            total_vals)
-
     household = clean_household(data, year, mapping_105_to_64, mapping_64_to_16, industry_names, sic64, aggregated_names, industries_in_cols)
+
+
+    ###################################################################################
+    ###################################################################################
+
+    gross_operating_surplus_and_mixed_income = clean_rows(data.others, "Gross operating surplus and mixed income", industry_names, mapping_105_to_64)
+
+
+    regional = RegionalData(total_use,
+        consumption,
+        delta_v,
+        export_to_eu,
+        export_to_world,
+        investment,
+        input_matrices,
+        total_vals
+        )
 
     asset_liability_current_year = clean_assets_liabilities(data.assets, year, mapping_64_to_16, 1000)
     asset_liability_next_year = clean_assets_liabilities(data.assets, year + 1, mapping_64_to_16)
-
     assets_liabilities = AssetsLiabilities(asset_liability_current_year,
                                            asset_liability_next_year)
     # Process dataframes from the data struct.
@@ -748,7 +676,6 @@ function clean_data(data::Data, settings::Dict{String, Any})
 
     mean_capital_current_year = merge_quarterly_data(data.industry.capital, year, sic64, mean)
     mean_capital_next_year = merge_quarterly_data(data.industry.capital, year + 1, sic64, mean)
-
     mean_capital = group_dataframes([mean_capital_current_year, mean_capital_next_year],
                                     ["current_year", "next_year"], aggregated_names, industries_in_cols,
                                     reduce_columns_by_group_sum, mapping_64_to_16)
@@ -758,13 +685,12 @@ function clean_data(data::Data, settings::Dict{String, Any})
 
     depreciation = DataFrame(data.depreciation)[!, string(year)]
     depreciation = DataFrame(permutedims(depreciation), sic64)
+    depreciation = group_dataframes([depreciation], ["val"], aggregated_names, industries_in_cols, reduce_columns_by_group_weighted_mean, mapping_64_to_16, weights = mean_capital_current_year)
 
-    interest_rates = data.risk_free_rate[Dates.year.(data.risk_free_rate.date) .== year, 2:end]
-    parse_string_dataframe!(interest_rates, Float64)
-    interest_rate = 1 + geomean(interest_rates[!, 1] / 100)
+    total_use_uk = clean_vector(data.input_output.total_use, industry_names, mapping_105_to_64)
 
     sigma_bar = clean_sigma_bar(data.model_results.sigma, settings["constants"]["zero_sigma_bar_industry_codes"], sic64)
-
+    sigma_bar = group_dataframes([sigma_bar], ["val"], aggregated_names, industries_in_cols, reduce_columns_by_group_weighted_mean, mapping_64_to_16, weights = total_use_uk)
 
     # Join data it is split either by "low"/"high", or "uk"/"eu"/"world"/"imports"
     # Aggregate from 64 to 16 industries.
@@ -774,15 +700,12 @@ function clean_data(data::Data, settings::Dict{String, Any})
                            industries_in_cols, reduce_columns_by_group_sum, mapping_64_to_16)
     surplus = group_dataframes([gross_operating_surplus_and_mixed_income], ["val"], aggregated_names,
                                industries_in_cols, reduce_columns_by_group_sum, mapping_64_to_16)
-    depreciation = group_dataframes([depreciation], ["val"], aggregated_names, industries_in_cols, reduce_columns_by_group_weighted_mean, mapping_64_to_16, weights = mean_capital_current_year)
 
     # total_use_uk before aggregation is needed as weights for sigma_bar
-    total_use_uk = clean_vector(data.input_output.total_use, industry_names, mapping_105_to_64)
-    sigma_bar = group_dataframes([sigma_bar], ["val"], aggregated_names, industries_in_cols, reduce_columns_by_group_weighted_mean, mapping_64_to_16, weights = total_use_uk)
 
     industry = IndustryData(depreciation, tax, mean_capital, surplus, sigma_bar, assets_liabilities, regional)
 
-    constants = Constants(year, exchange_rates, interest_rate, total_imports_from_uk, total_imports_from_all_sources)
+    constants = generate_constants(data, settings)
 
     return CleanData(
         household,
