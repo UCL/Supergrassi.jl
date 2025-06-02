@@ -33,15 +33,17 @@ end
 
 
 """
-    Reads a data file and returns a DataFrame.
+    read_data(file::String)
 
-    # Arguments
-    - `file::String`: The path to the file.
+Reads a data file and returns a DataFrame.
 
-    # Examples
-    ```julia
-    df = read_data("data.csv")
-    ```
+# Arguments
+- `file::String`: The path to the file.
+
+# Examples
+```julia
+df = read_data("data.csv")
+```
 """
 function read_data(file::String)
     
@@ -49,7 +51,7 @@ function read_data(file::String)
         error("File not found: $file")
     end
 
-    if occursin(r"\.csv$", file)
+    if endwith(file, ".csv")
         return read_csv(file)
     else
         error("Invalid file format: $file")
@@ -58,17 +60,19 @@ function read_data(file::String)
 end
 
 """
-    Reads a data file and returns a DataFrame.
+    read_data(file::String, sheet::String, range::String)
 
-    # Arguments
-    - `file::String`: The path to the file.
-    - `sheet::String`: The name of the sheet.
-    - `range::String`: The range of cells to read.
+Reads a data file and returns a DataFrame.
 
-    # Examples
-    ```julia
-    df = read_data("data.xlsx", "Sheet1", "A1:Z1000")
-    ```
+# Arguments
+- `file::String`: The path to the file.
+- `sheet::String`: The name of the sheet.
+- `range::String`: The range of cells to read.
+
+# Examples
+```julia
+df = read_data("data.xlsx", "Sheet1", "A1:Z1000")
+```
 """
 function read_data(file::String, sheet::String, range::String)
 
@@ -76,7 +80,7 @@ function read_data(file::String, sheet::String, range::String)
         error("File not found: $file")
     end
 
-    if !occursin(r"\.xlsx$", file)
+    if !endwith(file, ".xlsx")
         error("Invalid file format: $file")
     end
 
@@ -90,9 +94,9 @@ function read_data(filepaths::Dict{String, FilePath}, settings::Dict{String, Any
     for (key, filepath) in filepaths
         println("Reading data from $(filepath.path)")
 
-        if occursin(r"\.csv$", filepath.path)
+        if endwith(filepath.path, ".csv")
             data[key] = read_csv(filepath.path)
-        elseif occursin(r"\.xlsx$", filepath.path)
+        elseif endwith(filepath.path, ".xlsx")
             sheet = settings["excel_limits"][key]["sheet"]
             top_left = settings["excel_limits"][key]["top_left"]
             bottom_right = settings["excel_limits"][key]["bottom_right"]
