@@ -568,10 +568,8 @@ function  clean_sigma_bar(sigma_data::Vector, zero_list::Vector{Int64}, sic64::V
 
 end
 
-"""
-Main function for data cleaning. Should take in a Data struct and return a CleanData struct.
-"""
-function clean_data(data::Data, settings::Dict{String, Any})
+
+function generate_constants(data::Data, settings::Dict{String, Any})
 
     year::Int64 = settings["constants"]["data_year"]
 
@@ -583,6 +581,20 @@ function clean_data(data::Data, settings::Dict{String, Any})
     total_imports_from_all_sources = TotalImports(settings["constants"]["total_imports"]["from_all_sources"]["eu"],
                                                   settings["constants"]["total_imports"]["from_all_sources"]["world"])
 
+    interest_rates = data.risk_free_rate[Dates.year.(data.risk_free_rate.date) .== year, 2:end]
+    parse_string_dataframe!(interest_rates, Float64)
+    interest_rate = 1 + geomean(interest_rates[!, 1] / 100)
+                                              
+    return Constants(year, exchange_rates, interest_rate, total_imports_from_uk, total_imports_from_all_sources)
+
+end
+
+"""
+Main function for data cleaning. Should take in a Data struct and return a CleanData struct.
+"""
+function clean_data(data::Data, settings::Dict{String, Any})
+
+    year::Int64 = settings["constants"]["data_year"]
 
     industry_names = data.input_output.industry_names
     aggregated_names = unique(data.merge_codes_64.x7[2:end])
@@ -654,12 +666,7 @@ function clean_data(data::Data, settings::Dict{String, Any})
     depreciation = DataFrame(data.depreciation)[!, string(year)]
     depreciation = DataFrame(permutedims(depreciation), sic64)
 
-    interest_rates = data.risk_free_rate[Dates.year.(data.risk_free_rate.date) .== year, 2:end]
-    parse_string_dataframe!(interest_rates, Float64)
-    interest_rate = 1 + geomean(interest_rates[!, 1] / 100)
-
     sigma_bar = clean_sigma_bar(data.model_results.sigma, settings["constants"]["zero_sigma_bar_industry_codes"], sic64)
-
 
     # Join data it is split either by "low"/"high", or "uk"/"eu"/"world"/"imports"
     # Aggregate from 64 to 16 industries.
@@ -677,7 +684,7 @@ function clean_data(data::Data, settings::Dict{String, Any})
 
     industry = IndustryData(depreciation, tax, mean_capital, surplus, sigma_bar, assets_liabilities, regional)
 
-    constants = Constants(year, exchange_rates, interest_rate, total_imports_from_uk, total_imports_from_all_sources)
+    constants = generate_constants(data, settings)
 
     return CleanData(
         household,
