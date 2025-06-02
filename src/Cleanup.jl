@@ -594,11 +594,44 @@ function generate_constants(data::Data, settings::Dict{String, Any})
     total_imports_from_all_sources = TotalImports(settings["constants"]["total_imports"]["from_all_sources"]["eu"],
                                                   settings["constants"]["total_imports"]["from_all_sources"]["world"])
 
+    elasticities = settings["constants"]["elasticities"]
+
+    production_elasticity = Elasticity(elasticities["production"][1],
+                                        elasticities["production"][3],
+                                        nothing,
+                                        elasticities["production"][2])
+
+    world_export_demand_elasticity = Elasticity(elasticities["rest_of_world_export_demand"][1],
+                                                elasticities["rest_of_world_export_demand"][2],
+                                                elasticities["rest_of_world_export_demand"][3],
+                                                nothing)
+
+    eu_export_demand_elasticity = Elasticity(elasticities["eu_export_demand"][1],
+                                                elasticities["eu_export_demand"][2],
+                                                elasticities["eu_export_demand"][3],
+                                                nothing)
+
+    consumption_elasticity = Elasticity(elasticities["consumption"][1],
+                                        elasticities["consumption"][2],
+                                        nothing,
+                                        nothing)
+
+    investment_elasticity = Elasticity(elasticities["investment"][1],
+                                        elasticities["investment"][2],
+                                        nothing,
+                                        nothing)
+
+    elastisities_struct = Elasiticities(production_elasticity,
+                                 world_export_demand_elasticity,
+                                 eu_export_demand_elasticity,
+                                 consumption_elasticity,
+                                 investment_elasticity)
+
     interest_rates = data.risk_free_rate[Dates.year.(data.risk_free_rate.date) .== year, 2:end]
     parse_string_dataframe!(interest_rates, Float64)
     interest_rate = 1 + geomean(interest_rates[!, 1] / 100)
                                               
-    return Constants(year, exchange_rates, interest_rate, total_imports_from_uk, total_imports_from_all_sources)
+    return Constants(year, exchange_rates, interest_rate, total_imports_from_uk, total_imports_from_all_sources, elastisities_struct)
 
 end
 
