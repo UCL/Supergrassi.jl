@@ -2,6 +2,10 @@ using Supergrassi
 using DataFrames
 using Enzyme
 
+"""
+  Compute all utility function parameters from regional data, elasticities and prices.
+  Currently missing most of the γ parameters and a data structure for the output
+"""
 function compute_all_parameters(data::RegionalData, elasticities::Elasticities, prices::DataFrame)
 
     α, ∂α, Jacα = compute_parameter(data.consumption, elasticities.consumption, prices)
@@ -13,6 +17,10 @@ function compute_all_parameters(data::RegionalData, elasticities::Elasticities, 
 
 end
 
+"""
+  Compute 1d utility function parameters from a regional demand data frame and the corresponding elasticity.
+  Currently missing the tilde parameters for exports.
+"""
 function compute_parameter(demand::DataFrame, elasticity::Elasticity, prices)
 
     n = nrow(demand)
@@ -55,6 +63,10 @@ function compute_parameter(demand::DataFrame, elasticity::Elasticity, prices)
 
 end
 
+"""
+  Compute the 2d utility function parameters from regional InputMatrices and the corresponding elasticity.
+  Currently missing the jacobian, and the 1d parameters gammaL and gammaH
+"""
 function compute_parameter(demand::InputMatrices, elasticity::Elasticity, prices)
 
     n = nrow(demand.agg)
