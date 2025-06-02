@@ -7,6 +7,7 @@ version = "1.0.0-DEV"
 CSV = "336ed68f-0bac-5ca0-87d4-7b16caf5d00b"
 DataFrames = "a93c6f00-e57d-5684-b7b6-d8193f3e46c0"
 Dates = "ade2ca70-3891-5945-98fb-dc099432e06a"
+Enzyme = "7da242da-08ed-463a-9acd-ee780be4f1d9"
 Printf = "de0858da-6303-5e67-8744-51eddeeeb8d7"
 StatsBase = "2913bbd2-ae8a-5f71-8c99-4fb6c76f3a91"
 XLSX = "fdbf4ff8-1666-58a4-91e7-1b58723a45e0"
@@ -17,6 +18,7 @@ Aqua = "0.8"
 CSV = "0.10.15"
 DataFrames = "1.7.0"
 Dates = "1.10.0"
+Enzyme = "0.13.43"
 Printf = "1.10.0"
 StatsBase = "0.34.4"
 Test = "1"
@@ -26,8 +28,8 @@ julia = "1.10"
 
 [extras]
 Aqua = "4c88cf16-eb10-579e-8560-4a9242c79595"
-Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
 Enzyme = "7da242da-08ed-463a-9acd-ee780be4f1d9"
+Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
 
 [targets]
 test = ["Aqua", "Test", "Enzyme"]
