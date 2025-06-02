@@ -33,7 +33,7 @@ struct Constants
     total_imports_from_uk::TotalImports
     total_imports_from_all_sources::TotalImports
 
-    elastisities::Elasiticities
+    elasticities::Elasiticities
 end
 
 struct Totals
