@@ -242,7 +242,7 @@ function clean_2d_values(data::Data, split_factor::Float64)
     eu_import_export = imports_import_export .* split_factor
     world_import_export = imports_import_export .* (1 - split_factor)
 
-    return InputMatrices(import_export, eu_import_export, world_import_export, imports_import_export, import_export .+ eu_import_export .+ world_import_export)
+    return InputMatrices(import_export, eu_import_export, world_import_export, import_export .+ eu_import_export .+ world_import_export)
 
 
 end

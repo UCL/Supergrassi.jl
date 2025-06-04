@@ -22,7 +22,6 @@ nms = names(clean.industry.regional.input_matrices.uk)
 m = Supergrassi.InputMatrices(DataFrame(reshape(df2d.mValueUK, (16, 16)), nms),
                               DataFrame(reshape(df2d.mValueEU, (16, 16)), nms),
                               DataFrame(reshape(df2d.mValueW, (16, 16)), nms),
-                              DataFrame(reshape(df2d.mValueIMP, (16, 16)), nms),
                               DataFrame(reshape(df2d.mValue, (16, 16)), nms))
 
 @testset "Clean 1d Data" begin

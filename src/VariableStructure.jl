@@ -52,7 +52,6 @@ struct InputMatrices
     uk::DataFrame
     eu::DataFrame
     world::DataFrame
-    imports::DataFrame
     agg::DataFrame
 
 end
