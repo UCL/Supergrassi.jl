@@ -3,7 +3,7 @@
 """
 function parameter_by_region(elasticity::T, quantity_region::T, logP_region::T, logP::T) where {T <: Real}
 
-    return quantity_region * exp((elasticity - 1) * (logP_region - logP))
+    return quantity_region == 0.0 ? 0.0 : quantity_region * exp((elasticity - 1) * (logP_region - logP))
 
 end
 
@@ -12,7 +12,7 @@ end
 """
 function log_parameter_by_region(elasticity::T, quantity_region::T, logP_region::T, logP::T) where {T <: Real}
 
-    return log(quantity_region) + (elasticity - 1) * (logP_region - logP)
+    return quantity_region == 0.0 ? 0.0 : log(quantity_region) + (elasticity - 1) * (logP_region - logP)
 
 end
 
@@ -33,8 +33,8 @@ end
 
 """
 function parameters_by_region(elasticity::T,
-                           log_price_uk::T,log_price_eu::T,log_price_world::T,
-                           quantity_uk::T,quantity_eu::T,quantity_world::T) where {T <: Real}
+                              log_price_uk::T,log_price_eu::T,log_price_world::T,
+                              quantity_uk::T,quantity_eu::T,quantity_world::T) where {T <: Real}
 
     logP = log_price_index(elasticity, log_price_uk, log_price_eu, log_price_world, quantity_uk, quantity_eu, quantity_world)
 

@@ -14,16 +14,16 @@ tol = 1e-12
 
     alpha = Matrix{Float64}(undef, n, 3)
     grad_log_alpha = Matrix{Float64}(undef, n, 3)
-    df = CSV.read("../data/data_for_household_demand.csv", DataFrame)
+    df = CSV.read(joinpath(@__DIR__, "..", "data", "data_for_household_demand.csv"), DataFrame)
 
     for row in axes(alpha, 1)
         alpha[row,:] .= Supergrassi.parameters_by_region(elasticity_a,
-                                                      df.logP_uk[row],
-                                                      df.logP_eu[row],
-                                                      df.logP_w[row],
-                                                      df.f_uk[row],
-                                                      df.f_eu[row],
-                                                      df.f_w[row])
+                                                         df.logP_uk[row],
+                                                         df.logP_eu[row],
+                                                         df.logP_w[row],
+                                                         df.f_uk[row],
+                                                         df.f_eu[row],
+                                                         df.f_w[row])
         grad_log_alpha[row,:] .= gradient(Forward,
                                           Supergrassi.log_parameters_by_region,
                                           Const(elasticity_a),
@@ -34,11 +34,6 @@ tol = 1e-12
                                           Const(df.f_eu[row]),
                                           Const(df.f_w[row]))[2]
     end
-
-    mask = 12
-
-    alpha[mask,2:3] .= 0.0
-    grad_log_alpha[mask,:] .= 0.0
 
     @test isapprox(alpha[:,1], df.alpha_uk, atol = tol)
     @test isapprox(alpha[:,2], df.alpha_eu, atol = tol)
@@ -56,7 +51,7 @@ end
 
 @testset "EU demand parameters" begin
 
-    df = CSV.read("../data/data_for_eu_demand.csv", DataFrame)
+    df = CSV.read(joinpath(@__DIR__, "..", "data", "../data/data_for_eu_demand.csv"), DataFrame)
 
     beta = Matrix{Float64}(undef, n, 3)
     grad_log_beta = Matrix{Float64}(undef, n, 3)
@@ -102,12 +97,6 @@ end
                                    Const(elasticity),
                                    Const(elasticity_tilde))
 
-    mask = [4, 5, 7, 8, 9, 10, 11, 12, 13, 16]
-
-    beta[mask,1] .= 1.0
-    beta[mask,2:3] .= 0.0
-    grad_log_beta[mask,:] .= 0.0
-
     @test isapprox(beta[:,1], df.beta_uk, atol = tol)
     @test isapprox(beta[:,2], df.beta_eu, atol = tol)
     @test isapprox(beta[:,3], df.beta_w, atol = tol)
@@ -121,7 +110,7 @@ end
 
 @testset "Rest of World demand parameters" begin
 
-    df = CSV.read("../data/data_for_row_demand.csv", DataFrame)
+    df = CSV.read(joinpath(@__DIR__, "..", "data", "../data/data_for_row_demand.csv"), DataFrame)
 
     beta = Matrix{Float64}(undef, n, 3)
     grad_log_beta = Matrix{Float64}(undef, n, 3)
@@ -167,12 +156,6 @@ end
                                    Const(elasticity),
                                    Const(elasticity_tilde))
 
-    mask = [4, 5, 7, 8, 9, 10, 11, 12, 13, 16]
-
-    beta[mask,1] .= 1.0
-    beta[mask,2:3] .= 0.0
-    grad_log_beta[mask,:] .= 0.0
-
     @test isapprox(beta[:,1], df.beta2_uk, atol = tol)
     @test isapprox(beta[:,2], df.beta2_eu, atol = tol)
     @test isapprox(beta[:,3], df.beta2_w, atol = tol)
@@ -186,7 +169,7 @@ end
 
 @testset "Capital production function parameters" begin
 
-    df = CSV.read("../data/data_for_capital_production.csv", DataFrame)
+    df = CSV.read(joinpath(@__DIR__, "..", "data", "../data/data_for_capital_production.csv"), DataFrame)
 
     elasticity = 0.4
 
@@ -215,20 +198,10 @@ end
     end
 
     mask_zero_uk = [2, 6, 7, 11, 13, 14, 16]
-    mask_one_uk = [5, 8, 9, 12, 15]
-    mask_zero_row = [2, 5, 6, 7, 8, 9, 11, 12, 13, 14, 15, 16]
 
     mask = Vector{Bool}(undef, n)
     mask .= true
     mask[mask_zero_uk] .= false
-
-    rho[mask_zero_uk,1] .= 0.0
-    rho[mask_one_uk,1]  .= 1.0
-    rho[mask_zero_row, 2:3] .= 0.0
-
-    grad_log_rho[mask_zero_uk, 1] .= 0.0
-    grad_log_rho[mask_one_uk, 1]  .= 0.0
-    grad_log_rho[mask_zero_row, 2:3] .= 0.0
 
     @test isapprox(rho[:,1], df.rho_uk, atol = tol)
     @test isapprox(rho[:,2], df.rho_eu, atol = tol)
@@ -252,8 +225,8 @@ end
     xi = 0.4
     xi_a = 2.0
 
-    df = CSV.read("../data/1d_data_for_firm_production.csv", DataFrame)
-    df2d = CSV.read("../data/2d_data_for_firm_production.csv", DataFrame)
+    df = CSV.read(joinpath(@__DIR__, "..", "data", "../data/1d_data_for_firm_production.csv"), DataFrame)
+    df2d = CSV.read(joinpath(@__DIR__, "..", "data", "../data/2d_data_for_firm_production.csv"), DataFrame)
 
     gammaM_ref = reshape(df2d.gammaM, (n,n))
     gammaMUK_ref = reshape(df2d.gammaMUK, (n,n))
@@ -268,26 +241,20 @@ end
     gammaM = zeros(n,n,3)
     grad_gammaM = zeros(n,n,3)
 
-    mask = fill(true, n,n)
-    ind = [12 16 96 112 208 209 224 241 242 243 244 245 246 247 248 249 250 251 252 253 254 255 256]
-    mask[ind] .= false
-
     for i in axes(gammaMUK_ref, 1)
         for j in axes(gammaMUK_ref, 2)
-            if (mask[i,j])
-                gammaM[i,j,:] .= Supergrassi.parameters_by_region(xi_a, df.logP_uk[j], df.logP_eu[j], df.logP_w[j],
-                                                                 mUK[i,j], mEU[i,j], mW[i,j])
-                grad_gammaM[i,j,:] .= gradient(Forward,
-                                               Supergrassi.parameters_by_region,
-                                               Const(xi_a),
-                                               df.logP_uk[j],
-                                               Const(df.logP_eu[j]),
-                                               Const(df.logP_w[j]),
-                                               Const(mUK[i,j]),
-                                               Const(mEU[i,j]),
-                                               Const(mW[i,j]))[2]
+            gammaM[i,j,:] .= Supergrassi.parameters_by_region(xi_a, df.logP_uk[j], df.logP_eu[j], df.logP_w[j],
+                                                              mUK[i,j], mEU[i,j], mW[i,j])
+            grad_gammaM[i,j,:] .= gradient(Forward,
+                                           Supergrassi.parameters_by_region,
+                                           Const(xi_a),
+                                           df.logP_uk[j],
+                                           Const(df.logP_eu[j]),
+                                           Const(df.logP_w[j]),
+                                           Const(mUK[i,j]),
+                                           Const(mEU[i,j]),
+                                           Const(mW[i,j]))[2]
 
-            end
         end
     end
 
@@ -356,7 +323,7 @@ end
 
         mu[i] = Supergrassi.productivity_shock_mean(xi, df.logP_uk[i], logPm, m[i,:], df.k[i], df.k0[i],
                                                     df.y[i], df.h[i], df.logW[i], df.tau[i])
-        
+
     end
 
     @test isapprox(GammaM, gammaM_ref, atol = tol)
@@ -369,7 +336,7 @@ end
 @testset "Intermediate goods price index" begin
 
     xi = 0.4
-    df = CSV.read("../data/data_for_goods_price_index.csv", DataFrame)
+    df = CSV.read(joinpath(@__DIR__, "..", "data", "../data/data_for_goods_price_index.csv"), DataFrame)
 
     pdYBar = Supergrassi.intermediate_goods_price_index(df.logP_uk, df.zOC, df.tau, df.mu, df.gammaK, df.K0, xi)
 
