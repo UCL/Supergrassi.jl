@@ -297,12 +297,12 @@ function clean_exports(input_output::InputOutput, imports::InputOutput, split::F
 
     correct_exports_with_services!(eu_imp, world_imp, services_imp)
 
-    exports_to_eu = group_dataframes([eu, eu_imp .* split, eu_imp .* (1 - split), eu_imp],
-                                     ["uk", "eu", "world", "imports"], names_16,
+    exports_to_eu = group_dataframes([eu, eu_imp .* split, eu_imp .* (1 - split)],
+                                     ["uk", "eu", "world"], names_16,
                                      industries_in_cols, reduce_columns_by_group_sum, map_16)
 
-    exports_to_world = group_dataframes([world, world_imp .* split, world_imp .* (1 - split), world_imp],
-                                        ["uk", "eu", "world", "imports"], names_16,
+    exports_to_world = group_dataframes([world, world_imp .* split, world_imp .* (1 - split)],
+                                        ["uk", "eu", "world"], names_16,
                                         industries_in_cols, reduce_columns_by_group_sum, map_16)
 
     add_aggregate!(exports_to_eu)
