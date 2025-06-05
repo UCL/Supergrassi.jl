@@ -17,7 +17,7 @@ struct Elasticity
     skill_substitution::Union{Float64, Nothing}
 end
 
-struct Elasiticities
+struct Elasticities
     production::Elasticity
     world_export_demand::Elasticity
     eu_export_demand::Elasticity
@@ -33,7 +33,7 @@ struct Constants
     total_imports_from_uk::TotalImports
     total_imports_from_all_sources::TotalImports
 
-    elasticities::Elasiticities
+    elasticities::Elasticities
 end
 
 struct Totals
