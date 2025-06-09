@@ -108,11 +108,11 @@ end
 
 struct ParamsStruct
 
-    var1::Vector{Float64}
-    var2::Vector{Float64}
-    var3::Vector{Float64}
-    var4::Vector{Float64}
-    var5::Vector{Float64}
+    uk::Vector{Float64}
+    eu::Vector{Float64}
+    world::Vector{Float64}
+    agg::Vector{Float64}
+    tilde::Union{Vector{Float64}, Nothing} # Optional, used for some parameters that have a tilde version
 
 end
 
@@ -136,14 +136,12 @@ struct Parameters
     data_copy::Constants #TODO Make it more structured
 
     consumption::ParamsStruct
-
-
     export_eu::ParamsStruct
     export_world::ParamsStruct
 
     intermediate_input::ParamsProduction
 
     investment::ParamsStruct
-    financial::ParamsStruct
+    # financial::ParamsStruct
 
 end
