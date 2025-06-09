@@ -106,51 +106,44 @@ struct CleanData
 
 end
 
+struct ParamsStruct
 
-struct HouseholdDemandParameters
-
-    alpha::DataFrame
-    alpha_regional::DataFrame
-
-end
-
-struct BetaParameters
-
-    beta::DataFrame
-    beta_regional::DataFrame
-    beta_tilde::DataFrame
+    var1::Vector{Float64}
+    var2::Vector{Float64}
+    var3::Vector{Float64}
+    var4::Vector{Float64}
+    var5::Vector{Float64}
 
 end
 
-struct ExportDemandParameters
+struct ParamsProduction
 
-    eu::BetaParameters
-    world::BetaParameters
+    var1::Vector{Float64}
+    var2::Vector{Float64}
+    var3::Vector{Float64}
+    var4::Vector{Float64}
+    var5::Vector{Float64}
 
-end
-
-struct ProductionFunctionParameters
-
-    input_shares::InputMatrices
-    skill_shares::DataFrame
-    export_shares::InputMatrices
-    mean_productivity_shock::DataFrame
-    variance_productivity::DataFrame
-
-end
-
-struct InvestmentFunctionParameters
-
-    rho::DataFrame
-    rho_regional::DataFrame
+    mat1::Matrix{Float64}
+    mat2::Matrix{Float64}
+    mat3::Matrix{Float64}
+    mat4::Matrix{Float64}
 
 end
 
 struct Parameters
 
-    household_demand::HouseholdDemandParameters
-    export_demand::ExportDemandParameters
-    production_function::ProductionFunctionParameters
-    investment_function::InvestmentFunctionParameters
+    data_copy::Constants #TODO Make it more structured
+
+    consumption::ParamsStruct
+
+
+    export_eu::ParamsStruct
+    export_world::ParamsStruct
+
+    intermediate_input::ParamsProduction
+
+    investment::ParamsStruct
+    financial::ParamsStruct
 
 end
