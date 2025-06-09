@@ -582,19 +582,19 @@ function  clean_sigma_bar(sigma_data::Vector, zero_list::Vector{Int64}, sic64::V
 
 end
 
-function generate_constants(data::Data, settings::Dict{String, Any})
+function generate_constants(data::Data, settings_constants::Dict{String, Any})
 
-    year::Int64 = settings["constants"]["data_year"]
+    year::Int64 = settings_constants["data_year"]
 
-    exchange_rates = ExchangeRates(settings["constants"]["exchange_rates"]["usd"],
-                                   settings["constants"]["exchange_rates"]["eur"])
+    exchange_rates = ExchangeRates(settings_constants["exchange_rates"]["usd"],
+                                   settings_constants["exchange_rates"]["eur"])
 
-    total_imports_from_uk = TotalImports(settings["constants"]["total_imports"]["from_uk"]["eu"],
-                                         settings["constants"]["total_imports"]["from_uk"]["world"])
-    total_imports_from_all_sources = TotalImports(settings["constants"]["total_imports"]["from_all_sources"]["eu"],
-                                                  settings["constants"]["total_imports"]["from_all_sources"]["world"])
+    total_imports_from_uk = TotalImports(settings_constants["total_imports"]["from_uk"]["eu"],
+                                         settings_constants["total_imports"]["from_uk"]["world"])
+    total_imports_from_all_sources = TotalImports(settings_constants["total_imports"]["from_all_sources"]["eu"],
+                                                  settings_constants["total_imports"]["from_all_sources"]["world"])
 
-    elasticities = settings["constants"]["elasticities"]
+    elasticities = settings_constants["elasticities"]
 
     production_elasticity = Elasticity(elasticities["production"][1],
                                         elasticities["production"][3],
@@ -636,6 +636,7 @@ function generate_constants(data::Data, settings::Dict{String, Any})
 end
 
 struct CommonVariables
+
     year::Int64
     industry_names::Vector{String}
     aggregated_names::Vector{String}
@@ -754,7 +755,7 @@ function clean_data(data::Data, settings::Dict{String, Any})
 
     industry = IndustryData(depreciation, tax, mean_capital, surplus, sigma_bar, assets_liabilities, regional)
 
-    constants = generate_constants(data, settings)
+    constants = generate_constants(data, settings["constants"])
 
     return CleanData(
         household,
