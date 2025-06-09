@@ -105,3 +105,52 @@ struct CleanData
     constants::Constants
 
 end
+
+
+struct HouseholdDemandParameters
+
+    alpha::DataFrame
+    alpha_regional::DataFrame
+
+end
+
+struct BetaParameters
+
+    beta::DataFrame
+    beta_regional::DataFrame
+    beta_tilde::DataFrame
+
+end
+
+struct ExportDemandParameters
+
+    eu::BetaParameters
+    world::BetaParameters
+
+end
+
+struct ProductionFunctionParameters
+
+    input_shares::InputMatrices
+    skill_shares::DataFrame
+    export_shares::InputMatrices
+    mean_productivity_shock::DataFrame
+    variance_productivity::DataFrame
+
+end
+
+struct InvestmentFunctionParameters
+
+    rho::DataFrame
+    rho_regional::DataFrame
+
+end
+
+struct Parameters
+
+    household_demand::HouseholdDemandParameters
+    export_demand::ExportDemandParameters
+    production_function::ProductionFunctionParameters
+    investment_function::InvestmentFunctionParameters
+
+end
