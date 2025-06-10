@@ -118,16 +118,16 @@ end
 
 struct ParamsProduction
 
-    var1::Vector{Float64}
-    var2::Vector{Float64}
-    var3::Vector{Float64}
-    var4::Vector{Float64}
-    var5::Vector{Float64}
+    input_share_human::Vector{Float64}          # gamma_hi
+    input_share_capital::Vector{Float64}        # gamma_ki
+    input_share_low_skill::Vector{Float64}      # gamma_Li
+    input_share_high_skill::Vector{Float64}     # gamma_Hi
+    mean_productivity_shock::Vector{Float64}    # mu
 
-    mat1::Matrix{Float64}
-    mat2::Matrix{Float64}
-    mat3::Matrix{Float64}
-    mat4::Matrix{Float64}
+    input_share_uk::Matrix{Float64}             # gamma_mdij
+    input_share_eu::Matrix{Float64}             # gamma_meuij
+    input_share_world::Matrix{Float64}          # gamma_mwij
+    input_share_intermediate::Matrix{Float64}   # gamma_mij
 
 end
 
@@ -147,7 +147,7 @@ struct Parameters
     export_eu::ParamsStruct
     export_world::ParamsStruct
 
-    intermediate_input::ParamsProduction
+    production_function::ParamsProduction
 
     investment::ParamsStruct
 
