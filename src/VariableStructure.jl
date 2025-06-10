@@ -131,9 +131,17 @@ struct ParamsProduction
 
 end
 
+struct ParameterConstants
+
+    elasiticities::Elasiticities
+    loss_given_default::Float64
+    risk_free_interest_rate::Float64
+   
+end
+
 struct Parameters
 
-    data_copy::Constants #TODO Make it more structured
+    constants::ParameterConstants
 
     consumption::ParamsStruct
     export_eu::ParamsStruct
@@ -142,6 +150,5 @@ struct Parameters
     intermediate_input::ParamsProduction
 
     investment::ParamsStruct
-    # financial::ParamsStruct
 
 end
