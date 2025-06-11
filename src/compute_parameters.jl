@@ -2,40 +2,34 @@ using Supergrassi
 using DataFrames
 using Enzyme
 
-struct Values{T<:Real}
-
-    uk::Vector{T}
-    eu::Vector{T}
-    world::Vector{T}
-    tilde::Vector{T}
-    agg::Vector{T}
-
-end
-
-struct Derivatives{T<:Real}
-
-    uk::Vector{T}
-    eu::Vector{T}
-    world::Vector{T}
-    tilde::Vector{T}
-    agg::Matrix{T}
-
-end
-
-
 """
   Compute all utility function parameters from regional data, elasticities and prices.
   Currently missing most of the γ parameters and a data structure for the output
 """
-function compute_all_parameters(data::RegionalData, elasticities::Elasticities, prices::DataFrame)
+function compute_all_parameters(data::CleanData, prices::DataFrame, fun::Function = parameters_by_region)
 
-    α, ∂α = compute_parameter(data.consumption, elasticities.consumption, prices)
+    reg = data.industry.regional
+    constants = data.constants
 
-    β1, ∂β1 = compute_parameter(data.export_eu, elasticities.export_eu, prices)
-    β2, ∂β2 = compute_parameter(data.export_world, elasticities.export_world, prices)
-    ρ, ∂ρ = compute_parameter(data.investment, elasticities.investment, prices)
+    α, ∂α = compute_parameter(reg.consumption, constants.elasticities.consumption, prices, fun)
+    β1, ∂β1 = compute_parameter(reg.export_eu, constants.elasticities.eu_export_demand, prices, fun)
+    compute_foreign_share!(β1, reg.export_eu, constants.elasticities.eu_export_demand, prices, reg.totals.savings,
+                           reg.totals.imports.eu, 1.0, constants.exchange_rates.eur)
+    β2, ∂β2 = compute_parameter(reg.export_world, constants.elasticities.world_export_demand, prices, fun)
+    compute_foreign_share!(β2, reg.export_world, constants.elasticities.world_export_demand, prices, reg.totals.savings,
+                           reg.totals.imports.world, 1.0, constants.exchange_rates.usd)
+    ρ, ∂ρ = compute_parameter(reg.investment, constants.elasticities.investment, prices, fun)
 
-    γM, ∂γM = compute_parameter(data.input_matrices, elasticities.production, prices)
+    γ, ∂γ = compute_production_parameter(data, prices, fun)
+
+    loss_given_default = 0.1 # TODO: This should be in constants
+
+    consts = ParameterConstants(constants.elasticities, loss_given_default, constants.interest_rate)
+
+    vals = Parameters(consts, α, β1, β2, γ, ρ)
+    derivs = Parameters(consts, ∂α, ∂β1, ∂β2, ∂γ, ∂ρ)
+
+    return vals, derivs
 
 end
 
@@ -43,14 +37,14 @@ end
   Compute 1d utility function parameters from a regional demand data frame and the corresponding elasticity.
   Currently missing the tilde parameters for exports.
 """
-function compute_parameter(demand::DataFrame, elasticity::Elasticity, prices, fun = Supergrassi.parameters_by_region)
+function compute_parameter(demand::DataFrame, elasticity::Elasticity, prices::DataFrame, fun::Function = parameters_by_region)
 
     n = nrow(demand)
     v0 = Vector{Float64}(undef, n)
     m0 = Matrix{Float64}(undef, n, n)
 
-    val = Values(v0, similar(v0), similar(v0), similar(v0), similar(v0))
-    grad = Derivatives(similar(v0), similar(v0), similar(v0), similar(v0), m0)
+    val = ParamsStruct(similar(v0), similar(v0), similar(v0), similar(v0), similar(v0))
+    grad = ParamsStruct(similar(v0), similar(v0), similar(v0), similar(m0), similar(v0))
 
     for row in 1:n
 
@@ -74,10 +68,10 @@ function compute_parameter(demand::DataFrame, elasticity::Elasticity, prices, fu
 
     end
 
-    logPf = Supergrassi.log_price_index.(elasticity.armington,
+    logPf = log_price_index.(elasticity.armington,
                                          prices.uk, prices.eu, prices.world,
                                          demand.uk, demand.eu, demand.world)
-    param = jacobian(ForwardWithPrimal, Supergrassi.total_parameters, logPf,
+    param = jacobian(ForwardWithPrimal, total_parameters, logPf,
                      Const(demand.agg), Const(elasticity.substitution))
 
     val.agg .= param.val
@@ -87,80 +81,96 @@ function compute_parameter(demand::DataFrame, elasticity::Elasticity, prices, fu
 
 end
 
-function compute_EU_share(demand::DataFrame, elasticity::Elasticity, prices, Ex::T, Etilde::T, Ptilde::T) where {T<:Real}
+# Ptilde = 1
+# Ex = totals.imports.{eu, world}
+# Etilde = Ex / E = totals.imports.{eu, world} / totals.savings
+function compute_foreign_share!(param::ParamsStruct, demand::DataFrame, elasticity::Elasticity, prices::DataFrame, E::T, Ex::T, PTilde::T, exchange_rate::T) where {T<:Real}
 
-    tilde = gradient(ForwardWithPrimal,
-                     Supergrassi.log_eu_expenditure_on_uk_exports,
-                     prices.uk,
-                     Const(demand.agg),
-                     Const(Ex),
-                     Const(ETilde),
-                     Const(exchange_rates.usd),
-                     Const(PTilde),
-                     Const(elasticity.substitution),
-                     Const(elasticity.substitution_uk_other))
+    if (!isnothing(elasticity.substitution_uk_other))
+        tilde = gradient(ForwardWithPrimal,
+                         log_eu_expenditure_on_uk_exports,
+                         prices.uk,
+                         Const(demand.agg),
+                         Const(Ex),
+                         Const(Ex / E),
+                         Const(exchange_rate),
+                         Const(PTilde),
+                         Const(elasticity.substitution),
+                         Const(elasticity.substitution_uk_other))
 
-    return tilde.val, first(tilde.derivs)
+        param.tilde .= tilde.val
+    else
+        param.tilde = nothing
+    end
 
+    #dparam.tilde .= first(tilde.derivs)
 end
 
 """
   Compute the 2d utility function parameters from regional InputMatrices and the corresponding elasticity.
   Currently missing the jacobian, and the 1d parameters gammaL and gammaH
 """
-function compute_production_parameter(clean::CleanData, prices)
+function compute_production_parameter(data::CleanData, prices::DataFrame, fun::Function = parameters_by_region)
 
-    n = nrow(clean.industry.regional.input_matrices.agg)
+    n = nrow(data.industry.regional.input_matrices.agg)
+    v0 = Vector{Float64}(undef, n)
+    m0 = Matrix{Float64}(undef, n, n)
+    t0 = Array{Float64}(undef, n, n, n)
 
-    val = Array{Float64}(undef, n, n, 4)
-    grad = Array{Float64}(undef, n, n, 3)
-    jac = Array{Float64}(undef, n, n ,n)
+    val = ParamsProduction(similar(v0), similar(v0), similar(v0), similar(v0), similar(v0),
+                           similar(m0), similar(m0), similar(m0), similar(m0))
+    grad = ParamsProduction(similar(v0), similar(v0), similar(v0), similar(v0), similar(v0),
+                            similar(m0), similar(m0), similar(m0), similar(t0))
 
-    for row in 1:n
-        for col in 1:n
 
-            param_regional = gradient(ForwardWithPrimal,
-                                      Supergrassi.parameters_by_region,
-                                      Const(clean.constants.elasticities.production.armington),
-                                      prices.uk[col],
-                                      Const(prices.eu[col]),
-                                      Const(prices.world[col]),
-                                      Const(clean.industry.regional.input_matrices.uk[row, col]),
-                                      Const(clean.industry.regional.input_matrices.eu[row, col]),
-                                      Const(clean.industry.regional.input_matrices.world[row, col]))
+    # for row in 1:n
+    #     for col in 1:n
 
-            val[row, col, 1:3] .= param_regional.val
-            grad[row, col, 1:3] .= param_regional.derivs[2]
+    #         param_regional = gradient(ForwardWithPrimal,
+    #                                   parameters_by_region,
+    #                                   Const(data.constants.elasticities.production.armington),
+    #                                   prices.uk[col],
+    #                                   Const(prices.eu[col]),
+    #                                   Const(prices.world[col]),
+    #                                   Const(data.industry.regional.input_matrices.uk[row, col]),
+    #                                   Const(data.industry.regional.input_matrices.eu[row, col]),
+    #                                   Const(data.industry.regional.input_matrices.world[row, col]))
 
-        end
+    #         val.input_share_uk[row, col] = param_regional.val[1]
+    #         val.input_share_eu[row, col] = param_regional.val[2]
+    #         val.input_share_world[row, col] = param_regional.val[3]
 
-        logPm = Supergrassi.log_price_index.(clean.constants.elasticities.production.armington,
-                                             prices.uk, prices.eu, prices.world,
-                                             clean.industry.regional.input_matrices.uk[row,:],
-                                             clean.industry.regional.input_matrices.eu[row,:],
-                                             clean.industry.regional.input_matrices.world[row,:])
-        logPm[isinf.(logPm)] .= 0.0
+    #         grad[row, col, 1:3] .= param_regional.derivs[2]
 
-        # We are missing this from our data struct. Temporarily compute it on the fly.
-        tau = (clean.industry.tax.products .+ clean.industry.tax.production) ./ clean.industry.regional.total_use.agg
+    #     end
 
-        jacM = jacobian(ForwardWithPrimal,
-                        Supergrassi.total_input_parameters,
-                        logPm,
-                        Const(clean.industry.regional.input_matrices.agg[row,:]),
-                        Const(clean.industry.capital.next_year[row]),
-                        Const(clean.industry.capital.current_year[row]),
-                        Const(clean.industry.total_use.agg[row]),
-                        Const(clean.household.income[row]),
-                        Const(clean.household.wages[row]),
-                        Const(clean.constants.elasticities.production.substitution),
-                        Const(tau))
+    #     logPm = log_price_index.(data.constants.elasticities.production.armington,
+    #                                          prices.uk, prices.eu, prices.world,
+    #                                          data.industry.regional.input_matrices.uk[row,:],
+    #                                          data.industry.regional.input_matrices.eu[row,:],
+    #                                          data.industry.regional.input_matrices.world[row,:])
+    #     logPm[isinf.(logPm)] .= 0.0
 
-        val[row,:,4] .= jacM.val
-        jac[row,:,:] .= first(jacM.derivs)
+    #     # We are missing this from our data struct. Temporarily compute it on the fly.
+    #     tau = (data.industry.tax.products .+ data.industry.tax.production) ./ data.industry.regional.total_use.agg
 
-    end
+    #     jacM = jacobian(ForwardWithPrimal,
+    #                     total_input_parameters,
+    #                     logPm,
+    #                     Const(data.industry.regional.input_matrices.agg[row,:]),
+    #                     Const(data.industry.capital.next_year[row]),
+    #                     Const(data.industry.capital.current_year[row]),
+    #                     Const(data.industry.total_use.agg[row]),
+    #                     Const(data.household.income[row]),
+    #                     Const(data.household.wages[row]),
+    #                     Const(data.constants.elasticities.production.substitution),
+    #                     Const(tau))
 
-    return val, grad, jac
+    #     val.input_share_intermediate[row, col] = jacM.val[row, col]
+    #     jac[row,:,:] .= first(jacM.derivs)
+
+    # end
+
+    return val, grad
 
 end
