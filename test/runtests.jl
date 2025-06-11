@@ -14,4 +14,5 @@ include("test_assets_cleaning.jl")
 include("test_weighted_mean.jl")
 if(isdir(joinpath(@__DIR__,"..","input", "uk_data")))
     include("test_clean_data.jl")
+    include("test_parameters_with_data.jl")
 end
