@@ -51,7 +51,7 @@ end
 
 @testset "EU demand parameters" begin
 
-    df = CSV.read(joinpath(@__DIR__, "..", "data", "../data/data_for_eu_demand.csv"), DataFrame)
+    df = CSV.read(joinpath(@__DIR__, "..", "data", "data_for_eu_demand.csv"), DataFrame)
 
     beta = Matrix{Float64}(undef, n, 3)
     grad_log_beta = Matrix{Float64}(undef, n, 3)
@@ -110,7 +110,7 @@ end
 
 @testset "Rest of World demand parameters" begin
 
-    df = CSV.read(joinpath(@__DIR__, "..", "data", "../data/data_for_row_demand.csv"), DataFrame)
+    df = CSV.read(joinpath(@__DIR__, "..", "data", "data_for_row_demand.csv"), DataFrame)
 
     beta = Matrix{Float64}(undef, n, 3)
     grad_log_beta = Matrix{Float64}(undef, n, 3)
@@ -169,7 +169,7 @@ end
 
 @testset "Capital production function parameters" begin
 
-    df = CSV.read(joinpath(@__DIR__, "..", "data", "../data/data_for_capital_production.csv"), DataFrame)
+    df = CSV.read(joinpath(@__DIR__, "..", "data", "data_for_capital_production.csv"), DataFrame)
 
     elasticity = 0.4
 
@@ -225,8 +225,8 @@ end
     xi = 0.4
     xi_a = 2.0
 
-    df = CSV.read(joinpath(@__DIR__, "..", "data", "../data/1d_data_for_firm_production.csv"), DataFrame)
-    df2d = CSV.read(joinpath(@__DIR__, "..", "data", "../data/2d_data_for_firm_production.csv"), DataFrame)
+    df = CSV.read(joinpath(@__DIR__, "..", "data", "1d_data_for_firm_production.csv"), DataFrame)
+    df2d = CSV.read(joinpath(@__DIR__, "..", "data", "2d_data_for_firm_production.csv"), DataFrame)
 
     gammaM_ref = reshape(df2d.gammaM, (n,n))
     gammaMUK_ref = reshape(df2d.gammaMUK, (n,n))
@@ -336,7 +336,7 @@ end
 @testset "Intermediate goods price index" begin
 
     xi = 0.4
-    df = CSV.read(joinpath(@__DIR__, "..", "data", "../data/data_for_goods_price_index.csv"), DataFrame)
+    df = CSV.read(joinpath(@__DIR__, "..", "data", "data_for_goods_price_index.csv"), DataFrame)
 
     pdYBar = Supergrassi.intermediate_goods_price_index(df.logP_uk, df.zOC, df.tau, df.mu, df.gammaK, df.K0, xi)
 
