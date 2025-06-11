@@ -52,7 +52,6 @@ struct InputMatrices
     uk::DataFrame
     eu::DataFrame
     world::DataFrame
-    imports::DataFrame
     agg::DataFrame
 
 end
@@ -104,5 +103,52 @@ struct CleanData
     household::HouseholdData
     industry::IndustryData
     constants::Constants
+
+end
+
+struct ParamsStruct
+
+    uk::Vector{Float64}
+    eu::Vector{Float64}
+    world::Vector{Float64}
+    agg::Vector{Float64}
+    tilde::Union{Vector{Float64}, Nothing} # Optional, used for some parameters that have a tilde version
+
+end
+
+struct ParamsProduction
+
+    input_share_human::Vector{Float64}          # gamma_hi
+    input_share_capital::Vector{Float64}        # gamma_ki
+    input_share_low_skill::Vector{Float64}      # gamma_Li
+    input_share_high_skill::Vector{Float64}     # gamma_Hi
+    mean_productivity_shock::Vector{Float64}    # mu
+
+    input_share_uk::Matrix{Float64}             # gamma_mdij
+    input_share_eu::Matrix{Float64}             # gamma_meuij
+    input_share_world::Matrix{Float64}          # gamma_mwij
+    input_share_intermediate::Matrix{Float64}   # gamma_mij
+
+end
+
+struct ParameterConstants
+
+    elasiticities::Elasiticities
+    loss_given_default::Float64
+    risk_free_interest_rate::Float64
+   
+end
+
+struct Parameters
+
+    constants::ParameterConstants
+
+    consumption::ParamsStruct
+    export_eu::ParamsStruct
+    export_world::ParamsStruct
+
+    production_function::ParamsProduction
+
+    investment::ParamsStruct
 
 end

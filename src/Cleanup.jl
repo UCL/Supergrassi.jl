@@ -242,7 +242,7 @@ function clean_2d_values(data::Data, split_factor::Float64)
     eu_import_export = imports_import_export .* split_factor
     world_import_export = imports_import_export .* (1 - split_factor)
 
-    return InputMatrices(import_export, eu_import_export, world_import_export, imports_import_export, import_export .+ eu_import_export .+ world_import_export)
+    return InputMatrices(import_export, eu_import_export, world_import_export, import_export .+ eu_import_export .+ world_import_export)
 
 
 end
@@ -257,8 +257,8 @@ function clean_1d_values(val::Vector{<:Number}, val_imp::Vector{<:Number}, map_6
     val_eu = val_imports .* split_factor
     val_world = val_imports .* (1 - split_factor)
 
-    df =  group_dataframes([val_uk, val_eu, val_world, val_imports],
-                           ["uk", "eu", "world", "imports"], names_16,
+    df =  group_dataframes([val_uk, val_eu, val_world],
+                           ["uk", "eu", "world"], names_16,
                            industries_in_cols, reduce_columns_by_group_sum, map_16)
 
     add_aggregate!(df)
@@ -297,12 +297,12 @@ function clean_exports(input_output::InputOutput, imports::InputOutput, split::F
 
     correct_exports_with_services!(eu_imp, world_imp, services_imp)
 
-    exports_to_eu = group_dataframes([eu, eu_imp .* split, eu_imp .* (1 - split), eu_imp],
-                                     ["uk", "eu", "world", "imports"], names_16,
+    exports_to_eu = group_dataframes([eu, eu_imp .* split, eu_imp .* (1 - split)],
+                                     ["uk", "eu", "world"], names_16,
                                      industries_in_cols, reduce_columns_by_group_sum, map_16)
 
-    exports_to_world = group_dataframes([world, world_imp .* split, world_imp .* (1 - split), world_imp],
-                                        ["uk", "eu", "world", "imports"], names_16,
+    exports_to_world = group_dataframes([world, world_imp .* split, world_imp .* (1 - split)],
+                                        ["uk", "eu", "world"], names_16,
                                         industries_in_cols, reduce_columns_by_group_sum, map_16)
 
     add_aggregate!(exports_to_eu)
