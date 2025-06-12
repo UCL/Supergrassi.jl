@@ -111,7 +111,7 @@ struct ParamsStruct
     uk::Vector{Float64}
     eu::Vector{Float64}
     world::Vector{Float64}
-    agg::Vector{Float64}
+    agg::Array{Float64}
     tilde::Union{Vector{Float64}, Nothing} # Optional, used for some parameters that have a tilde version
 
 end
@@ -127,7 +127,7 @@ struct ParamsProduction
     input_uk::Matrix{Float64}             # gamma_mdij
     input_eu::Matrix{Float64}             # gamma_meuij
     input_world::Matrix{Float64}          # gamma_mwij
-    input_agg::Matrix{Float64}   # gamma_mij
+    input_agg::Array{Float64}   # gamma_mij
 
 end
 
