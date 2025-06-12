@@ -117,60 +117,81 @@ function compute_production_parameter(data::CleanData, prices::DataFrame, fun::F
     m0 = Matrix{Float64}(undef, n, n)
     t0 = Array{Float64}(undef, n, n, n)
 
-    val = ParamsProduction(similar(v0), similar(v0), similar(v0), similar(v0), similar(v0),
+    val = ParamsProduction(similar(v0), similar(v0), similar(v0), similar(v0), similar(v0), similar(v0),
                            similar(m0), similar(m0), similar(m0), similar(m0))
-    grad = ParamsProduction(similar(v0), similar(v0), similar(v0), similar(v0), similar(v0),
+    grad = ParamsProduction(similar(v0), similar(v0), similar(v0), similar(v0), similar(v0), similar(v0),
                             similar(m0), similar(m0), similar(m0), similar(t0))
 
+    m_uk = Matrix(data.industry.regional.input_matrices.uk)
+    m_eu = Matrix(data.industry.regional.input_matrices.eu)
+    m_world = Matrix(data.industry.regional.input_matrices.world)
+    m_agg = Matrix(data.industry.regional.input_matrices.agg)
 
-    # for row in 1:n
-    #     for col in 1:n
+    compute_agg_wages!(data.household, data.constants.elasticities.production)
 
-    #         param_regional = gradient(ForwardWithPrimal,
-    #                                   parameters_by_region,
-    #                                   Const(data.constants.elasticities.production.armington),
-    #                                   prices.uk[col],
-    #                                   Const(prices.eu[col]),
-    #                                   Const(prices.world[col]),
-    #                                   Const(data.industry.regional.input_matrices.uk[row, col]),
-    #                                   Const(data.industry.regional.input_matrices.eu[row, col]),
-    #                                   Const(data.industry.regional.input_matrices.world[row, col]))
+    for row in 1:n
+        for col in 1:n
 
-    #         val.input_share_uk[row, col] = param_regional.val[1]
-    #         val.input_share_eu[row, col] = param_regional.val[2]
-    #         val.input_share_world[row, col] = param_regional.val[3]
+            param_regional = gradient(ForwardWithPrimal,
+                                      parameters_by_region,
+                                      Const(data.constants.elasticities.production.armington),
+                                      prices.uk[col],
+                                      Const(prices.eu[col]),
+                                      Const(prices.world[col]),
+                                      Const(m_uk[row, col]),
+                                      Const(m_eu[row, col]),
+                                      Const(m_world[row, col]))
 
-    #         grad[row, col, 1:3] .= param_regional.derivs[2]
+            val.input_uk[row, col] = param_regional.val[1]
+            val.input_eu[row, col] = param_regional.val[2]
+            val.input_world[row, col] = param_regional.val[3]
 
-    #     end
+            grad.input_uk[row, col] = param_regional.derivs[2][1]
+            grad.input_eu[row, col] = param_regional.derivs[2][2]
+            grad.input_world[row, col] = param_regional.derivs[2][3]
 
-    #     logPm = log_price_index.(data.constants.elasticities.production.armington,
-    #                                          prices.uk, prices.eu, prices.world,
-    #                                          data.industry.regional.input_matrices.uk[row,:],
-    #                                          data.industry.regional.input_matrices.eu[row,:],
-    #                                          data.industry.regional.input_matrices.world[row,:])
-    #     logPm[isinf.(logPm)] .= 0.0
+        end
 
-    #     # We are missing this from our data struct. Temporarily compute it on the fly.
-    #     tau = (data.industry.tax.products .+ data.industry.tax.production) ./ data.industry.regional.total_use.agg
+        logPm = log_price_index.(data.constants.elasticities.production.armington,
+                                             prices.uk, prices.eu, prices.world,
+                                             m_uk[row,:],
+                                             m_eu[row,:],
+                                             m_world[row,:])
+        logPm[isinf.(logPm)] .= 0.0
 
-    #     jacM = jacobian(ForwardWithPrimal,
-    #                     total_input_parameters,
-    #                     logPm,
-    #                     Const(data.industry.regional.input_matrices.agg[row,:]),
-    #                     Const(data.industry.capital.next_year[row]),
-    #                     Const(data.industry.capital.current_year[row]),
-    #                     Const(data.industry.total_use.agg[row]),
-    #                     Const(data.household.income[row]),
-    #                     Const(data.household.wages[row]),
-    #                     Const(data.constants.elasticities.production.substitution),
-    #                     Const(tau))
+        # We are missing this from our data struct. Temporarily compute it on the fly.
+        tau = (data.industry.tax.products[row] .+ data.industry.tax.production[row]) ./ data.industry.regional.total_use.agg[row]
 
-    #     val.input_share_intermediate[row, col] = jacM.val[row, col]
-    #     jac[row,:,:] .= first(jacM.derivs)
+        jacM = jacobian(ForwardWithPrimal,
+                        total_input_parameters,
+                        logPm,
+                        Const(m_agg[row,:]),
+                        Const(data.industry.surplus.val[row]),
+                        Const(data.industry.capital.current_year[row]),
+                        Const(data.industry.regional.total_use.agg[row]),
+                        Const(data.household.payments.agg[row]),
+                        Const(data.household.wages.logW[row]),
+                        Const(data.constants.elasticities.production.substitution),
+                        Const(tau))
 
-    # end
+        val.input_agg[row, :] = jacM.val
+        grad.input_agg[row,:,:] .= first(jacM.derivs)
+
+    end
 
     return val, grad
+
+end
+
+function compute_agg_wages!(data::HouseholdData, elasticity::Elasticity)
+
+    # ref. https://github.com/UCL/Supergrassi/blob/29510a8c9f50427068a475be01583b544975bd5c/code/matlab/macro_v2/B1_SetupParameters.m#L328-L332
+
+    ξh = elasticity.skill_substitution
+    data.wages.logW = ξh/(ξh-1) * log.(
+        (data.payments.low.^(1/ξh) .* data.wages.low.^((ξh-1)/ξh))
+        + (data.payments.high.^(1/ξh) .* data.wages.high.^((ξh-1)/ξh))
+    )
+    replace!(data.wages.logW, NaN => 0.0)
 
 end

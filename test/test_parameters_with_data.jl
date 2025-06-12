@@ -13,12 +13,20 @@ df = outerjoin(CSV.read(joinpath(@__DIR__,"..","data", "data_for_household_deman
                CSV.read(joinpath(@__DIR__, "..", "data", "data_for_capital_production.csv"), DataFrame),
                on = [:logP_uk, :logP_eu, :logP_w], makeunique = true)
 
+df2d = CSV.read(joinpath(@__DIR__, "..", "data", "2d_data_for_firm_production.csv"), DataFrame)
+
+n = 16
+gammaM_ref = reshape(df2d.gammaM, (n,n))
+gammaMUK_ref = reshape(df2d.gammaMUK, (n,n))
+gammaMEU_ref = reshape(df2d.gammaMEU, (n,n))
+gammaMW_ref = reshape(df2d.gammaMW, (n,n))
+
 prices = DataFrame([df.logP_uk, df.logP_eu, df.logP_w], ["uk", "eu", "world"])
 
 clean = Supergrassi.clean_data(data,settings)
 Supergrassi.postprocess_clean_data!(clean)
 
-@testset "household demand parameters" begin
+@testset "Parameters" begin
 
     params, ∂params = Supergrassi.compute_all_parameters(clean, prices)
     log_params, ∂log_params = Supergrassi.compute_all_parameters(clean, prices, Supergrassi.log_parameters_by_region)
@@ -42,6 +50,11 @@ Supergrassi.postprocess_clean_data!(clean)
     @test isapprox(params.investment.eu, df.rho_eu, atol = tol)
     @test isapprox(params.investment.world, df.rho_w, atol = tol)
     # @test isapprox(params.investment.agg, df.rho, atol = tol)
+
+    @test isapprox(params.production.input_uk, gammaMUK_ref, atol = tol)
+    @test isapprox(params.production.input_eu, gammaMEU_ref, atol = tol)
+    @test isapprox(params.production.input_world, gammaMW_ref, atol = tol)
+    @test isapprox(params.production.input_agg, gammaM_ref, atol = tol)
 
     @test isapprox(∂log_params.consumption.uk, df.dlogalpha_uk, atol = tol)
     @test isapprox(∂log_params.consumption.eu, df.dlogalpha_eu, atol = tol)
