@@ -12,17 +12,17 @@ end
 
 struct Elasticity
     substitution::Float64
-    armington::Float64
-    substitution_uk_other::Union{Float64, Nothing}
-    skill_substitution::Union{Float64, Nothing}
+    armington::Float64 # _a
+    substitution_uk_other::Union{Float64, Nothing} # ~
+    skill_substitution::Union{Float64, Nothing} # _h
 end
 
 struct Elasticities
-    production::Elasticity
-    world_export_demand::Elasticity
-    eu_export_demand::Elasticity
-    consumption::Elasticity
-    investment::Elasticity
+    production::Elasticity # ξ
+    world_export_demand::Elasticity # β2
+    eu_export_demand::Elasticity # β1
+    consumption::Elasticity # α
+    investment::Elasticity # ρ
 end
 
 struct Constants
@@ -80,7 +80,7 @@ struct HouseholdData
 
     income::DataFrame
     income_share::DataFrame
-    payments::DataFrame
+    payments::DataFrame # data.{hValueLO, hValueHI, hValue}
     hours::DataFrame
     wages::DataFrame
 
@@ -89,10 +89,10 @@ end
 struct IndustryData
 
     depreciation::DataFrame
-    tax::DataFrame
-    capital::DataFrame
-    surplus::DataFrame
-    shock_stdev::DataFrame
+    tax::DataFrame # data.taxValue{1,2}
+    capital::DataFrame # data.k{0,1}
+    surplus::DataFrame # data.kValue
+    shock_stdev::DataFrame # sigmaBar
     assets_liabilities::AssetsLiabilities
     regional::RegionalData
 
@@ -122,12 +122,13 @@ struct ParamsProduction
     input_capital::Vector{Float64}        # gamma_ki
     input_low_skill::Vector{Float64}      # gamma_Li
     input_high_skill::Vector{Float64}     # gamma_Hi
-    mean_productivity_shock::Vector{Float64}    # mu
+    shock_mean::Vector{Float64}           # mu
+    shock_stddev::Vector{Float64}         # sigmaBar
 
     input_uk::Matrix{Float64}             # gamma_mdij
     input_eu::Matrix{Float64}             # gamma_meuij
     input_world::Matrix{Float64}          # gamma_mwij
-    input_agg::Array{Float64}   # gamma_mij
+    input_agg::Array{Float64}             # gamma_mij
 
 end
 
@@ -136,19 +137,17 @@ struct ParameterConstants
     elasticities::Elasticities
     loss_given_default::Float64
     risk_free_interest_rate::Float64
-   
+
 end
 
 struct Parameters
 
     constants::ParameterConstants
 
-    consumption::ParamsStruct
-    export_eu::ParamsStruct
-    export_world::ParamsStruct
-
-    production_function::ParamsProduction
-
-    investment::ParamsStruct
+    consumption::ParamsStruct # alpha
+    export_eu::ParamsStruct # beta1
+    export_world::ParamsStruct # beta2
+    production::ParamsProduction # gamma
+    investment::ParamsStruct # rho
 
 end
