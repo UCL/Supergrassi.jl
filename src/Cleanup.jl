@@ -344,6 +344,7 @@ function clean_household(data::Data, year::Int64, map_64::Dict{String, String}, 
                              industries_in_cols, reduce_columns_by_group_sum, map_16)
 
     wages = DataFrame([names_16, payments.low ./ hours.low, payments.high ./ hours.high], ["industries", "low", "high"])
+    mapcols(col -> replace!(col, NaN=>0.0), wages)
 
     return HouseholdData(income, income_share, payments, hours, wages)
 
