@@ -17,7 +17,7 @@ struct Elasticity
     skill_substitution::Union{Float64, Nothing}
 end
 
-struct Elasiticities
+struct Elasticities
     production::Elasticity
     world_export_demand::Elasticity
     eu_export_demand::Elasticity
@@ -33,7 +33,7 @@ struct Constants
     total_imports_from_uk::TotalImports
     total_imports_from_all_sources::TotalImports
 
-    elasticities::Elasiticities
+    elasticities::Elasticities
 end
 
 struct Totals
@@ -103,5 +103,52 @@ struct CleanData
     household::HouseholdData
     industry::IndustryData
     constants::Constants
+
+end
+
+struct ParamsStruct
+
+    uk::Vector{Float64}
+    eu::Vector{Float64}
+    world::Vector{Float64}
+    agg::Array{Float64}
+    tilde::Union{Vector{Float64}, Nothing} # Optional, used for some parameters that have a tilde version
+
+end
+
+struct ParamsProduction
+
+    input_human::Vector{Float64}          # gamma_hi
+    input_capital::Vector{Float64}        # gamma_ki
+    input_low_skill::Vector{Float64}      # gamma_Li
+    input_high_skill::Vector{Float64}     # gamma_Hi
+    mean_productivity_shock::Vector{Float64}    # mu
+
+    input_uk::Matrix{Float64}             # gamma_mdij
+    input_eu::Matrix{Float64}             # gamma_meuij
+    input_world::Matrix{Float64}          # gamma_mwij
+    input_agg::Array{Float64}   # gamma_mij
+
+end
+
+struct ParameterConstants
+
+    elasticities::Elasticities
+    loss_given_default::Float64
+    risk_free_interest_rate::Float64
+   
+end
+
+struct Parameters
+
+    constants::ParameterConstants
+
+    consumption::ParamsStruct
+    export_eu::ParamsStruct
+    export_world::ParamsStruct
+
+    production_function::ParamsProduction
+
+    investment::ParamsStruct
 
 end
