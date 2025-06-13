@@ -79,7 +79,6 @@ end
 struct HouseholdData
 
     income::DataFrame
-    income_share::DataFrame
     payments::DataFrame # data.{hValueLO, hValueHI, hValue}
     hours::DataFrame
     wages::DataFrame

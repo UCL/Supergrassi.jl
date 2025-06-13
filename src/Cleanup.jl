@@ -334,8 +334,6 @@ function clean_household(data::Data, year::Int64, map_64::Dict{String, String}, 
 
     income = group_dataframes([low_income, high_income], ["low", "high"], names_16,
                               industries_in_cols, reduce_columns_by_group_sum, map_16)
-    income_share = group_dataframes([low_income_share, high_income_share], ["low", "high"], names_16,
-                                    industries_in_cols, reduce_columns_by_group_sum, map_16)
     payments = group_dataframes([payments_to_low_skilled, payments_to_high_skilled, compensation_employees],
                                 ["low", "high", "agg"], names_16, industries_in_cols, reduce_columns_by_group_sum,
                                 map_16)
@@ -346,7 +344,7 @@ function clean_household(data::Data, year::Int64, map_64::Dict{String, String}, 
     wages = DataFrame([names_16, payments.low ./ hours.low, payments.high ./ hours.high], ["industries", "low", "high"])
     mapcols(col -> replace!(col, NaN=>0.0), wages)
 
-    return HouseholdData(income, income_share, payments, hours, wages)
+    return HouseholdData(income, payments, hours, wages)
 
 end
 
