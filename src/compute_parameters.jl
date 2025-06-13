@@ -4,20 +4,29 @@ using Enzyme
 
 """
   Compute all utility function parameters from regional data, elasticities and prices.
-  Currently missing most of the γ parameters and a data structure for the output
+  Currently missing some of the γ parameters
+
+  fun parameter should be either parameters_by_region or log_parameters_by_region
 """
 function compute_all_parameters(data::CleanData, prices::DataFrame, fun::Function = parameters_by_region)
+
+    @assert fun in [parameters_by_region, log_parameters_by_region] "fun argument should be either parameters_by_region or log_parameters_by_region"
 
     reg = data.industry.regional
     constants = data.constants
 
+    imports_uk_share_eu = constants.total_imports_from_uk.eu / (constants.total_imports_from_all_sources.eu
+                                                                / constants.exchange_rates.eur )
+    imports_uk_share_world = constants.total_imports_from_uk.world / (constants.total_imports_from_all_sources.world
+                                                                      / constants.exchange_rates.usd )
+
     α, ∂α = compute_parameter(reg.consumption, constants.elasticities.consumption, prices, fun)
     β1, ∂β1 = compute_parameter(reg.export_eu, constants.elasticities.eu_export_demand, prices, fun)
-    compute_foreign_share!(β1, reg.export_eu, constants.elasticities.eu_export_demand, prices, reg.totals.savings,
-                           reg.totals.imports.eu, 1.0, constants.exchange_rates.eur)
+    β1, ∂β1 = compute_foreign_share(β1, ∂β1, reg.export_eu, constants.elasticities.eu_export_demand, prices,
+                           imports_uk_share_eu, reg.totals.imports.eu, 1.0, constants.exchange_rates.eur)
     β2, ∂β2 = compute_parameter(reg.export_world, constants.elasticities.world_export_demand, prices, fun)
-    compute_foreign_share!(β2, reg.export_world, constants.elasticities.world_export_demand, prices, reg.totals.savings,
-                           reg.totals.imports.world, 1.0, constants.exchange_rates.usd)
+    β2, ∂β2 = compute_foreign_share(β2, ∂β2, reg.export_world, constants.elasticities.world_export_demand, prices,
+                           imports_uk_share_world, reg.totals.imports.world, 1.0, constants.exchange_rates.usd)
     ρ, ∂ρ = compute_parameter(reg.investment, constants.elasticities.investment, prices, fun)
 
     γ, ∂γ = compute_production_parameter(data, prices, fun)
@@ -43,8 +52,8 @@ function compute_parameter(demand::DataFrame, elasticity::Elasticity, prices::Da
     v0 = Vector{Float64}(undef, n)
     m0 = Matrix{Float64}(undef, n, n)
 
-    val = ParamsStruct(similar(v0), similar(v0), similar(v0), similar(v0), similar(v0))
-    grad = ParamsStruct(similar(v0), similar(v0), similar(v0), similar(m0), similar(v0))
+    val = ParamsStruct(similar(v0), similar(v0), similar(v0), similar(v0), nothing)
+    grad = ParamsStruct(similar(v0), similar(v0), similar(v0), similar(m0), nothing)
 
     for row in 1:n
 
@@ -81,29 +90,32 @@ function compute_parameter(demand::DataFrame, elasticity::Elasticity, prices::Da
 
 end
 
+using Accessors
+
 # Ptilde = 1
 # Ex = totals.imports.{eu, world}
 # Etilde = Ex / E = totals.imports.{eu, world} / totals.savings
-function compute_foreign_share!(param::ParamsStruct, demand::DataFrame, elasticity::Elasticity, prices::DataFrame, E::T, Ex::T, PTilde::T, exchange_rate::T) where {T<:Real}
+function compute_foreign_share(param::ParamsStruct, dparam::ParamsStruct, demand::DataFrame, elasticity::Elasticity, prices::DataFrame, E::T, Ex::T, PTilde::T, exchange_rate::T) where {T<:Real}
 
-    if (!isnothing(elasticity.substitution_uk_other))
-        tilde = gradient(ForwardWithPrimal,
-                         log_eu_expenditure_on_uk_exports,
-                         prices.uk,
-                         Const(demand.agg),
-                         Const(Ex),
-                         Const(Ex / E),
-                         Const(exchange_rate),
-                         Const(PTilde),
-                         Const(elasticity.substitution),
-                         Const(elasticity.substitution_uk_other))
+    logPf = Supergrassi.log_price_index.(elasticity.armington, prices.uk, prices.eu, prices.world,
+                                         demand.uk, demand.eu, demand.world)
 
-        param.tilde .= tilde.val
-    else
-        param.tilde = nothing
-    end
+    tilde = gradient(ForwardWithPrimal,
+                     log_eu_expenditure_on_uk_exports,
+                     logPf,
+                     Const(demand.agg),
+                     Const(Ex),
+                     Const(Ex / E),
+                     Const(exchange_rate),
+                     Const(PTilde),
+                     Const(elasticity.substitution),
+                     Const(elasticity.substitution_uk_other))
 
-    #dparam.tilde .= first(tilde.derivs)
+    @reset param.tilde = [tilde.val]
+    @reset dparam.tilde = Vector(first(tilde.derivs))
+
+    return param, dparam
+
 end
 
 """

@@ -4,6 +4,7 @@ authors = ["Tuomas Koskela <t.koskela@ucl.ac.uk> and Arindam Saha <arindam.saha@
 version = "1.0.0-DEV"
 
 [deps]
+Accessors = "7d9f7c33-5ae7-4f3b-8dc6-eff91059b697"
 CSV = "336ed68f-0bac-5ca0-87d4-7b16caf5d00b"
 DataFrames = "a93c6f00-e57d-5684-b7b6-d8193f3e46c0"
 Dates = "ade2ca70-3891-5945-98fb-dc099432e06a"
@@ -14,6 +15,7 @@ XLSX = "fdbf4ff8-1666-58a4-91e7-1b58723a45e0"
 YAML = "ddb6d928-2868-570f-bddf-ab3f9cf99eb6"
 
 [compat]
+Accessors = "0.1.42"
 Aqua = "0.8"
 CSV = "0.10.15"
 DataFrames = "1.7.0"
