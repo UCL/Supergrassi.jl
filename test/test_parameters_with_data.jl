@@ -27,10 +27,10 @@ prices = DataFrame([df.logP_uk, df.logP_eu, df.logP_w], ["uk", "eu", "world"])
 clean = Supergrassi.clean_data(data,settings)
 Supergrassi.postprocess_clean_data!(clean)
 
-@testset "Parameters" begin
+params, ∂params = Supergrassi.compute_all_parameters(clean, prices)
+log_params, ∂log_params = Supergrassi.compute_all_parameters(clean, prices, Supergrassi.log_parameters_by_region)
 
-    params, ∂params = Supergrassi.compute_all_parameters(clean, prices)
-    log_params, ∂log_params = Supergrassi.compute_all_parameters(clean, prices, Supergrassi.log_parameters_by_region)
+@testset "Parameter values" begin
 
     @test isapprox(params.consumption.uk, df.alpha_uk, atol = tol)
     @test isapprox(params.consumption.eu, df.alpha_eu, atol = tol)
@@ -60,6 +60,10 @@ Supergrassi.postprocess_clean_data!(clean)
     @test isapprox(params.production.input_capital, df1d.gammaK, atol = tol)
 
     @test isapprox(params.production.shock_mean, df1d.mu, atol = tol)
+
+end
+
+@testset "Parameter derivatives" begin
 
     @test isapprox(∂log_params.consumption.uk, df.dlogalpha_uk, atol = tol)
     @test isapprox(∂log_params.consumption.eu, df.dlogalpha_eu, atol = tol)
