@@ -31,7 +31,7 @@ function compute_all_parameters(data::CleanData, prices::DataFrame, fun::Functio
 
     γ, ∂γ = compute_production_parameter(data, prices, fun)
 
-    loss_given_default = 0.1 # TODO: This should be in constants
+    loss_given_default = 0.12 # TODO: This should be in constants
 
     consts = ParameterConstants(constants.elasticities, loss_given_default, constants.interest_rate)
 
