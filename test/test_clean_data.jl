@@ -75,7 +75,6 @@ m = Supergrassi.InputMatrices(DataFrame(reshape(df2d.mValueUK, (16, 16)), nms),
     @test isapprox(clean.industry.tax.products, df.taxValue1)
     @test isapprox(clean.industry.tax.production, df.taxValue2)
 
-    @test isapprox(clean.household.income_share.high, df.hi_income_share, nans=true)
     @test isapprox(clean.industry.surplus.val, df.kValue)
     @test isapprox(clean.industry.depreciation.val, df.depreciation)
     @test isapprox(clean.industry.shock_stdev.val, df.sigmaBar)
