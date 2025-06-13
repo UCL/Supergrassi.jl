@@ -49,7 +49,7 @@ Supergrassi.postprocess_clean_data!(clean)
     @test isapprox(params.investment.uk, df.rho_uk, atol = tol)
     @test isapprox(params.investment.eu, df.rho_eu, atol = tol)
     @test isapprox(params.investment.world, df.rho_w, atol = tol)
-    # @test isapprox(params.investment.agg, df.rho, atol = tol)
+    @test isapprox(params.investment.agg, df.rho, atol = tol)
 
     @test isapprox(params.production.input_uk, gammaMUK_ref, atol = tol)
     @test isapprox(params.production.input_eu, gammaMEU_ref, atol = tol)

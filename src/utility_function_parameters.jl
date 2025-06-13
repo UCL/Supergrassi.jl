@@ -79,7 +79,6 @@ end
 """
 function total_parameters(log_price_index::Vector{T}, quantity::Vector{T}, elasticity::T ) where {T <: Real}
 
-
     length(log_price_index) == length(quantity) || error()
 
     logPBar = log_total_price_index(elasticity, log_price_index, quantity)
@@ -128,7 +127,9 @@ function log_price_index(elasticity::T,
                          log_price_uk::T, log_price_eu::T, log_price_world::T,
                          demand_uk::T, demand_eu::T, demand_world::T) where {T <: Real}
 
-    return elasticity / (elasticity - 1) * log(
+    if(demand_uk == demand_eu == demand_world == 0.0) return 0.0 end
+
+    return (elasticity / (elasticity - 1)) * log(
         demand_uk ^ (1 / elasticity) * exp((elasticity - 1) * log_price_uk / elasticity) +
         demand_eu ^ (1 /elasticity) * exp((elasticity - 1) * log_price_eu / elasticity) +
         demand_world  ^ (1 / elasticity) * exp((elasticity - 1) * log_price_world  / elasticity)
