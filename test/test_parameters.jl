@@ -197,12 +197,6 @@ end
 
     end
 
-    mask_zero_uk = [2, 6, 7, 11, 13, 14, 16]
-
-    mask = Vector{Bool}(undef, n)
-    mask .= true
-    mask[mask_zero_uk] .= false
-
     @test isapprox(rho[:,1], df.rho_uk, atol = tol)
     @test isapprox(rho[:,2], df.rho_eu, atol = tol)
     @test isapprox(rho[:,3], df.rho_w, atol = tol)
@@ -211,12 +205,9 @@ end
     @test isapprox(grad_log_rho[:,3], df.dlogrho_w, atol = tol)
 
     logPI = Supergrassi.log_price_index.(elasticity_a,df.logP_uk,df.logP_eu,df.logP_w,df.I_uk,df.I_eu,df.I_w)
-    Rho = jacobian(ForwardWithPrimal, Supergrassi.total_parameters, logPI[mask], Const(df.I[mask]), Const(elasticity))
+    Rho = jacobian(ForwardWithPrimal, Supergrassi.total_parameters, logPI, Const(df.I), Const(elasticity))
 
-    Rho_out = zeros(n)
-    Rho_out[mask] .= Rho.val
-
-    @test isapprox(Rho_out, df.rho, atol = tol)
+    @test isapprox(Rho.val, df.rho, atol = tol)
 
 end
 
