@@ -117,8 +117,8 @@ end
 
 struct ParamsProduction
 
-    input_human::Vector{Float64}          # gamma_hi
-    input_capital::Vector{Float64}        # gamma_ki
+    input_human::Array{Float64}          # gamma_hi
+    input_capital::Array{Float64}        # gamma_ki
     input_low_skill::Vector{Float64}      # gamma_Li
     input_high_skill::Vector{Float64}     # gamma_Hi
     shock_mean::Vector{Float64}           # mu

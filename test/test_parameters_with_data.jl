@@ -13,6 +13,7 @@ df = outerjoin(CSV.read(joinpath(@__DIR__,"..","data", "data_for_household_deman
                CSV.read(joinpath(@__DIR__, "..", "data", "data_for_capital_production.csv"), DataFrame),
                on = [:logP_uk, :logP_eu, :logP_w], makeunique = true)
 
+df1d = CSV.read(joinpath(@__DIR__, "..", "data", "1d_data_for_firm_production.csv"), DataFrame)
 df2d = CSV.read(joinpath(@__DIR__, "..", "data", "2d_data_for_firm_production.csv"), DataFrame)
 
 n = 16
@@ -55,6 +56,8 @@ Supergrassi.postprocess_clean_data!(clean)
     @test isapprox(params.production.input_eu, gammaMEU_ref, atol = tol)
     @test isapprox(params.production.input_world, gammaMW_ref, atol = tol)
     @test isapprox(params.production.input_agg, gammaM_ref, atol = tol)
+    @test isapprox(params.production.input_human, df1d.gammaH, atol = tol)
+    @test isapprox(params.production.input_capital, df1d.gammaK, atol = tol)
 
     @test isapprox(∂log_params.consumption.uk, df.dlogalpha_uk, atol = tol)
     @test isapprox(∂log_params.consumption.eu, df.dlogalpha_eu, atol = tol)

@@ -78,8 +78,8 @@ function compute_parameter(demand::DataFrame, elasticity::Elasticity, prices::Da
     end
 
     logPf = log_price_index.(elasticity.armington,
-                                         prices.uk, prices.eu, prices.world,
-                                         demand.uk, demand.eu, demand.world)
+                             prices.uk, prices.eu, prices.world,
+                             demand.uk, demand.eu, demand.world)
     param = jacobian(ForwardWithPrimal, total_parameters, logPf,
                      Const(demand.agg), Const(elasticity.substitution))
 
@@ -129,9 +129,9 @@ function compute_production_parameter(data::CleanData, prices::DataFrame, fun::F
     m0 = Matrix{Float64}(undef, n, n)
     t0 = Array{Float64}(undef, n, n, n)
 
-    val = ParamsProduction(similar(v0), similar(v0), similar(v0), similar(v0), similar(v0), similar(v0),
+    val = ParamsProduction(similar(v0), similar(v0), similar(v0), similar(v0), similar(v0), data.industry.shock_stdev.val,
                            similar(m0), similar(m0), similar(m0), similar(m0))
-    grad = ParamsProduction(similar(v0), similar(v0), similar(v0), similar(v0), similar(v0), similar(v0),
+    grad = ParamsProduction(similar(m0), similar(m0), similar(v0), similar(v0), similar(v0), similar(v0),
                             similar(m0), similar(m0), similar(m0), similar(t0))
 
     m_uk = Matrix(data.industry.regional.input_matrices.uk)
@@ -188,6 +188,36 @@ function compute_production_parameter(data::CleanData, prices::DataFrame, fun::F
 
         val.input_agg[row, :] = jacM.val
         grad.input_agg[row,:,:] .= first(jacM.derivs)
+
+        jacH = jacobian(ForwardWithPrimal,
+                        total_labor_parameters,
+                        logPm,
+                        Const(m_agg[row,:]),
+                        Const(data.industry.surplus.val[row]),
+                        Const(data.industry.capital.current_year[row]),
+                        Const(data.industry.regional.total_use.agg[row]),
+                        Const(data.household.payments.agg[row]),
+                        Const(data.household.wages.logW[row]),
+                        Const(data.constants.elasticities.production.substitution),
+                        Const(tau))
+
+        val.input_human[row] = jacH.val
+        grad.input_human[row,:] .= first(jacH.derivs)
+
+        jacK = jacobian(ForwardWithPrimal,
+                        total_capital_parameters,
+                        logPm,
+                        Const(m_agg[row,:]),
+                        Const(data.industry.surplus.val[row]),
+                        Const(data.industry.capital.current_year[row]),
+                        Const(data.industry.regional.total_use.agg[row]),
+                        Const(data.household.payments.agg[row]),
+                        Const(data.household.wages.logW[row]),
+                        Const(data.constants.elasticities.production.substitution),
+                        Const(tau))
+
+        val.input_capital[row] = jacK.val
+        grad.input_capital[row,:] .= first(jacK.derivs)
 
     end
 
