@@ -59,6 +59,8 @@ Supergrassi.postprocess_clean_data!(clean)
     @test isapprox(params.production.input_human, df1d.gammaH, atol = tol)
     @test isapprox(params.production.input_capital, df1d.gammaK, atol = tol)
 
+    @test isapprox(params.production.shock_mean, df1d.mu, atol = tol)
+
     @test isapprox(∂log_params.consumption.uk, df.dlogalpha_uk, atol = tol)
     @test isapprox(∂log_params.consumption.eu, df.dlogalpha_eu, atol = tol)
     @test isapprox(∂log_params.consumption.world, df.dlogalpha_w, atol = tol)

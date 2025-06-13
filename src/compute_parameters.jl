@@ -219,6 +219,18 @@ function compute_production_parameter(data::CleanData, prices::DataFrame, fun::F
         val.input_capital[row] = jacK.val
         grad.input_capital[row,:] .= first(jacK.derivs)
 
+        # Gradient of mu does not seem to be used anywhere in the matlab code, hence we don't compute it.
+        val.shock_mean[row] = Supergrassi.productivity_shock_mean(data.constants.elasticities.production.substitution,
+                                                                  prices.uk[row],
+                                                                  logPm,
+                                                                  m_agg[row,:],
+                                                                  data.industry.surplus.val[row],
+                                                                  data.industry.capital.current_year[row],
+                                                                  data.industry.regional.total_use.agg[row],
+                                                                  data.household.payments.agg[row],
+                                                                  data.household.wages.logW[row],
+                                                                  tau)
+
     end
 
     return val, grad
