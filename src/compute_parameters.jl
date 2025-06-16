@@ -3,10 +3,16 @@ using DataFrames
 using Enzyme
 
 """
-  Compute all utility function parameters from regional data, elasticities and prices.
-  Currently missing some of the γ parameters
+    function compute_all_parameters(data::CleanData, prices::DataFrame, fun::Function = parameters_by_region)
 
-  fun parameter should be either parameters_by_region or log_parameters_by_region
+Compute all utility function parameters from regional data, elasticities and prices.
+
+# Arguments 
+- `data::CleanData`: Data structure created by [`clean_data`](@ref)
+- `prices::DataFrame`: Logarithm of price index equilibrium variable. Has three components (uk, eu, world)
+- `fun::Function`: Function that computes three parameters by region. Either [`parameters_by_region`](@ref) or [`log_parameters_by_region`](@ref)
+
+See also [`test_parameters_with_data`](@ref)
 """
 function compute_all_parameters(data::CleanData, prices::DataFrame, fun::Function = parameters_by_region)
 
