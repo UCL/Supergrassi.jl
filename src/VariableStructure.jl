@@ -76,6 +76,9 @@ struct RegionalData
 
 end
 
+"""
+structure that contains data on households
+"""
 struct HouseholdData
 
     income::DataFrame
