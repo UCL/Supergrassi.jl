@@ -1,15 +1,24 @@
 using DataFrames
 
+"""
+PLACEHOLDER
+"""
 struct ExchangeRates
     usd::Float64
     eur::Float64
 end
 
+"""
+PLACEHOLDER
+"""
 struct TotalImports
     eu::Float64
     world::Float64
 end
 
+"""
+PLACEHOLDER
+"""
 struct Elasticity
     substitution::Float64
     armington::Float64 # _a
@@ -17,6 +26,9 @@ struct Elasticity
     skill_substitution::Union{Float64, Nothing} # _h
 end
 
+"""
+PLACEHOLDER
+"""
 struct Elasticities
     production::Elasticity # ξ
     world_export_demand::Elasticity # β2
@@ -25,6 +37,9 @@ struct Elasticities
     investment::Elasticity # ρ
 end
 
+"""
+PLACEHOLDER
+"""
 struct Constants
     data_year::Int64
     exchange_rates::ExchangeRates
@@ -36,6 +51,9 @@ struct Constants
     elasticities::Elasticities
 end
 
+"""
+PLACEHOLDER
+"""
 struct Totals
 
     savings::Float64 # E
@@ -44,7 +62,9 @@ struct Totals
 
 end
 
-
+"""
+PLACEHOLDER
+"""
 struct InputMatrices
 
     # These correspond to mValue matrices in the Matlab code
@@ -56,6 +76,9 @@ struct InputMatrices
 
 end
 
+"""
+PLACEHOLDER
+"""
 struct AssetsLiabilities
 
     current_year::DataFrame
@@ -63,6 +86,9 @@ struct AssetsLiabilities
 
 end
 
+"""
+PLACEHOLDER
+"""
 struct RegionalData
 
     total_use::DataFrame # data.yValue
@@ -88,6 +114,9 @@ struct HouseholdData
 
 end
 
+"""
+PLACEHOLDER
+"""
 struct IndustryData
 
     depreciation::DataFrame
@@ -100,6 +129,9 @@ struct IndustryData
 
 end
 
+"""
+PLACEHOLDER
+"""
 struct CleanData
 
     household::HouseholdData
@@ -108,6 +140,9 @@ struct CleanData
 
 end
 
+"""
+PLACEHOLDER
+"""
 struct ParamsStruct
 
     uk::Vector{Float64}
@@ -118,6 +153,9 @@ struct ParamsStruct
 
 end
 
+"""
+PLACEHOLDER
+"""
 struct ParamsProduction
 
     input_human::Array{Float64}          # gamma_hi
@@ -134,6 +172,9 @@ struct ParamsProduction
 
 end
 
+"""
+PLACEHOLDER
+"""
 struct ParameterConstants
 
     elasticities::Elasticities
@@ -142,6 +183,9 @@ struct ParameterConstants
 
 end
 
+"""
+PLACEHOLDER
+"""
 struct Parameters
 
     constants::ParameterConstants
