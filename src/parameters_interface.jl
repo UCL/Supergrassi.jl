@@ -229,10 +229,7 @@ function compute_production_parameter(data::CleanData, prices::DataFrame, fun::F
                       Const(data.household.wages.logW[row]),
                       Const(tau))
         
-        # Gradient of mu does not seem to be used anywhere in the matlab code, hence we don't compute it.
         val.shock_mean[row] = mu.val
-        @show size(mu.derivs[3])
-        @show grad.shock_mean
         grad.shock_mean[row,:] .= mu.derivs[3]
 
     end
