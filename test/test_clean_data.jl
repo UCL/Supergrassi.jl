@@ -17,12 +17,11 @@ Supergrassi.postprocess_clean_data!(clean)
 df = CSV.read(joinpath(@__DIR__, "..", "data", "test_load_data.csv"), DataFrame)
 df2d = CSV.read(joinpath(@__DIR__, "..", "data", "test_load_data_2d.csv"), DataFrame)
 
-nms = names(clean.industry.regional.input_matrices.uk)
 
-m = Supergrassi.InputMatrices(DataFrame(reshape(df2d.mValueUK, (16, 16)), nms),
-                              DataFrame(reshape(df2d.mValueEU, (16, 16)), nms),
-                              DataFrame(reshape(df2d.mValueW, (16, 16)), nms),
-                              DataFrame(reshape(df2d.mValue, (16, 16)), nms))
+m = Supergrassi.InputMatrices(Matrix(reshape(df2d.mValueUK, (16, 16))),
+                              Matrix(reshape(df2d.mValueEU, (16, 16))),
+                              Matrix(reshape(df2d.mValueW, (16, 16))),
+                              Matrix(reshape(df2d.mValue, (16, 16))))
 
 @testset "Clean 1d Data" begin
 

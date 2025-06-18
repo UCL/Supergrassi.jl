@@ -49,10 +49,10 @@ struct InputMatrices
 
     # These correspond to mValue matrices in the Matlab code
 
-    uk::DataFrame
-    eu::DataFrame
-    world::DataFrame
-    agg::DataFrame
+    uk::Matrix{Float64}
+    eu::Matrix{Float64}
+    world::Matrix{Float64}
+    agg::Matrix{Float64}
 
 end
 
