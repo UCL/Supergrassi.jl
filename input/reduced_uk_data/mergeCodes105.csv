@@ -1,0 +1,106 @@
+sic105,sic64,name
+A01,1,"Products of agriculture, hunting and related services"
+A02,2,"Products of forestry, logging and related services"
+A03,3,Fish and other fishing products; aquaculture products; support services to fishing
+B05,4,Coal and lignite
+B06 & B07,4,Crude Petroleum And Natural Gas & Metal Ores
+B08,4,Other mining and quarrying products
+B09,4,Mining support services
+C101,5,Preserved meat and meat products
+C102_3,5,"Processed and preserved fish, crustaceans, molluscs, fruit and vegetables"
+C104,5,Vegetable and animal oils and fats
+C105,5,Dairy products
+C106,5,"Grain mill products, starches and starch products"
+C107,5,Bakery and farinaceous products
+C108,5,Other food products
+C109,5,Prepared animal feeds
+C11.01-6 & C12,5,Alcoholic beverages  & Tobacco products
+C1107,5,Soft drinks
+C13,6,Textiles
+C14,6,Wearing apparel
+C15,6,Leather and related products
+C16,7,"Wood and of products of wood and cork, except furniture; articles of straw and plaiting materials"
+C17,8,Paper and paper products
+C18,9,Printing and recording services
+C19,10,Coke and refined petroleum products
+C203,11,"Paints, varnishes and similar coatings, printing ink and mastics"
+C204,11,"Soap and detergents, cleaning and polishing preparations, perfumes and toilet preparations"
+C205,11,Other chemical products
+C20A,11,"Industrial gases, inorganics and fertilisers (all inorganic chemicals) - 20.11/13/15"
+C20B,11,Petrochemicals - 20.14/16/17/60
+C20C,11,"Dyestuffs, agro-chemicals - 20.12/20"
+C21,12,Basic pharmaceutical products and pharmaceutical preparations
+C22,13,Rubber and plastic products
+C235_6,14,"Manufacture of cement, lime, plaster and articles of concrete, cement and plaster"
+C23OTHER,14,"Glass, refractory, clay, other porcelain and ceramic, stone and abrasive products - 23.1-4/7-9"
+C241_3,15,Basic iron and steel
+C244_5,15,Other basic metals and casting
+C254,16,Weapons and ammunition
+C25OTHER,16,"Fabricated metal products, excl. machinery and equipment and weapons & ammunition - 25.1-3/25.5-9"
+C26,17,"Computer, electronic and optical products"
+C27,18,Electrical equipment
+C28,19,Machinery and equipment n.e.c.
+C29,20,"Motor vehicles, trailers and semi-trailers"
+C301,21,Ships and boats
+C303,21,Air and spacecraft and related machinery
+C30OTHER,21,Other transport equipment - 30.2/4/9
+C31,22,Furniture
+C32,22,Other manufactured goods
+C3315,23,Repair and maintenance of ships and boats
+C3316,23,Repair and maintenance of aircraft and spacecraft
+C33OTHER,23,Rest of repair; Installation - 33.11-14/17/19/20
+D351,24,"Electricity, transmission and distribution"
+D352_3,24,Gas; distribution of gaseous fuels through mains; steam and air conditioning supply
+E36,25,Natural water; water treatment and supply services
+E37,26,Sewerage services; sewage sludge
+E38,26,"Waste collection, treatment and disposal services; materials recovery services"
+E39,26,Remediation services and other waste management services
+"F41, F42 & F43",27,Construction
+G45,28,Wholesale and retail trade and repair services of motor vehicles and motorcycles
+G46,29,"Wholesale trade services, except of motor vehicles and motorcycles"
+G47,30,"Retail trade services, except of motor vehicles and motorcycles"
+H491_2,31,Rail transport services
+H493_5,31,"Land transport services and transport services via pipelines, excluding rail transport"
+H50,32,Water transport services
+H51,33,Air transport services
+H52,34,Warehousing and support services for transportation
+H53,35,Postal and courier services
+I55,36,Accommodation services
+I56,36,Food and beverage serving services
+J58,37,Publishing services
+J59 & J60,38,"Motion Picture, Video & TV Programme Production, Sound Recording & Music Publishing Activities & Programming And Broadcasting Activities"
+J61,39,Telecommunications services
+J62,40,"Computer programming, consultancy and related services"
+J63,40,Information services
+K64,41,"Financial services, except insurance and pension funding"
+K65.1-2 & K65.3,42,"Insurance, reinsurance and pension funding services, except compulsory social security"
+K66,43,Services auxiliary to financial services and insurance services
+L68BXL683,44,"Real estate services, excluding on a fee or contract basis and excluding imputed rent"
+L68A,45,Imputed rents of owner-occupied dwellings
+L683,44,Real estate activities on a fee or contract basis
+M691,46,Legal services
+M692,46,"Accounting, bookkeeping and auditing services; tax consulting services"
+M70,46,Services of head offices; management consulting services
+M71,47,Architectural and engineering services; technical testing and analysis services
+M72,48,Scientific research and development services
+M73,49,Advertising and market research services
+M74,50,"Other professional, scientific and technical services"
+M75,50,Veterinary services
+N77,51,Rental and leasing services
+N78,52,Employment services
+N79,53,"Travel agency, tour operator and other reservation services and related services"
+N80,54,Security and investigation services
+N81,54,Services to buildings and landscape
+N82,54,"Office administrative, office support and other business support services"
+O84,55,Public administration and defence services; compulsory social security services
+P85,56,Education services
+Q86,57,Human health services
+Q87 & Q88,58,Residential Care  & Social Work Activities
+R90,59,"Creative, arts and entertainment services"
+R91,59,"Libraries, archives, museums and other cultural services"
+R92,59,Gambling and betting services
+R93,60,Sports services and amusement and recreation services
+S94,61,Services furnished by membership organisations
+S95,62,Repair services of computers and personal and household goods
+S96,63,Other personal services
+T97,64,Services of households as employers of domestic personnel
