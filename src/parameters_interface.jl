@@ -129,15 +129,12 @@ function compute_production_parameter(data::CleanData, prices::DataFrame, fun::F
     m0 = Matrix{Float64}(undef, n, n)
     t0 = Array{Float64}(undef, n, n, n)
 
-    val = ParamsProduction(similar(v0), similar(v0), similar(v0), similar(v0), similar(v0), data.industry.shock_stdev.val,
+    val = ParamsProduction(similar(v0), similar(v0), similar(v0), similar(v0),
+                           similar(v0), data.industry.shock_stdev.val,
                            similar(m0), similar(m0), similar(m0), similar(m0))
-    grad = ParamsProduction(similar(m0), similar(m0), similar(v0), similar(v0), similar(v0), similar(v0),
+    grad = ParamsProduction(similar(m0), similar(m0), similar(v0), similar(v0),
+                            similar(m0), similar(v0),
                             similar(m0), similar(m0), similar(m0), similar(t0))
-
-    m_uk = Matrix(data.industry.regional.input_matrices.uk)
-    m_eu = Matrix(data.industry.regional.input_matrices.eu)
-    m_world = Matrix(data.industry.regional.input_matrices.world)
-    m_agg = Matrix(data.industry.regional.input_matrices.agg)
 
     compute_agg_wages!(data.household, data.constants.elasticities.production)
 
@@ -150,9 +147,9 @@ function compute_production_parameter(data::CleanData, prices::DataFrame, fun::F
                                       prices.uk[col],
                                       Const(prices.eu[col]),
                                       Const(prices.world[col]),
-                                      Const(m_uk[row, col]),
-                                      Const(m_eu[row, col]),
-                                      Const(m_world[row, col]))
+                                      Const(data.industry.regional.input_matrices.uk[row, col]),
+                                      Const(data.industry.regional.input_matrices.eu[row, col]),
+                                      Const(data.industry.regional.input_matrices.world[row, col]))
 
             val.input_uk[row, col] = param_regional.val[1]
             val.input_eu[row, col] = param_regional.val[2]
@@ -165,10 +162,10 @@ function compute_production_parameter(data::CleanData, prices::DataFrame, fun::F
         end
 
         logPm = log_price_index.(data.constants.elasticities.production.armington,
-                                             prices.uk, prices.eu, prices.world,
-                                             m_uk[row,:],
-                                             m_eu[row,:],
-                                             m_world[row,:])
+                                 prices.uk, prices.eu, prices.world,
+                                 data.industry.regional.input_matrices.uk[row,:],
+                                 data.industry.regional.input_matrices.eu[row,:],
+                                 data.industry.regional.input_matrices.world[row,:])
         logPm[isinf.(logPm)] .= 0.0
 
         # We are missing this from our data struct. Temporarily compute it on the fly.
@@ -177,7 +174,7 @@ function compute_production_parameter(data::CleanData, prices::DataFrame, fun::F
         jacM = jacobian(ForwardWithPrimal,
                         total_input_parameters,
                         logPm,
-                        Const(m_agg[row,:]),
+                        Const(data.industry.regional.input_matrices.agg[row,:]),
                         Const(data.industry.surplus.val[row]),
                         Const(data.industry.capital.current_year[row]),
                         Const(data.industry.regional.total_use.agg[row]),
@@ -192,7 +189,7 @@ function compute_production_parameter(data::CleanData, prices::DataFrame, fun::F
         jacH = jacobian(ForwardWithPrimal,
                         total_labor_parameters,
                         logPm,
-                        Const(m_agg[row,:]),
+                        Const(data.industry.regional.input_matrices.agg[row,:]),
                         Const(data.industry.surplus.val[row]),
                         Const(data.industry.capital.current_year[row]),
                         Const(data.industry.regional.total_use.agg[row]),
@@ -207,7 +204,7 @@ function compute_production_parameter(data::CleanData, prices::DataFrame, fun::F
         jacK = jacobian(ForwardWithPrimal,
                         total_capital_parameters,
                         logPm,
-                        Const(m_agg[row,:]),
+                        Const(data.industry.regional.input_matrices.agg[row,:]),
                         Const(data.industry.surplus.val[row]),
                         Const(data.industry.capital.current_year[row]),
                         Const(data.industry.regional.total_use.agg[row]),
@@ -219,17 +216,24 @@ function compute_production_parameter(data::CleanData, prices::DataFrame, fun::F
         val.input_capital[row] = jacK.val
         grad.input_capital[row,:] .= first(jacK.derivs)
 
+        mu = jacobian(ForwardWithPrimal,
+                      productivity_shock_mean,
+                      Const(data.constants.elasticities.production.substitution),
+                      Const(prices.uk[row]),
+                      logPm,
+                      Const(data.industry.regional.input_matrices.agg[row,:]),
+                      Const(data.industry.surplus.val[row]),
+                      Const(data.industry.capital.current_year[row]),
+                      Const(data.industry.regional.total_use.agg[row]),
+                      Const(data.household.payments.agg[row]),
+                      Const(data.household.wages.logW[row]),
+                      Const(tau))
+        
         # Gradient of mu does not seem to be used anywhere in the matlab code, hence we don't compute it.
-        val.shock_mean[row] = Supergrassi.productivity_shock_mean(data.constants.elasticities.production.substitution,
-                                                                  prices.uk[row],
-                                                                  logPm,
-                                                                  m_agg[row,:],
-                                                                  data.industry.surplus.val[row],
-                                                                  data.industry.capital.current_year[row],
-                                                                  data.industry.regional.total_use.agg[row],
-                                                                  data.household.payments.agg[row],
-                                                                  data.household.wages.logW[row],
-                                                                  tau)
+        val.shock_mean[row] = mu.val
+        @show size(mu.derivs[3])
+        @show grad.shock_mean
+        grad.shock_mean[row,:] .= mu.derivs[3]
 
     end
 
