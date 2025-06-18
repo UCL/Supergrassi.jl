@@ -543,26 +543,7 @@ function round_shares!(data::InputMatrices, threshold = 1e-4)
     for field in [:uk, :eu, :world]
 
         df = getfield(data, field)
-
-        # for i in eachindex(df)
-        df = map(x -> x < threshold ? 0.0 : x, df)
-
-
-        if minimum(df) < threshold
-            error("Some values in $field are below the threshold of $threshold. They have been set to 0.")
-        end
-
-        # end
-
-        # ss = size(df)
-
-        # for i in 1:ss[1]
-        #     for j in 1:ss[2]
-        #         if df[i,j] < threshold
-        #             df[i,j] = 0.0
-        #         end
-        #     end
-        # end
+        df .= map(x -> x < threshold ? 0.0 : x, df)
 
     end
 
@@ -571,19 +552,8 @@ function round_shares!(data::InputMatrices, threshold = 1e-4)
 
     for field in [:uk, :eu, :world]
 
-        ss = size(scaling_factor)
-
         df = getfield(data, field)
-
-        for i in 1:ss[1]
-            for j in 1:ss[2]
-                if scaling_factor[i, j] != 0.0
-                    df[i,j] /= scaling_factor[i, j]
-                else
-                    df[i,j] = 0.0
-                end
-            end
-        end
+        df ./= scaling_factor
 
     end
 

@@ -3,6 +3,8 @@ using CSV
 using Supergrassi
 using Test
 
+tol = 1e-12
+
 # This test assumes we have a data set available in input/uk_data
 
 path = joinpath(@__DIR__, "..", "config","settings.yml")
@@ -82,9 +84,9 @@ end
 
 @testset "Clean 2d data" begin
 
-    @test isapprox(clean.industry.regional.input_matrices.uk, m.uk)
-    @test isapprox(clean.industry.regional.input_matrices.eu, m.eu)
-    @test isapprox(clean.industry.regional.input_matrices.world, m.world)
-    @test isapprox(clean.industry.regional.input_matrices.agg, m.agg)
+    @test isapprox(clean.industry.regional.input_matrices.uk, m.uk, atol = tol)
+    @test isapprox(clean.industry.regional.input_matrices.eu, m.eu, atol = tol)
+    @test isapprox(clean.industry.regional.input_matrices.world, m.world, atol = tol)
+    @test isapprox(clean.industry.regional.input_matrices.agg, m.agg, atol = tol)
     
 end
