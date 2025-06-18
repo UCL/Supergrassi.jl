@@ -582,10 +582,15 @@ function generate_constants(data::Data, settings::Dict{String, Any})
     exchange_rates = ExchangeRates(settings["constants"]["exchange_rates"]["usd"],
                                    settings["constants"]["exchange_rates"]["eur"])
 
-    total_imports_from_uk = TotalImports(settings["constants"]["total_imports"]["from_uk"]["eu"],
+    total_imports_from_uk = ForeignRegionalValues(settings["constants"]["total_imports"]["from_uk"]["eu"],
                                          settings["constants"]["total_imports"]["from_uk"]["world"])
-    total_imports_from_all_sources = TotalImports(settings["constants"]["total_imports"]["from_all_sources"]["eu"],
+    total_imports_from_all_sources = ForeignRegionalValues(settings["constants"]["total_imports"]["from_all_sources"]["eu"],
                                                   settings["constants"]["total_imports"]["from_all_sources"]["world"])
+
+    import_tariffs = ForeignRegionalValues(settings["constants"]["import_tariff"]["eu"], 
+                                  settings["constants"]["import_tariff"]["world"])
+    export_costs = ForeignRegionalValues(settings["constants"]["export_costs"]["eu"],
+                                settings["constants"]["export_costs"]["world"])
 
     elasticities = settings["constants"]["elasticities"]
 
@@ -624,7 +629,8 @@ function generate_constants(data::Data, settings::Dict{String, Any})
     parse_string_dataframe!(interest_rates, Float64)
     interest_rate = 1 + geomean(interest_rates[!, 1] / 100)
 
-    return Constants(year, exchange_rates, interest_rate, total_imports_from_uk, total_imports_from_all_sources, elasticities_struct)
+    return Constants(year, exchange_rates, interest_rate, total_imports_from_uk, total_imports_from_all_sources, 
+                     import_tariffs, export_costs, elasticities_struct)
 
 end
 
@@ -670,7 +676,7 @@ function clean_data(data::Data, settings::Dict{String, Any})
     # These variables get re-scaled to sum to 1 in the postprocessing step and this information gets otherwise lost.
     total_vals = Totals(sum(consumption.agg) / mean(total_use.uk),
                         sum(investment.agg) / mean(total_use.uk),
-                        TotalImports(sum(export_to_eu.agg) / mean(total_use.uk),
+                        ForeignRegionalValues(sum(export_to_eu.agg) / mean(total_use.uk),
                                      sum(export_to_world.agg) / mean(total_use.uk)))
 
     household = clean_household(data, year, mapping_105_to_64, mapping_64_to_16, industry_names, sic64, aggregated_names, industries_in_cols)
