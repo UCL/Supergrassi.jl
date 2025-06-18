@@ -3,6 +3,8 @@ using CSV
 using Supergrassi
 using Test
 
+tol = 1e-12
+
 # This test assumes we have a data set available in input/uk_data
 
 path = joinpath(@__DIR__, "..", "config","settings.yml")
@@ -17,12 +19,11 @@ Supergrassi.postprocess_clean_data!(clean)
 df = CSV.read(joinpath(@__DIR__, "..", "data", "test_load_data.csv"), DataFrame)
 df2d = CSV.read(joinpath(@__DIR__, "..", "data", "test_load_data_2d.csv"), DataFrame)
 
-nms = names(clean.industry.regional.input_matrices.uk)
 
-m = Supergrassi.InputMatrices(DataFrame(reshape(df2d.mValueUK, (16, 16)), nms),
-                              DataFrame(reshape(df2d.mValueEU, (16, 16)), nms),
-                              DataFrame(reshape(df2d.mValueW, (16, 16)), nms),
-                              DataFrame(reshape(df2d.mValue, (16, 16)), nms))
+m = Supergrassi.InputMatrices(Matrix(reshape(df2d.mValueUK, (16, 16))),
+                              Matrix(reshape(df2d.mValueEU, (16, 16))),
+                              Matrix(reshape(df2d.mValueW, (16, 16))),
+                              Matrix(reshape(df2d.mValue, (16, 16))))
 
 @testset "Clean 1d Data" begin
 
@@ -83,9 +84,9 @@ end
 
 @testset "Clean 2d data" begin
 
-    @test isapprox(clean.industry.regional.input_matrices.uk, m.uk)
-    @test isapprox(clean.industry.regional.input_matrices.eu, m.eu)
-    @test isapprox(clean.industry.regional.input_matrices.world, m.world)
-    @test isapprox(clean.industry.regional.input_matrices.agg, m.agg)
+    @test isapprox(clean.industry.regional.input_matrices.uk, m.uk, atol = tol)
+    @test isapprox(clean.industry.regional.input_matrices.eu, m.eu, atol = tol)
+    @test isapprox(clean.industry.regional.input_matrices.world, m.world, atol = tol)
+    @test isapprox(clean.industry.regional.input_matrices.agg, m.agg, atol = tol)
     
 end

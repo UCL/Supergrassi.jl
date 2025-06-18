@@ -234,10 +234,10 @@ function clean_2d_values(data::Data, split_factor::Float64)
     mapping_64_to_16 = create_map_64_to_16(data.merge_codes_64)
 
     import_export = clean_matrix(data.input_output.input_output_matrix, industry_names, mapping_105_to_64)
-    import_export = clean_matrix(import_export, names(import_export), mapping_64_to_16)
+    import_export = Matrix(clean_matrix(import_export, names(import_export), mapping_64_to_16))
 
     imports_import_export = clean_matrix(data.imports.input_output_matrix, industry_names, mapping_105_to_64)
-    imports_import_export = clean_matrix(imports_import_export, names(imports_import_export), mapping_64_to_16)
+    imports_import_export = Matrix(clean_matrix(imports_import_export, names(imports_import_export), mapping_64_to_16))
 
     eu_import_export = imports_import_export .* split_factor
     world_import_export = imports_import_export .* (1 - split_factor)
@@ -543,23 +543,17 @@ function round_shares!(data::InputMatrices, threshold = 1e-4)
     for field in [:uk, :eu, :world]
 
         df = getfield(data, field)
-
-        for col in names(df)
-            df[!,col] = map(x -> x < threshold ? 0.0 : x, df[!, col])
-        end
+        df .= map(x -> x < threshold ? 0.0 : x, df)
 
     end
 
     scaling_factor = data.uk .+ data.eu .+ data.world
+    replace!(scaling_factor, 0.0 => 1.0)
 
-    # Rescale sum to 1
     for field in [:uk, :eu, :world]
+
         df = getfield(data, field)
-        for (c,s) in zip(eachcol(df), eachcol(scaling_factor))
-            # Avoid divide by zeros by dividing by 1.0
-            replace!(s, 0.0 => 1.0)
-            c ./= s
-        end
+        df ./= scaling_factor
 
     end
 

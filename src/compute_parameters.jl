@@ -124,7 +124,7 @@ end
 """
 function compute_production_parameter(data::CleanData, prices::DataFrame, fun::Function = parameters_by_region)
 
-    n = nrow(data.industry.regional.input_matrices.agg)
+    n = size(data.industry.regional.input_matrices.agg, 1)
     v0 = Vector{Float64}(undef, n)
     m0 = Matrix{Float64}(undef, n, n)
     t0 = Array{Float64}(undef, n, n, n)
