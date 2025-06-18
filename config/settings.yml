@@ -18,8 +18,8 @@ constants:
     world: 0.12
 
   export_costs:
-    eu: 0.02
-    world: 0.02
+    eu: 0.01
+    world: 0.01
 
   elasticities:
     consumption: [3.0, 2.0]
