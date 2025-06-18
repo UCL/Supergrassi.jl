@@ -587,6 +587,11 @@ function generate_constants(data::Data, settings::Dict{String, Any})
     total_imports_from_all_sources = TotalImports(settings["constants"]["total_imports"]["from_all_sources"]["eu"],
                                                   settings["constants"]["total_imports"]["from_all_sources"]["world"])
 
+    import_tariffs = TotalImports(settings["constants"]["eu_import_tariff"], 
+                                  settings["constants"]["rest_of_world_import_tariff"])
+    export_costs = TotalImports(settings["constants"]["eu_export_costs"],
+                                settings["constants"]["rest_of_world_export_costs"])
+
     elasticities = settings["constants"]["elasticities"]
 
     production_elasticity = Elasticity(elasticities["production"][1],
@@ -624,7 +629,8 @@ function generate_constants(data::Data, settings::Dict{String, Any})
     parse_string_dataframe!(interest_rates, Float64)
     interest_rate = 1 + geomean(interest_rates[!, 1] / 100)
 
-    return Constants(year, exchange_rates, interest_rate, total_imports_from_uk, total_imports_from_all_sources, elasticities_struct)
+    return Constants(year, exchange_rates, interest_rate, total_imports_from_uk, total_imports_from_all_sources, 
+                     import_tariffs, export_costs, elasticities_struct)
 
 end
 

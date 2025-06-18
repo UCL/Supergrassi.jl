@@ -33,6 +33,9 @@ struct Constants
     total_imports_from_uk::TotalImports
     total_imports_from_all_sources::TotalImports
 
+    import_tariffs::TotalImports
+    export_costs::TotalImports
+
     elasticities::Elasticities
 end
 
