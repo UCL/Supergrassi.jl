@@ -13,10 +13,13 @@ constants:
   # split between eu and rest of world imports
   imports_split: 0.5
 
-  eu_import_tariff: 0.12
-  rest_of_world_import_tariff: 0.12
-  eu_export_costs: 0.02
-  rest_of_world_export_costs: 0.02
+  import_tariff:
+    eu: 0.12
+    world: 0.12
+
+  export_costs:
+    eu: 0.02
+    world: 0.02
 
   elasticities:
     consumption: [3.0, 2.0]

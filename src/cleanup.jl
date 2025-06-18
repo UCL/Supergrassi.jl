@@ -587,10 +587,10 @@ function generate_constants(data::Data, settings::Dict{String, Any})
     total_imports_from_all_sources = TotalImports(settings["constants"]["total_imports"]["from_all_sources"]["eu"],
                                                   settings["constants"]["total_imports"]["from_all_sources"]["world"])
 
-    import_tariffs = TotalImports(settings["constants"]["eu_import_tariff"], 
-                                  settings["constants"]["rest_of_world_import_tariff"])
-    export_costs = TotalImports(settings["constants"]["eu_export_costs"],
-                                settings["constants"]["rest_of_world_export_costs"])
+    import_tariffs = TotalImports(settings["constants"]["import_tariff"]["eu"], 
+                                  settings["constants"]["import_tariff"]["world"])
+    export_costs = TotalImports(settings["constants"]["export_costs"]["eu"],
+                                settings["constants"]["export_costs"]["world"])
 
     elasticities = settings["constants"]["elasticities"]
 
