@@ -1,5 +1,7 @@
 using Distributions
 using Enzyme
+using Roots
+using Random
 
 """
 Wrapper around Delta that exposes logOmega, price_uk and zOC as the arguments for computation
@@ -22,7 +24,7 @@ end
 """
 Function Delta as a function of logOmega, B and b as written in the paper (C. 47).
 """
-function Delta(logOmega::T, B::T = 0.0, b::T = 0.0, μ::T = 1.0, muBar::T = 1.0, sigmaBar::T = 1.0, λ::T = 1.0, R::T = 1.0) where {T <: Real}
+function Delta(logOmega::T, B::T = 0.0, b::T = 1.0, μ::T = 1.0, muBar::T = 1.0, sigmaBar::T = 1.0, λ::T = 1.0, R::T = 1.0) where {T <: Real}
 
     ζ = (logOmega - muBar) / sigmaBar
     F = cdf(Normal(), ζ)
@@ -85,8 +87,14 @@ function rk(price_uk, μ, zOC, τ, γK, ξ, q0)
 
 end
 
+function residual(logOmega::T, L::T, fun::Function) where {T<:Real}
 
-logOmega = 1.0
+    return L - fun(logOmega)
+
+end
+
+Random.seed!(1238)
+
 price_uk = rand()
 mu = rand()
 zOC = rand()
@@ -96,6 +104,13 @@ gammaK = rand()
 chi0 = rand()
 xi = rand()
 q0 = rand()
+
+L = 1.0
+σ = 1.4
+
+Δ(Ω) = Delta_wrapper(Ω, price_uk, zOC, mu, delta, tau, gammaK, chi0, xi, q0)
+Δres(Ω) = residual(Ω, L, Δ)
+logOmega = find_zero(Δres, (mu - 4 * σ, mu + 4 * σ), Bisection(), verbose=true)
 
 grad = gradient(ForwardWithPrimal, Delta_wrapper, logOmega, price_uk, zOC, Const(mu),
                 Const(delta), Const(tau), Const(gammaK), Const(chi0), Const(xi), Const(q0))
