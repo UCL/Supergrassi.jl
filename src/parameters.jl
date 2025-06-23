@@ -1,12 +1,3 @@
-struct UtilityFunctionParameters{R <: Real, T <: VecOrMat{R}}
-
-    uk::T
-    eu::T
-    world::T
-    agg::T
-
-end
-
 """
   Compute an utility function parameter for a single region
 """
@@ -73,20 +64,20 @@ function log_parameters_by_region(elasticity::T,
 end
 
 """
-  Compute the aggregate utility function parameter. Parameters of this type appear in multiple utility function
+  Compute the total utility function parameter. Parameters of this type appear in multiple utility function
   in the paper, and are annotated (at least) α, β1, β2, γ and ρ.
 
   This is refactored from the Matlab code in e.g. ComputeTheta.m line 59
 
   # Arguments
   - log_price_index: price index computed by log_price_index()
-  - quantity: aggregate quantity [f, x1, x2, I, m]
+  - quantity: total quantity [f, x1, x2, I, m]
   - elasticity: [ϵ, χ1, χ2, η, ξ]
 
   # Outputs
   - parameters
 """
-function agg_parameters(log_price_index::Vector{T}, quantity::Vector{T}, elasticity::T ) where {T <: Real}
+function total_parameters(log_price_index::Vector{T}, quantity::Vector{T}, elasticity::T ) where {T <: Real}
 
     length(log_price_index) == length(quantity) || error()
 
@@ -110,7 +101,7 @@ function log_eu_expenditure_on_uk_exports(log_price_index::Vector{T}, quantity::
                                           elasticity_tilde::T) where {T <: Real}
 
     length(log_price_index) == length(quantity) || error()
-    logPBar = log_agg_price_index(elasticity, log_price_index, quantity)
+    logPBar = log_total_price_index(elasticity, log_price_index, quantity)
 
     return log_weight_kernel(Ex/ETilde, exp(logPBar) * ePx / PTilde, elasticity_tilde)
 
@@ -150,7 +141,7 @@ end
   Compute the consumer price index defined in equation 2.7 of the main paper as \bar{P}.
   Matlab code reference e.g. ComputeTheta.m line 58.
 """
-function log_agg_price_index(elasticity::T, log_price_index::Vector{T}, quantity::Vector{T}) where {T <: Real}
+function log_total_price_index(elasticity::T, log_price_index::Vector{T}, quantity::Vector{T}) where {T <: Real}
 
     s = sum_kernel(quantity, log_price_index, elasticity)
     weight = elasticity / (elasticity - 1) * log(s)
@@ -182,13 +173,13 @@ function firms_parameters_by_region(elasticity::T,
     return parameters
 
 end
-0
+
 """
-  Compute the aggregate parameter (γM) for the firms input utility function.
+  Compute the total parameter (γM) for the firms input utility function.
 
   Matlab code reference ComputeTheta.m line 251
 """
-function agg_input_parameters(log_price_index::Vector{T}, input::Vector{T},
+function total_input_parameters(log_price_index::Vector{T}, input::Vector{T},
                             capital::T, demand0::T, output::T, labor::T, log_wages::T, elasticity::T, tau::T) where T
 
     length(log_price_index) == length(input) || error()
@@ -207,11 +198,11 @@ function agg_input_parameters(log_price_index::Vector{T}, input::Vector{T},
 end
 
 """
-  Compute the aggregate parameter (γH) for the firms labor utility function.
+  Compute the total parameter (γH) for the firms labor utility function.
 
   Matlab code reference ComputeTheta.m line 249
 """
-function agg_labor_parameters(log_price_index::Vector{T}, input::Vector{T},
+function total_labor_parameters(log_price_index::Vector{T}, input::Vector{T},
                             capital::T, demand0::T, output::T, labor::T, log_wages::T, elasticity::T, tau::T) where T
 
     length(log_price_index) == length(input) || error()
@@ -221,11 +212,11 @@ function agg_labor_parameters(log_price_index::Vector{T}, input::Vector{T},
 end
 
 """
-  Compute the aggregate parameter (γK) for the firms capital utility function.
+  Compute the total parameter (γK) for the firms capital utility function.
 
   Matlab code reference ComputeTheta.m line 254
 """
-function agg_capital_parameters(log_price_index::Vector{T}, input::Vector{T},
+function total_capital_parameters(log_price_index::Vector{T}, input::Vector{T},
                             capital::T, demand0::T, output::T, labor::T, log_wages::T, elasticity::T, tau::T) where T
 
     length(log_price_index) == length(input) || error()
