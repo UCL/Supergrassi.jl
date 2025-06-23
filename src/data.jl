@@ -1,15 +1,15 @@
 
-struct IncomeData
+struct RawIncomeData
     high::DataFrame
     low::DataFrame
 end
 
-struct HouseHoldData
-    income::IncomeData
-    hours::IncomeData
+struct RawHouseHoldData
+    income::RawIncomeData
+    hours::RawIncomeData
 end
 
-struct IndustryData
+struct RawIndustryData
     capital::DataFrame
     turnover::DataFrame
     inventory::DataFrame
@@ -43,7 +43,17 @@ struct InputOutput
         limits = settings["excel_limits"]["input_output"]
 
         input_output_matrix = raw_data[limits["row_range"][1]:limits["row_range"][2], limits["matrix_cols"][1]:limits["matrix_cols"][2]]
-        industry_names = Array(raw_data[limits["industry_names_row"], limits["matrix_cols"][1]:limits["matrix_cols"][2]])
+        temp_industry_names = Array(raw_data[limits["industry_names_row"], limits["matrix_cols"][1]:limits["matrix_cols"][2]])
+
+        industry_names = Array{String, 1}(undef, length(temp_industry_names))
+        for i in eachindex(temp_industry_names)
+            industry_name = temp_industry_names[i]
+            industry_name = split(industry_name, "CPA_")[2]
+            industry_names[i] = industry_name
+
+        end
+
+        input_output_matrix = DataFrame(permutedims(input_output_matrix), industry_names)
 
         final_consumption = Array(raw_data[limits["row_range"][1]:limits["row_range"][2], limits["final_consumption_col"]])
         gross_fixed_capital_formation = Array(raw_data[limits["row_range"][1]:limits["row_range"][2], limits["gross_fixed_capital_formation_col"]])
@@ -65,10 +75,11 @@ end
 
 struct Data
 
-    household::HouseHoldData
-    industry::IndustryData
+    household::RawHouseHoldData
+    industry::RawIndustryData
 
     input_output::InputOutput
+    imports::InputOutput
 
     depreciation::DataFrame
 
@@ -77,39 +88,38 @@ struct Data
     model_results::DataFrame
 
     merge_codes_105::DataFrame
+    merge_codes_64::DataFrame
+
+    others::DataFrame
 
     # gdp::DataFrame
 
     function Data(data_struct::Dict{String, DataFrame}, settings::Dict{String, Any})
 
-        household = HouseHoldData(
-            IncomeData(data_struct["hi_income"], data_struct["lo_income"]),
-            IncomeData(data_struct["hi_hours"], data_struct["lo_hours"])
+        household = RawHouseHoldData(
+            RawIncomeData(data_struct["hi_income"], data_struct["lo_income"]),
+            RawIncomeData(data_struct["hi_hours"], data_struct["lo_hours"])
         )     
 
-        industry = IndustryData(
+        industry = RawIndustryData(
             data_struct["capital"],
             data_struct["turnover"],
             data_struct["inventory"]
         )
 
         input_output = InputOutput(data_struct["input_output"], settings)
+        imports = InputOutput(data_struct["imports"], settings)
+
+        others = data_struct["others"]
 
         depreciation = data_struct["depreciation"]
         risk_free_rate = data_struct["risk_free_rate"]
         assets = data_struct["assets"]
         model_results = data_struct["model_results"]
         merge_codes_105 = data_struct["merge_codes_105"]
+        merge_codes_64 = data_struct["merge_codes_64"]
 
-        return new(household, industry, input_output, depreciation, risk_free_rate, assets, model_results, merge_codes_105)
+        return new(household, industry, input_output, imports, depreciation, risk_free_rate, assets, model_results, merge_codes_105, merge_codes_64, others)
     end
 
-end
-
-function organise_data(data_struct::Dict{String, DataFrame})
-
-    data = Data(data_struct)
-
-    return data
-    
 end

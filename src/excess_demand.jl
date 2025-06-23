@@ -4,15 +4,13 @@ function intermediate_goods_price_index(log_price_uk::Vector{T}, zOC::Vector{T},
 
     # Computes the intermediate goods price index, Step 1 of ExcessDemand.m
 
-    pdYBar = Vector{T}(undef, length(log_price_uk))
+    # pdYBar = Vector{T}(undef, length(log_price_uk))
+    # for i in axes(log_price_uk, 1)
+    #     pdYBar[i] = intermediate_goods_price_index(log_price_uk[i], zOC[i], tau[i], mu[i], gammaK[i], K0[i], xi)
+    # end
+    # return pdYBar
 
-    for i in axes(log_price_uk, 1)
-
-        pdYBar[i] = intermediate_goods_price_index(log_price_uk[i], zOC[i], tau[i], mu[i], gammaK[i], K0[i], xi)
-
-    end
-
-    return pdYBar
+    return [intermediate_goods_price_index(log_price_uk[i], zOC[i], tau[i], mu[i], gammaK[i], K0[i], xi) for i in eachindex(log_price_uk, zOC, tau, mu, gammaK, K0)]
 
 end
 

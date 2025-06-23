@@ -8,6 +8,24 @@ struct UtilityFunctionParameters{R <: Real, T <: VecOrMat{R}}
 end
 
 """
+  Compute an utility function parameter for a single region
+"""
+function parameter_by_region(elasticity::T, quantity_region::T, logP_region::T, logP::T) where {T <: Real}
+
+    return quantity_region == 0.0 ? 0.0 : quantity_region * exp((elasticity - 1) * (logP_region - logP))
+
+end
+
+"""
+  Compute log of an utility function parameter for a single region
+"""
+function log_parameter_by_region(elasticity::T, quantity_region::T, logP_region::T, logP::T) where {T <: Real}
+
+    return quantity_region == 0.0 ? 0.0 : log(quantity_region) + (elasticity - 1) * (logP_region - logP)
+
+end
+
+"""
   Compute utility function parameters by region considered in the model (uk, eu, rest of world).
   Parameters of this type appear in multiple utility functions in the paper, and are annotated
   (at least) α, β1, β2, γ and ρ.
@@ -24,14 +42,14 @@ end
 
 """
 function parameters_by_region(elasticity::T,
-                           log_price_uk::T,log_price_eu::T,log_price_world::T,
-                           quantity_uk::T,quantity_eu::T,quantity_world::T) where {T <: Real}
+                              log_price_uk::T,log_price_eu::T,log_price_world::T,
+                              quantity_uk::T,quantity_eu::T,quantity_world::T) where {T <: Real}
 
     logP = log_price_index(elasticity, log_price_uk, log_price_eu, log_price_world, quantity_uk, quantity_eu, quantity_world)
 
-    weight_uk = quantity_uk * exp((elasticity - 1.0) * (log_price_uk - logP))
-    weight_eu = quantity_eu * exp((elasticity - 1.0) * (log_price_eu - logP))
-    weight_world = quantity_world * exp((elasticity - 1.0) * (log_price_world - logP))
+    weight_uk = parameter_by_region(elasticity, quantity_uk, log_price_uk, logP)
+    weight_eu = parameter_by_region(elasticity, quantity_eu, log_price_eu, logP)
+    weight_world = parameter_by_region(elasticity, quantity_world, log_price_world, logP)
 
     return weight_uk, weight_eu, weight_world
 
@@ -46,9 +64,9 @@ function log_parameters_by_region(elasticity::T,
 
     logP = log_price_index(elasticity, log_price_uk, log_price_eu, log_price_world, quantity_uk, quantity_eu, quantity_world)
 
-    log_weight_uk = log(quantity_uk) + (elasticity - 1.0) * (log_price_uk - logP)
-    log_weight_eu = log(quantity_eu)  + (elasticity - 1.0) * (log_price_eu - logP)
-    log_weight_world = log(quantity_world) + (elasticity - 1.0) * (log_price_world - logP)
+    log_weight_uk = log_parameter_by_region(elasticity, quantity_uk, log_price_uk, logP)
+    log_weight_eu = log_parameter_by_region(elasticity, quantity_eu, log_price_eu, logP)
+    log_weight_world = log_parameter_by_region(elasticity, quantity_world, log_price_world, logP)
 
     return log_weight_uk, log_weight_eu, log_weight_world
 
@@ -70,17 +88,17 @@ end
 """
 function agg_parameters(log_price_index::Vector{T}, quantity::Vector{T}, elasticity::T ) where {T <: Real}
 
-
     length(log_price_index) == length(quantity) || error()
 
-    logPBar = log_agg_price_index(elasticity, log_price_index, quantity)
-    parameters = Vector{T}(undef, length(log_price_index))
+    logPBar = log_total_price_index(elasticity, log_price_index, quantity)
 
+    parameters = Vector{T}(undef, length(log_price_index))
     for i in axes(log_price_index,1)
         parameters[i] = weight_kernel(quantity[i], exp(log_price_index[i] - logPBar), elasticity)
     end
-
     return parameters
+
+    #return [parameters[i] = weight_kernel(quantity[i], exp(log_price_index[i] - logPBar), elasticity) for i in eachindex(quantity, log_price_index)]
 
 end
 
@@ -107,10 +125,10 @@ function price_index(elasticity::T,
                      demand_uk::T, demand_eu::T, demand_world::T) where {T <: Real}
 
     return (
-        demand_uk ^ (1.0/elasticity) * exp((elasticity - 1.0) * log_price_uk / elasticity) +
-        demand_eu ^ (1.0/elasticity) * exp((elasticity - 1.0) * log_price_eu / elasticity) +
-        demand_world  ^ (1.0/elasticity) * exp((elasticity - 1.0) * log_price_world  / elasticity)
-    ) ^ ( elasticity / (elasticity - 1.0) )
+        demand_uk ^ (1 / elasticity) * exp((elasticity - 1) * log_price_uk / elasticity) +
+        demand_eu ^ (1 / elasticity) * exp((elasticity - 1) * log_price_eu / elasticity) +
+        demand_world  ^ (1 / elasticity) * exp((elasticity - 1) * log_price_world  / elasticity)
+    ) ^ ( elasticity / (elasticity - 1) )
 
 end
 
@@ -118,10 +136,12 @@ function log_price_index(elasticity::T,
                          log_price_uk::T, log_price_eu::T, log_price_world::T,
                          demand_uk::T, demand_eu::T, demand_world::T) where {T <: Real}
 
-    return elasticity / (elasticity - 1.0) * log(
-        demand_uk ^ (1.0/elasticity) * exp((elasticity - 1.0) * log_price_uk / elasticity) +
-        demand_eu ^ (1.0/elasticity) * exp((elasticity - 1.0) * log_price_eu / elasticity) +
-        demand_world  ^ (1.0/elasticity) * exp((elasticity - 1.0) * log_price_world  / elasticity)
+    if(demand_uk == demand_eu == demand_world == 0.0) return 0.0 end
+
+    return (elasticity / (elasticity - 1)) * log(
+        demand_uk ^ (1 / elasticity) * exp((elasticity - 1) * log_price_uk / elasticity) +
+        demand_eu ^ (1 /elasticity) * exp((elasticity - 1) * log_price_eu / elasticity) +
+        demand_world  ^ (1 / elasticity) * exp((elasticity - 1) * log_price_world  / elasticity)
     )
 
 end
@@ -133,7 +153,9 @@ end
 function log_agg_price_index(elasticity::T, log_price_index::Vector{T}, quantity::Vector{T}) where {T <: Real}
 
     s = sum_kernel(quantity, log_price_index, elasticity)
-    return elasticity/(elasticity - 1.0) * log(s)
+    weight = elasticity / (elasticity - 1) * log(s)
+
+    return weight
 
 end
 
@@ -160,7 +182,7 @@ function firms_parameters_by_region(elasticity::T,
     return parameters
 
 end
-
+0
 """
   Compute the aggregate parameter (γM) for the firms input utility function.
 
@@ -179,6 +201,8 @@ function agg_input_parameters(log_price_index::Vector{T}, input::Vector{T},
     end
 
     return parameters
+
+    #return [weight_kernel(input[i], exp(log_price_index[i]) / tauP, elasticity) for i in eachindex(input, log_price_index)]
 
 end
 
@@ -207,19 +231,19 @@ function agg_capital_parameters(log_price_index::Vector{T}, input::Vector{T},
     length(log_price_index) == length(input) || error()
     tauP = tauPdMu(elasticity, log_price_index, input, capital, demand0, output, labor, log_wages, tau)
     tauY = (1 - tau) * output / demand0
-    return capital ^ elasticity * (tauY / tauP) ^ (elasticity - 1.0)
+    return capital ^ elasticity * (tauY / tauP) ^ (elasticity - 1)
 
 end
 
 function weight_kernel(a::T, b::T, elasticity::T) where {T <: Real}
 
-    return a / b ^ (1.0 - elasticity)
+    return a / b ^ (1 - elasticity)
 
 end
 
 function log_weight_kernel(a::T, b::T, elasticity::T) where {T <: Real}
 
-    return log(a) + (elasticity - 1.0) * log(b)
+    return log(a) + (elasticity - 1) * log(b)
 
 end
 
@@ -229,8 +253,9 @@ function sum_kernel(var::Vector{T}, logP::Vector{T}, elasticity::T) where {T <: 
     for i in axes(logP,1)
         s += var[i] ^ (1.0 / elasticity) * exp((elasticity - 1.0) * logP[i] / elasticity)
     end
-
     return s
+
+    #return sum(x -> x[1] ^ (1 / elasticity) * exp((elasticity - 1) * x[2] / elasticity), zip(var, logP))
 
 end
 
@@ -254,7 +279,7 @@ function logTauPdMu(elasticity::T, log_price_index::Vector{T}, input::Vector{T},
     k = capital_fun(capital, tau, output, demand0, elasticity)
     h = labor_fun(labor, log_wages, elasticity)
 
-    return elasticity / ( elasticity - 1.0 ) * log(s + k + h)
+    return elasticity / ( elasticity - 1 ) * log(s + k + h)
 
 end
 
@@ -264,18 +289,18 @@ function tauPdMu(elasticity::T, log_price_index::Vector{T}, input::Vector{T}, ca
     k = capital_fun(capital, tau, output, demand0, elasticity)
     h = labor_fun(labor, log_wages, elasticity)
 
-    return (s + k + h) ^ (elasticity / ( elasticity - 1.0 ) )
+    return (s + k + h) ^ (elasticity / ( elasticity - 1 ) )
 
 end
 
 function capital_fun(capital::T, tau::T, output::T, demand0::T, elasticity::T) where T
 
-    return capital * exp((elasticity - 1.0) / elasticity * log((1 - tau) * output / demand0))
+    return capital * exp((elasticity - 1) / elasticity * log((1 - tau) * output / demand0))
 
 end
 
 function labor_fun(labor::T, log_wages::T, elasticity::T) where T
 
-    return labor ^ ( 1.0 / elasticity ) * exp(( elasticity - 1.0 ) / elasticity * log_wages)
+    return labor ^ ( 1 / elasticity ) * exp(( elasticity - 1 ) / elasticity * log_wages)
 
 end
