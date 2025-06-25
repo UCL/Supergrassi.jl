@@ -10,10 +10,12 @@ include("data.jl")
 include("cleanup.jl")
 
 include("parameters.jl")
+include("additional_parameters.jl")
 include("parameters_interface.jl")
 include("excess_demand.jl")
 
 export create_filepath, read_data, read_settings, check_file_availability
 export clean_data
+export compute_additional_parameters
 
 end
