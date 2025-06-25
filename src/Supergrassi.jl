@@ -15,6 +15,5 @@ include("excess_demand.jl")
 
 export create_filepath, read_data, read_settings, check_file_availability
 export clean_data
-export compute_additional_parameters
 
 end
