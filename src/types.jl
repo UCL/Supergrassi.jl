@@ -9,7 +9,9 @@ struct ExchangeRates
 end
 
 """
-PLACEHOLDER
+    struct ForeignRegionalValues
+
+Stores eu and rest of world components of a scalar quantity.
 """
 struct ForeignRegionalValues
     eu::Float64
@@ -17,28 +19,49 @@ struct ForeignRegionalValues
 end
 
 """
-PLACEHOLDER
+    struct Elasticity
+
+Stores components of an elasticity constant.
+
+Names for reference in paper/matlab code for e.g. production elasticity ξ:
+
+substitution: ξ
+armington: ξ_a
+substitution_uk_other: ~ξ
+skill_substitution: ξ_h
 """
 struct Elasticity
     substitution::Float64
-    armington::Float64 # _a
-    substitution_uk_other::Union{Float64, Nothing} # ~
-    skill_substitution::Union{Float64, Nothing} # _h
+    armington::Float64
+    substitution_uk_other::Union{Float64, Nothing}
+    skill_substitution::Union{Float64, Nothing}
 end
 
 """
-PLACEHOLDER
+    struct Elasticities
+
+Stores sets of elasticity constants.
+
+Names for reference in paper/matlab code:
+
+consumption: α
+eu_export_demand: β1
+world_export_demand: β2
+investment: ρ
+production: ξ
 """
 struct Elasticities
-    production::Elasticity # ξ
-    world_export_demand::Elasticity # β2
-    eu_export_demand::Elasticity # β1
-    consumption::Elasticity # α
-    investment::Elasticity # ρ
+    production::Elasticity
+    world_export_demand::Elasticity
+    eu_export_demand::Elasticity
+    consumption::Elasticity
+    investment::Elasticity
 end
 
 """
-PLACEHOLDER
+    struct Constants
+
+Stores constants read from settings file.
 """
 struct Constants
     data_year::Int64
@@ -55,22 +78,32 @@ struct Constants
 end
 
 """
-PLACEHOLDER
+    struct Totals
+
+Stores sums of quantities over industries before renormalisation.
+
+Names for reference with the paper/matlab code:
+
+savings: E
+investments: ISum
+imports: EX1, EX2
 """
 struct Totals
 
-    savings::Float64 # E
-    investments::Float64 # ISum
-    imports::ForeignRegionalValues # EX1, EX2
+    savings::Float64
+    investments::Float64
+    imports::ForeignRegionalValues
 
 end
 
 """
-PLACEHOLDER
+    struct InputMatrices
+
+Stores intermediate input production matrices .
+
+In the matlab code these matrices are called `mValue_*`
 """
 struct InputMatrices
-
-    # These correspond to mValue matrices in the Matlab code
 
     uk::Matrix{Float64}
     eu::Matrix{Float64}
@@ -80,7 +113,9 @@ struct InputMatrices
 end
 
 """
-PLACEHOLDER
+    struct AssetsLiabilities
+
+In the matlab code these are called `assets0` and `assets1`
 """
 struct AssetsLiabilities
 
@@ -90,7 +125,22 @@ struct AssetsLiabilities
 end
 
 """
-PLACEHOLDER
+    struct RegionalData
+
+Stores industries data that is split between uk/eu/rest of the world.
+
+The data is vectors with one value per industry stored in a DataFrame. Names for reference with
+the matlab code/paper:
+
+total_use: data.yValue / y
+consumption:data.fValue / f
+delta_v: data.deltaVValue / Δv
+export_eu: data.x1Value / x1
+export_world: data.x2Value / x2
+investment:: data.IValue / I
+input_matrices:: data.mValue / m
+totals: data.{E, ISum, EX1, EX2}
+
 """
 struct RegionalData
 
@@ -106,34 +156,65 @@ struct RegionalData
 end
 
 """
-structure that contains data on households
+    struct HouseholdData
+
+Stores data on households
+
+Names reference for matlab code/paper
+
+income: data.income_{lo, hi}
+payments: data.{hValueLO, hValueHI, hValue}
+hours: data.h{LO, HI}
+wages: data.w{LO, HI}
+
 """
 struct HouseholdData
 
     income::DataFrame
-    payments::DataFrame # data.{hValueLO, hValueHI, hValue}
+    payments::DataFrame
     hours::DataFrame
     wages::DataFrame
 
 end
 
 """
-PLACEHOLDER
+    struct IndustryData
+
+Stores data on industries
+
+Names reference for matlab code/paper
+
+depreciation: data.depreciation
+tax: data.taxValue{1,2}
+capital: data.k{0,1}
+surplus: data.kValue
+shock_stdev: data.sigmaBar
+assets_liabilities: [AssetsLiabilities](@ref)
+regional: [RegionalData](@ref)
+
 """
 struct IndustryData
 
     depreciation::DataFrame
-    tax::DataFrame # data.taxValue{1,2}
-    capital::DataFrame # data.k{0,1}
-    surplus::DataFrame # data.kValue
-    shock_stdev::DataFrame # sigmaBar
+    tax::DataFrame 
+    capital::DataFrame 
+    surplus::DataFrame 
+    shock_stdev::DataFrame 
     assets_liabilities::AssetsLiabilities
     regional::RegionalData
 
 end
 
 """
-PLACEHOLDER
+    struct CleanData
+
+Top level structure for cleaned up input data.
+
+Contains
+
+[HouseholdData](@ref)
+[IndustryData](@ref)
+[Constants](@ref)
 """
 struct CleanData
 
