@@ -123,6 +123,9 @@ function price_index(elasticity::T,
 
 end
 
+"""
+TODO
+"""
 function log_price_index(elasticity::T,
                          log_price_uk::T, log_price_eu::T, log_price_world::T,
                          demand_uk::T, demand_eu::T, demand_world::T) where {T <: Real}

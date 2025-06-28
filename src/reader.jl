@@ -1,6 +1,7 @@
 using CSV
 using DataFrames
 using XLSX
+using Logging
 
 function read_excel(file::String; sheet::String="Sheet1", range::String="A1:Z1000")
 
@@ -46,7 +47,7 @@ df = read_data("data.csv")
 ```
 """
 function read_data(file::String)
-    
+
     if !isfile(file)
         error("File not found: $file")
     end
@@ -92,7 +93,7 @@ function read_data(filepaths::Dict{String, FilePath}, settings::Dict{String, Any
     data = Dict{String, DataFrame}()
 
     for (key, filepath) in filepaths
-        println("Reading data from $(filepath.path)")
+        @debug "Reading data from $(filepath.path)"
 
         if endswith(filepath.path, ".csv")
             data[key] = read_csv(filepath.path)
