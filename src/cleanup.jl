@@ -533,7 +533,6 @@ function clean_household(data::Data, year::Int64, map_64::Dict{String, String}, 
     high_income = merge_quarterly_data(data.household.income.high, year, names_64, sum)
 
     high_income_share = high_income ./ (high_income .+ low_income)
-    low_income_share = low_income ./ (high_income .+ low_income)
 
     payments_to_low_skilled = (1 .- high_income_share) .* compensation_employees
     payments_to_high_skilled = high_income_share .* compensation_employees
