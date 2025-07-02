@@ -116,6 +116,15 @@ function reduce_columns_by_group_weighted_mean(df::DataFrame, mapping::Dict{Stri
 
 end
 
+"""
+Group columns by their new names based on a mapping.
+
+# Arguments
+- `mapping::Dict{String, String}`: A dictionary mapping old column names to new column names.
+
+# Returns
+- `Dict{String, Vector{Symbol}}`: A dictionary where keys are new column names and values are vectors of old column names (as Symbols) that map to them.
+"""
 function group_columns_by_new_name(mapping::Dict{String, String})
 
     grouped = Dict{String, Vector{Symbol}}()
@@ -127,6 +136,21 @@ function group_columns_by_new_name(mapping::Dict{String, String})
 
 end
 
+"""
+Group multiple DataFrames by industry names and aggregate their values.
+
+# Arguments
+- `dfs::AbstractArray`: An array of DataFrames to be grouped.
+- `col_names::AbstractArray`: An array of column names for the resulting DataFrame.
+- `industry_names::AbstractArray`: An array of industry names to be used as row names.
+- `industries_on_cols::Bool`: If true, industries will be on columns; otherwise, they will be on rows.
+- `reduction_fun::Function`: A function to apply for data aggregation (default is `nothing`).
+- `mapping::Dict{String, String}`: A dictionary mapping old column names to new column names.
+- `kwargs...`: Additional keyword arguments to be passed to the `reduction_fun`.
+
+# Returns
+- `DataFrame`: A DataFrame with industries as rows or columns, depending on `industries_on_cols`, and aggregated values.
+"""
 function group_dataframes(dfs::AbstractArray, col_names::AbstractArray, industry_names::AbstractArray, industries_on_cols::Bool = true, reduction_fun::Function = nothing, mapping::Dict{String, String} = Dict(); kwargs...)
 
     dd = DataFrame([industry_names], ["industry"])
@@ -149,6 +173,16 @@ function group_dataframes(dfs::AbstractArray, col_names::AbstractArray, industry
 
 end
 
+"""
+Select rows from a DataFrame based on a specific year.
+
+# Arguments
+- `data::DataFrame`: The DataFrame containing the data.
+- `year::Int64`: The year to filter the DataFrame by.
+
+# Returns
+- `DataFrame`: A new DataFrame containing only the rows for the specified year, with columns converted to Float64 if they are strings.
+"""
 function select_year(data::DataFrame, year::Int64)
     rr = data[data.year .== year, 4:end]
 
@@ -161,10 +195,28 @@ function select_year(data::DataFrame, year::Int64)
     return rr
 end
 
+"""
+Combine rows of a DataFrame by applying a function to each row.
+
+# Arguments
+- `data::DataFrame`: The DataFrame containing the data to be combined.
+- `func::Function`: A function to apply to each row of the DataFrame.
+
+# Returns
+- `DataFrame`: A new DataFrame with the combined results, where each column is named after the original column names.
+"""
 function combine_dataframe_row_wise(data::DataFrame, func::Function)
     return combine(data, names(data, Real) .=> func, renamecols=false)
 end
 
+"""
+Parse string columns in a DataFrame to a specified type, replacing missing values with a default value.
+
+# Arguments
+- `df::DataFrame`: The DataFrame containing the string columns to be parsed.
+- `T::Type`: The type to which the string columns should be parsed (e.g., `Float64`).
+- `default_val`: The value to replace missing values with (default is `nothing`).
+"""
 function parse_string_dataframe!(df::DataFrame, T::Type, default_val=nothing)
 
     for v in names(df)
@@ -175,6 +227,18 @@ function parse_string_dataframe!(df::DataFrame, T::Type, default_val=nothing)
 
 end
 
+"""
+Clean selected subset of rows in a DataFrame based on row names and rename columns.
+
+# Arguments
+- `data::DataFrame`: The DataFrame containing the data to be cleaned.
+- `row_names::String`: The name of the row to select.
+- `col_names::Array{String, 1}`: An array of new column names to rename the selected columns.
+- `mapping::Dict{String, String}`: A dictionary mapping old column names to new column names for reduction.
+
+# Returns
+- `DataFrame`: A new DataFrame with selected rows, renamed columns, and reduced columns based on the mapping.
+"""
 function clean_rows(data::DataFrame, row_names::String, col_names::Array{String, 1}, mapping::Dict{String, String})
     rr = data[data.x2 .== row_names, 3:end]
 
@@ -185,6 +249,17 @@ function clean_rows(data::DataFrame, row_names::String, col_names::Array{String,
     return rr
 end
 
+"""
+Clean a vector of numbers by creating a DataFrame, renaming columns, and reducing columns based on a mapping.
+
+# Arguments
+- `data::Vector{<:Number}`: A vector of numbers to be cleaned.
+- `industry_names::Array{String, 1}`: An array of industry names to be used as column names.
+- `mapping::Dict{String, String}`: A dictionary mapping old column names to new column names for reduction.
+
+# Returns
+- `DataFrame`: A new DataFrame with the vector data, renamed columns, and reduced columns based on the mapping.
+"""
 function clean_vector(data::Vector{<:Number}, industry_names::Array{String, 1}, mapping::Dict{String, String})
     # Create a DataFrame from the vector
     df = DataFrame([data], :auto)
@@ -194,6 +269,17 @@ function clean_vector(data::Vector{<:Number}, industry_names::Array{String, 1}, 
     return rr
 end
 
+"""
+Clean a matrix of data by reducing based on a mapping and renaming them with industry names.
+
+# Arguments
+- `data::DataFrame`: A DataFrame containing the matrix data to be cleaned.
+- `industry_names::Array{String, 1}`: An array of industry names to be used as column names.
+- `mapping::Dict{String, String}`: A dictionary mapping old column names to new column names for reduction.
+
+# Returns
+- `DataFrame`: A new DataFrame with the matrix data, renamed columns, and reduced columns based on the mapping.
+"""
 function clean_matrix(data::DataFrame, industry_names::Array{String, 1}, mapping::Dict{String, String})
 
 
