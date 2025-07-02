@@ -76,7 +76,7 @@ Reduce columns in a DataFrame by summing them based on a mapping.
 # Returns
 - `DataFrame`: A new DataFrame with reduced columns, where each new column is the sum of the old columns that map to it.
 """
-function reduce_columns_by_group_sum(df::DataFrame, mapping::Dict{String, String};)
+function reduce_columns_by_group_sum(df::DataFrame, mapping::Dict{String, String})
 
     grouped = group_columns_by_new_name(mapping)
 
