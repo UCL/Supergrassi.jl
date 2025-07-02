@@ -284,7 +284,6 @@ function clean_matrix(data::DataFrame, industry_names::Array{String, 1}, mapping
 
 
     rr = reduce_columns_by_group_sum(data, mapping)
-    final_names = names(rr)
 
     rr = DataFrame(permutedims(rr), industry_names)
 
