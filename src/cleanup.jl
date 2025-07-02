@@ -4,6 +4,8 @@ using StatsBase
 using Dates
 
 """
+    function create_map_105_to_64(merge_codes::DataFrame, verbose::Bool = false)
+
 Create a mapping from SIC 105 industry names to SIC 64 industry names.
 
 # Arguments
@@ -36,6 +38,8 @@ function create_map_105_to_64(merge_codes::DataFrame, verbose::Bool = false)
 end
 
 """
+    function create_map_105_to_64(merge_codes::DataFrame, verbose::Bool = false)
+
 Create a mapping from SIC 64 industry names to SIC 16 industry names.
 # Arguments
 - `merge_codes::DataFrame`: A DataFrame containing the mapping between SIC 64 and SIC 16 industry names. It should have two columns: `x1` containing SIC 64 industry names and `x7` containing SIC 16 industry names.
@@ -67,6 +71,8 @@ function create_map_64_to_16(merge_codes::DataFrame, verbose::Bool = false)
 end
 
 """
+    function reduce_columns_by_group_sum(df::DataFrame, mapping::Dict{String, String})
+
 Reduce columns in a DataFrame by summing them based on a mapping.
 
 # Arguments
@@ -90,6 +96,8 @@ function reduce_columns_by_group_sum(df::DataFrame, mapping::Dict{String, String
 end
 
 """
+    fubction reduce_columns_by_group_weighted_mean(df::DataFrame, mapping::Dict{String, String}; weights::DataFrame = DataFrame(ones(1,ncol(df)), names(df)))
+
 Reduce columns in a DataFrame by calculating the weighted mean based on a mapping.
 # Arguments
 - `df::DataFrame`: The DataFrame containing the columns to be reduced.
@@ -117,6 +125,8 @@ function reduce_columns_by_group_weighted_mean(df::DataFrame, mapping::Dict{Stri
 end
 
 """
+    function group_columns_by_new_name(mapping::Dict{String, String})
+
 Group columns by their new names based on a mapping.
 
 # Arguments
@@ -137,6 +147,8 @@ function group_columns_by_new_name(mapping::Dict{String, String})
 end
 
 """
+    function group_dataframes(dfs::AbstractArray, col_names::AbstractArray, industry_names::AbstractArray, industries_on_cols::Bool = true, reduction_fun::Function = nothing, mapping::Dict{String, String} = Dict(); kwargs...)
+
 Group multiple DataFrames by industry names and aggregate their values.
 
 # Arguments
@@ -174,6 +186,8 @@ function group_dataframes(dfs::AbstractArray, col_names::AbstractArray, industry
 end
 
 """
+    function select_year(data::DataFrame, year::Int64)
+
 Select rows from a DataFrame based on a specific year.
 
 # Arguments
@@ -196,6 +210,8 @@ function select_year(data::DataFrame, year::Int64)
 end
 
 """
+    function combine_dataframe_row_wise(data::DataFrame, func::Function)
+
 Combine rows of a DataFrame by applying a function to each row.
 
 # Arguments
@@ -210,6 +226,8 @@ function combine_dataframe_row_wise(data::DataFrame, func::Function)
 end
 
 """
+    function parse_string_dataframe!(df::DataFrame, T::Type, default_val=nothing)
+
 Parse string columns in a DataFrame to a specified type, replacing missing values with a default value.
 
 # Arguments
@@ -228,6 +246,8 @@ function parse_string_dataframe!(df::DataFrame, T::Type, default_val=nothing)
 end
 
 """
+    function clean_rows(data::DataFrame, row_names::String, col_names::Array{String, 1}, mapping::Dict{String, String})
+
 Clean selected subset of rows in a DataFrame based on row names and rename columns.
 
 # Arguments
@@ -250,6 +270,8 @@ function clean_rows(data::DataFrame, row_names::String, col_names::Array{String,
 end
 
 """
+    function clean_vector(data::Vector{<:Number}, industry_names::Array{String, 1}, mapping::Dict{String, String})
+
 Clean a vector of numbers by creating a DataFrame, renaming columns, and reducing columns based on a mapping.
 
 # Arguments
@@ -270,6 +292,8 @@ function clean_vector(data::Vector{<:Number}, industry_names::Array{String, 1}, 
 end
 
 """
+    function clean_matrix(data::DataFrame, industry_names::Array{String, 1}, mapping::Dict{String, String})
+
 Clean a matrix of data by reducing based on a mapping and renaming them with industry names.
 
 # Arguments
@@ -293,6 +317,8 @@ function clean_matrix(data::DataFrame, industry_names::Array{String, 1}, mapping
 end
 
 """
+    funvtion clean_assets_liabilities(assets::DataFrame, year::Int64, map_to_16::Dict{String, String}, n_samples::Int64 = nrow(assets))
+
 Wrapper function to clean assets and liabilities data.
 
 # Arguments
@@ -361,6 +387,8 @@ end
 
 
 """
+    function clean_2d_values(data::Data, split_factor::Float64)
+
 Function to process the 2D values that are split between uk, eu, world and stored in matrices.
 
 # Arguments
@@ -391,6 +419,8 @@ function clean_2d_values(data::Data, split_factor::Float64)
 end
 
 """
+    function clean_1d_values(val::Vector{<:Number}, val_imp::Vector{<:Number}, map_64::Dict{String, String}, map_16::Dict{String, String}, names_105::Vector, names_16::Vector, split_factor::Float64, industries_in_cols::Bool)
+
 Function to process the values that are split between uk, eu, world and stored in vectors.
 
 # Arguments
@@ -423,6 +453,8 @@ function clean_1d_values(val::Vector{<:Number}, val_imp::Vector{<:Number}, map_6
 end
 
 """
+    function correct_exports_with_services!(export_to_eu::DataFrame, export_to_world::DataFrame, services_export::DataFrame)
+
 Function to correct exports by accounting for NaN values and scaling appropriately.
 
 # Arguments
@@ -441,6 +473,8 @@ function correct_exports_with_services!(export_to_eu::DataFrame, export_to_world
 end
 
 """
+    function clean_exports(input_output::InputOutput, imports::InputOutput, split::Float64, names_16::Vector, industries_in_cols::Bool, map_64::Dict{String, String}, map_16::Dict{String, String})
+
 Wrapper function to clean exports data.
 
 Exports need a special treatment because they are a sum of export and services_export data frames.
