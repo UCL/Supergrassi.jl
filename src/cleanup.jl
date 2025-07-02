@@ -292,6 +292,18 @@ function clean_matrix(data::DataFrame, industry_names::Array{String, 1}, mapping
     return rr
 end
 
+"""
+Wrapper function to clean assets and liabilities data.
+
+# Arguments
+- `assets::DataFrame`: The DataFrame containing assets and liabilities data.
+- `year::Int64`: The year for which the data is to be cleaned.
+- `map_to_16::Dict{String, String}`: A dictionary mapping SIC 64 industry names to SIC 16 industry names.
+- `n_samples::Int64`: The number of samples to limit per SIC 64 industry (default is the number of rows in `assets`.).
+
+# Returns
+- `DataFrame`: A cleaned DataFrame containing assets, liabilities, and their ratio, limited to `n_samples` per SIC 64 industry.
+"""
 function clean_assets_liabilities(assets::DataFrame, year::Int64, map_to_16::Dict{String, String}, n_samples::Int64 = nrow(assets))
 
     # Step 1: Extract the relevant columns as strings
@@ -349,7 +361,14 @@ end
 
 
 """
-Function to process the mValues stored in input_output_matrix:es in the data struct
+Function to process the 2D values that are split between uk, eu, world and stored in matrices.
+
+# Arguments
+- `data::Data`: The Data struct containing input-output matrices and imports.
+- `split_factor::Float64`: The factor by which to split the imports between EU and World.
+
+# Returns
+- `InputMatrices`: A struct containing the cleaned input-output matrices for UK, EU, World, and aggregate values.
 """
 function clean_2d_values(data::Data, split_factor::Float64)
 
@@ -373,6 +392,19 @@ end
 
 """
 Function to process the values that are split between uk, eu, world and stored in vectors.
+
+# Arguments
+- `val::Vector{<:Number}`: The vector containing the values for UK.
+- `val_imp::Vector{<:Number}`: The vector containing the values for imports.
+- `map_64::Dict{String, String}`: A dictionary mapping SIC 64 industry names to SIC 16 industry names.
+- `map_16::Dict{String, String}`: A dictionary mapping SIC 16 industry names to their final names.
+- `names_105::Vector`: A vector of industry names for SIC 105.
+- `names_16::Vector`: A vector of industry names for SIC 16.
+- `split_factor::Float64`: The factor by which to split the imports between EU and World.
+- `industries_in_cols::Bool`: If true, industries will be on columns; otherwise, they will be on rows.
+
+# Returns
+- `DataFrame`: A DataFrame containing the cleaned values for UK, EU, World, and aggregate values.
 """
 function clean_1d_values(val::Vector{<:Number}, val_imp::Vector{<:Number}, map_64::Dict{String, String}, map_16::Dict{String, String}, names_105::Vector, names_16::Vector, split_factor::Float64, industries_in_cols::Bool)
 
@@ -391,7 +423,12 @@ function clean_1d_values(val::Vector{<:Number}, val_imp::Vector{<:Number}, map_6
 end
 
 """
-Helper function for exports
+Function to correct exports by accounting for NaN values and scaling appropriately.
+
+# Arguments
+- `export_to_eu::DataFrame`: DataFrame containing exports to the EU.
+- `export_to_world::DataFrame`: DataFrame containing exports to the World.
+- `services_export::DataFrame`: DataFrame containing service exports.
 """
 function correct_exports_with_services!(export_to_eu::DataFrame, export_to_world::DataFrame, services_export::DataFrame)
 
@@ -404,8 +441,22 @@ function correct_exports_with_services!(export_to_eu::DataFrame, export_to_world
 end
 
 """
+Wrapper function to clean exports data.
+
 Exports need a special treatment because they are a sum of export and services_export data frames.
 Service export is scaled by the sum of eu and world exports. Further refactoring definitely possible here.
+
+# Arguments
+- `input_output::InputOutput`: The InputOutput struct containing export data.
+- `imports::InputOutput`: The InputOutput struct containing import data.
+- `split::Float64`: The factor by which to split the imports between EU and World.
+- `names_16::Vector`: A vector of industry names for SIC 16.
+- `industries_in_cols::Bool`: If true, industries will be on columns; otherwise, they will be on rows.
+- `map_64::Dict{String, String}`: A dictionary mapping SIC 64 industry names to SIC 16 industry names.
+- `map_16::Dict{String, String}`: A dictionary mapping SIC 16 industry names to their final names.
+
+# Returns
+- `DataFrame, DataFrame`: Two DataFrames containing exports to the EU and World, respectively.
 """
 function clean_exports(input_output::InputOutput, imports::InputOutput, split::Float64, names_16::Vector, industries_in_cols::Bool, map_64::Dict{String, String}, map_16::Dict{String, String})
 
