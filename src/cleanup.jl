@@ -523,7 +523,22 @@ end
 
 
 """
+    function clean_household(data::Data, year::Int64, map_64::Dict{String, String}, map_16::Dict{String, String}, names_105::Vector, names_64::Vector, names_16::Vector, industries_in_cols::Bool)
+
 Function to process the household incomes and their derived data.
+
+# Arguments
+- `data::Data`: The Data struct containing household income and hours data.
+- `year::Int64`: The year for which the data is to be cleaned.
+- `map_64::Dict{String, String}`: A dictionary mapping SIC 105 industry names to SIC 64 industry names.
+- `map_16::Dict{String, String}`: A dictionary mapping SIC 64 industry names to SIC 16 industry names.
+- `names_105::Vector`: A vector of industry names for SIC 105.
+- `names_64::Vector`: A vector of industry names for SIC 64.
+- `names_16::Vector`: A vector of industry names for SIC 16.
+- `industries_in_cols::Bool`: If true, industries will be on columns; otherwise, they will be on rows.
+
+# Returns
+- `HouseholdData`: A struct containing cleaned household income, payments, hours, and wages data.
 """
 function clean_household(data::Data, year::Int64, map_64::Dict{String, String}, map_16::Dict{String, String}, names_105::Vector, names_64::Vector, names_16::Vector, industries_in_cols::Bool)
 
@@ -556,6 +571,20 @@ function clean_household(data::Data, year::Int64, map_64::Dict{String, String}, 
 
 end
 
+"""
+    function merge_quarterly_data(df::DataFrame, year::Int64, industry_names::Vector, fun::Function)
+
+Merge quarterly data for a specific year by applying a function to each row.
+
+# Arguments
+- `df::DataFrame`: The DataFrame containing quarterly data.
+- `year::Int64`: The year for which the data is to be merged.
+- `industry_names::Vector`: A vector of industry names to be used as row names.
+- `fun::Function`: A function to combine the quarterly data (e.g., `sum`).
+
+# Returns
+- `DataFrame`: A new DataFrame with the merged data for the specified year, with industry names as row names.
+"""
 function merge_quarterly_data(df::DataFrame, year::Int64, industry_names::Vector, fun::Function)
 
     dd = select_year(df, year)
@@ -576,6 +605,9 @@ end
 
 Re-scale the data that does not get convereted into a ratio explicitly, following
 <https://github.com/UCL/Supergrassi/blob/main/code/matlab/macro_v2/DataCleaning/RescaleData.m>.
+
+# Arguments
+- `data::CleanData`: The CleanData struct containing household and industry data to be rescaled.
 """
 function rescale_data!(data::CleanData)
 
@@ -621,6 +653,9 @@ end
     convert_to_ratio!(data::RegionalData)
 
 Convert regional data into ratios of region / sum(regions)
+
+# Arguments
+- `data::RegionalData`: The RegionalData struct containing regional data to be converted into ratios.
 """
 function convert_to_ratio!(data::RegionalData)
 
@@ -638,6 +673,14 @@ function convert_to_ratio!(data::RegionalData)
 
 end
 
+"""
+    convert_to_ratio!(data::HouseholdData)
+
+Convert household data into ratios of low and high payments to the sum of low and high payments.
+
+# Arguments
+- `data::HouseholdData`: The HouseholdData struct containing household data to be converted into ratios.
+"""
 function convert_to_ratio!(data::HouseholdData)
 
     for field in [:payments]
@@ -662,6 +705,9 @@ end
 Convert regional vector data into fractions of the aggregate value.
 Then renormalise the aggregate value by its sum.
 Nans are replaced with 0's.
+
+# Arguments
+- `df::DataFrame`: The DataFrame containing regional vector data to be converted into ratios.
 """
 function convert_to_ratio!(df::DataFrame)
 
@@ -679,6 +725,9 @@ end
 
 Convert regional matrix data to fractions of the aggregate value
 Nans are replaced with 0's
+
+# Arguments
+- `data::InputMatrices`: The InputMatrices struct containing regional matrix data to be converted into ratios.
 """
 function convert_to_ratio!(data::InputMatrices)
 
@@ -699,6 +748,9 @@ end
     round_shares!(data::RegionalData, threshold::Float64 = 1e-4)
 
 Round values below threshold in regional data to 0, then rescale so that regions sum to 1.
+
+# Arguments
+- `data::RegionalData`: The RegionalData struct containing regional data to be rounded.
 """
 function round_shares!(data::RegionalData, threshold::Float64 = 1e-4)
 
@@ -722,6 +774,10 @@ end
     round_shares!(df::DataFrame, threshold = 1e-4)
 
 Round shares in regional vector data
+
+# Arguments
+- `df::DataFrame`: The DataFrame containing regional data to be rounded.
+- `threshold`: The threshold below which values are set to 0 (default is `1e-4`).
 """
 function round_shares!(df::DataFrame, threshold = 1e-4)
 
@@ -744,6 +800,9 @@ end
     round_shares!(data::InputMatrices, threshold = 1e-4)
 
 Round shares in regional matrix data
+
+# Arguments
+- `data::InputMatrices`: The InputMatrices struct containing regional matrix data to be rounded.
 """
 function round_shares!(data::InputMatrices, threshold = 1e-4)
 
@@ -767,6 +826,18 @@ function round_shares!(data::InputMatrices, threshold = 1e-4)
 
 end
 
+"""
+    clean_sigma_bar(sigma_data::Vector, zero_list::Vector{Int64}, sic64::Vector{String})
+Clean the sigma bar data by converting it to a DataFrame, parsing strings to Float64, and setting specified indices to zero.
+
+# Arguments
+- `sigma_data::Vector`: A vector containing sigma bar data.
+- `zero_list::Vector{Int64}`: A vector of indices where the sigma bar values should be set to zero.
+- `sic64::Vector{String}`: A vector of SIC 64 industry names to be used as column names.
+
+# Returns
+- `DataFrame`: A DataFrame containing the cleaned sigma bar data, with specified indices set to zero.
+"""
 function  clean_sigma_bar(sigma_data::Vector, zero_list::Vector{Int64}, sic64::Vector{String})
 
     sigma_bar = DataFrame(permutedims(sigma_data), sic64)
@@ -783,6 +854,18 @@ function  clean_sigma_bar(sigma_data::Vector, zero_list::Vector{Int64}, sic64::V
 
 end
 
+"""
+    generate_constants(data::Data, settings::Dict{String, Any})
+
+Generate a Constants struct from the provided data and settings.
+
+# Arguments
+- `data::Data`: The Data struct containing various economic data.
+- `settings::Dict{String, Any}`: A dictionary containing constants and settings for the model.
+
+# Returns
+- `Constants`: A Constants struct containing the year, exchange rates, interest rate, total imports, import tariffs, export costs, and elasticities.
+"""
 function generate_constants(data::Data, settings::Dict{String, Any})
 
     year::Int64 = settings["constants"]["data_year"]
@@ -846,6 +929,10 @@ end
     clean_data(data::Data, settings::Dict{String, Any})
 
 Main function for data cleaning. Should take in a Data struct and return a CleanData struct.
+
+# Arguments
+- `data::Data`: The Data struct containing various economic data.
+- `settings::Dict{String, Any}`: A dictionary containing constants and settings for the model.
 """
 function clean_data(data::Data, settings::Dict{String, Any})
 
@@ -955,6 +1042,13 @@ function clean_data(data::Data, settings::Dict{String, Any})
 
 end
 
+"""
+    postprocess_clean_data!(data::CleanData)
+Post-process the cleaned data to convert regional data into ratios, round shares, and rescale the data.
+
+# Arguments
+- `data::CleanData`: The CleanData struct containing household and industry data to be post-processed.
+"""
 function postprocess_clean_data!(data::CleanData)
 
     # Note: the order these are called in matters (Should be refactored)
