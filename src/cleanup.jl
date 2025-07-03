@@ -594,6 +594,14 @@ function merge_quarterly_data(df::DataFrame, year::Int64, industry_names::Vector
 
 end
 
+"""
+    function add_aggregate!(df::DataFrame)
+
+Add an aggregate column to a DataFrame that sums the UK, EU, and World columns.
+
+# Arguments
+- `df::DataFrame`: The DataFrame to which the aggregate column will be added.
+"""
 function add_aggregate!(df::DataFrame)
 
     df[!,:agg] = df.uk + df.eu + df.world
