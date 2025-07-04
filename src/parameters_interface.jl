@@ -187,7 +187,7 @@ function compute_production_parameter(data::CleanData, prices::DataFrame, log_sc
                         Const(data.industry.capital.current_year[row]),
                         Const(data.industry.regional.total_use.agg[row]),
                         Const(data.household.payments.agg[row]),
-                        Const(data.household.wages.logW[row]),
+                        Const(logW[row]),
                         Const(data.constants.elasticities.production),
                         Const(tau),
                         Const(log_scale))
@@ -208,7 +208,7 @@ function compute_production_parameter(data::CleanData, prices::DataFrame, log_sc
                         Const(data.industry.capital.current_year[row]),
                         Const(data.industry.regional.total_use.agg[row]),
                         Const(data.household.payments.agg[row]),
-                        Const(data.household.wages.logW[row]),
+                        Const(logW[row]),
                         Const(data.constants.elasticities.production),
                         Const(tau),
                         Const(log_scale))
@@ -229,7 +229,7 @@ function compute_production_parameter(data::CleanData, prices::DataFrame, log_sc
                         Const(data.industry.capital.current_year[row]),
                         Const(data.industry.regional.total_use.agg[row]),
                         Const(data.household.payments.agg[row]),
-                        Const(data.household.wages.logW[row]),
+                        Const(logW[row]),
                         Const(data.constants.elasticities.production),
                         Const(tau),
                         Const(log_scale))
@@ -251,7 +251,7 @@ function compute_production_parameter(data::CleanData, prices::DataFrame, log_sc
                       Const(data.industry.capital.current_year[row]),
                       Const(data.industry.regional.total_use.agg[row]),
                       Const(data.household.payments.agg[row]),
-                      Const(data.household.wages.logW[row]),
+                      Const(logW[row]),
                       Const(tau),
                       Const(row),
                       Const(log_scale))
