@@ -8,9 +8,9 @@ using Enzyme
 
   fun parameter should be either parameters_by_region or log_parameters_by_region
 """
-function compute_all_parameters(data::CleanData, prices::DataFrame, fun::Function = parameters_by_region)
+function compute_all_parameters(data::CleanData, prices::DataFrame, log_scale::Bool = false)
 
-    @assert fun in [parameters_by_region, log_parameters_by_region] "fun argument should be either parameters_by_region or log_parameters_by_region"
+    #@assert fun in [parameters_by_region, log_parameters_by_region] "fun argument should be either parameters_by_region or log_parameters_by_region"
 
     reg = data.industry.regional
     constants = data.constants
@@ -20,16 +20,16 @@ function compute_all_parameters(data::CleanData, prices::DataFrame, fun::Functio
     imports_uk_share_world = constants.total_imports_from_uk.world / (constants.total_imports_from_all_sources.world
                                                                       / constants.exchange_rates.usd )
 
-    α, ∂α = compute_parameter(reg.consumption, constants.elasticities.consumption, prices, fun)
-    β1, ∂β1 = compute_parameter(reg.export_eu, constants.elasticities.eu_export_demand, prices, fun)
+    α, ∂α = compute_parameter(reg.consumption, constants.elasticities.consumption, prices, log_scale)
+    β1, ∂β1 = compute_parameter(reg.export_eu, constants.elasticities.eu_export_demand, prices, log_scale)
     β1, ∂β1 = compute_foreign_share(β1, ∂β1, reg.export_eu, constants.elasticities.eu_export_demand, prices,
                            imports_uk_share_eu, reg.totals.imports.eu, 1.0, constants.exchange_rates.eur)
-    β2, ∂β2 = compute_parameter(reg.export_world, constants.elasticities.world_export_demand, prices, fun)
+    β2, ∂β2 = compute_parameter(reg.export_world, constants.elasticities.world_export_demand, prices, log_scale)
     β2, ∂β2 = compute_foreign_share(β2, ∂β2, reg.export_world, constants.elasticities.world_export_demand, prices,
                            imports_uk_share_world, reg.totals.imports.world, 1.0, constants.exchange_rates.usd)
-    ρ, ∂ρ = compute_parameter(reg.investment, constants.elasticities.investment, prices, fun)
+    ρ, ∂ρ = compute_parameter(reg.investment, constants.elasticities.investment, prices, log_scale)
 
-    γ, ∂γ = compute_production_parameter(data, prices, fun)
+    γ, ∂γ = compute_production_parameter(data, prices, log_scale)
 
     loss_given_default = 0.12 # TODO: This should be in constants
 
@@ -46,7 +46,7 @@ end
   Compute 1d utility function parameters from a regional demand data frame and the corresponding elasticity.
   Currently missing the tilde parameters for exports.
 """
-function compute_parameter(demand::DataFrame, elasticity::Elasticity, prices::DataFrame, fun::Function = parameters_by_region)
+function compute_parameter(demand::DataFrame, elasticity::Elasticity, prices::DataFrame, log_scale::Bool)
 
     n = nrow(demand)
     v0 = Vector{Float64}(undef, n)
@@ -55,6 +55,8 @@ function compute_parameter(demand::DataFrame, elasticity::Elasticity, prices::Da
     val = ParamsStruct(similar(v0), similar(v0), similar(v0), similar(v0), nothing)
     grad = ParamsStruct(similar(v0), similar(v0), similar(v0), similar(m0), nothing)
 
+    fun = log_scale ? log_parameters_by_region : parameters_by_region
+    
     for row in 1:n
 
         param_regional = gradient(ForwardWithPrimal,
@@ -122,7 +124,7 @@ end
   Compute the 2d utility function parameters from regional InputMatrices and the corresponding elasticity.
   Currently missing the jacobian, and the 1d parameters gammaL and gammaH
 """
-function compute_production_parameter(data::CleanData, prices::DataFrame, fun::Function = parameters_by_region)
+function compute_production_parameter(data::CleanData, prices::DataFrame, log_scale::Bool)
 
     n = size(data.industry.regional.input_matrices.agg, 1)
     v0 = Vector{Float64}(undef, n)
@@ -138,11 +140,13 @@ function compute_production_parameter(data::CleanData, prices::DataFrame, fun::F
 
     compute_agg_wages!(data.household, data.constants.elasticities.production)
 
+    fun = log_scale ? log_parameters_by_region : parameters_by_region
+    
     for row in 1:n
         for col in 1:n
 
             param_regional = gradient(ForwardWithPrimal,
-                                      parameters_by_region,
+                                      fun,
                                       Const(data.constants.elasticities.production.armington),
                                       prices.uk[col],
                                       Const(prices.eu[col]),
@@ -186,7 +190,8 @@ function compute_production_parameter(data::CleanData, prices::DataFrame, fun::F
                         Const(data.household.payments.agg[row]),
                         Const(data.household.wages.logW[row]),
                         Const(data.constants.elasticities.production),
-                        Const(tau))
+                        Const(tau),
+                        Const(log_scale))
 
         val.input_agg[row, :] = jacM.val
         grad.input_agg[row,:,:] .= first(jacM.derivs)
@@ -206,7 +211,8 @@ function compute_production_parameter(data::CleanData, prices::DataFrame, fun::F
                         Const(data.household.payments.agg[row]),
                         Const(data.household.wages.logW[row]),
                         Const(data.constants.elasticities.production),
-                        Const(tau))
+                        Const(tau),
+                        Const(log_scale))
 
         val.input_human[row] = jacH.val
         grad.input_human[row,:] .= first(jacH.derivs)
@@ -226,7 +232,8 @@ function compute_production_parameter(data::CleanData, prices::DataFrame, fun::F
                         Const(data.household.payments.agg[row]),
                         Const(data.household.wages.logW[row]),
                         Const(data.constants.elasticities.production),
-                        Const(tau))
+                        Const(tau),
+                        Const(log_scale))
 
         val.input_capital[row] = jacK.val
         grad.input_capital[row,:] .= first(jacK.derivs)
@@ -247,7 +254,8 @@ function compute_production_parameter(data::CleanData, prices::DataFrame, fun::F
                       Const(data.household.payments.agg[row]),
                       Const(data.household.wages.logW[row]),
                       Const(tau),
-                      Const(row))
+                      Const(row),
+                      Const(log_scale))
         
         val.shock_mean[row] = mu.val
         grad.shock_mean[row,:] .= mu.derivs[2]
