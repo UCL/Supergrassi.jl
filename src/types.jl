@@ -5,7 +5,7 @@ struct ExchangeRates
     eur::Float64
 end
 
-struct TotalImports
+struct ForeignRegionalValues
     eu::Float64
     world::Float64
 end
@@ -30,8 +30,11 @@ struct Constants
     exchange_rates::ExchangeRates
     interest_rate::Float64
 
-    total_imports_from_uk::TotalImports
-    total_imports_from_all_sources::TotalImports
+    total_imports_from_uk::ForeignRegionalValues
+    total_imports_from_all_sources::ForeignRegionalValues
+
+    import_tariffs::ForeignRegionalValues
+    export_costs::ForeignRegionalValues
 
     elasticities::Elasticities
 end
@@ -40,7 +43,7 @@ struct Totals
 
     savings::Float64 # E
     investments::Float64 # ISum
-    imports::TotalImports # EX1, EX2
+    imports::ForeignRegionalValues # EX1, EX2
 
 end
 

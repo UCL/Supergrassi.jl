@@ -13,6 +13,14 @@ constants:
   # split between eu and rest of world imports
   imports_split: 0.5
 
+  import_tariff:
+    eu: 0.12
+    world: 0.12
+
+  export_costs:
+    eu: 0.01
+    world: 0.01
+
   elasticities:
     consumption: [3.0, 2.0]
     eu_export_demand: [3.0, 2.0, 2.0]
@@ -47,7 +55,7 @@ flags:
   random_initial_values: false
 
 files:
-  input_dir: input/uk_data
+  input_dir: input/reduced_uk_data
   output_dir: output
   scenario: 0 # 0: noCovid, 1: covid
 

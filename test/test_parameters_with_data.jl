@@ -68,6 +68,9 @@ log_params, ∂log_params = Supergrassi.compute_all_parameters(clean, prices, tr
 
     @test isapprox(params.production.shock_mean, df1d.mu, atol = tol)
 
+    @test isapprox(params.production.input_low_skill, df1d.gammaHL, atol = tol)
+    @test isapprox(params.production.input_high_skill, df1d.gammaHH, atol = tol)
+    
 end
 
 @testset "Parameter derivatives" begin

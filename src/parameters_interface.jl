@@ -138,7 +138,18 @@ function compute_production_parameter(data::CleanData, prices::DataFrame, log_sc
                             similar(m0), similar(v0),
                             similar(m0), similar(m0), similar(m0), similar(t0))
 
-    compute_agg_wages!(data.household, data.constants.elasticities.production)
+    m_uk = Matrix(data.industry.regional.input_matrices.uk)
+    m_eu = Matrix(data.industry.regional.input_matrices.eu)
+    m_world = Matrix(data.industry.regional.input_matrices.world)
+    m_agg = Matrix(data.industry.regional.input_matrices.agg)
+
+    logW = compute_agg_wages(data.household, data.constants.elasticities.production)
+
+    val.input_low_skill .= data.household.payments.low .* (data.household.wages.low ./ (exp.(logW))) .^ (data.constants.elasticities.production.skill_substitution - 1)
+    val.input_high_skill .= data.household.payments.high .* (data.household.wages.high ./ (exp.(logW))) .^ (data.constants.elasticities.production.skill_substitution - 1)
+
+    replace!(val.input_low_skill, NaN => 0.0)
+    replace!(val.input_high_skill, NaN => 0.0)
 
     fun = log_scale ? log_parameters_by_region : parameters_by_region
     
@@ -266,15 +277,17 @@ function compute_production_parameter(data::CleanData, prices::DataFrame, log_sc
 
 end
 
-function compute_agg_wages!(data::HouseholdData, elasticity::Elasticity)
+function compute_agg_wages(data::HouseholdData, elasticity::Elasticity)
 
     # ref. https://github.com/UCL/Supergrassi/blob/29510a8c9f50427068a475be01583b544975bd5c/code/matlab/macro_v2/B1_SetupParameters.m#L328-L332
 
     ξh = elasticity.skill_substitution
-    data.wages.logW = ξh/(ξh-1) * log.(
+    logW = ξh/(ξh-1) * log.(
         (data.payments.low.^(1/ξh) .* data.wages.low.^((ξh-1)/ξh))
         + (data.payments.high.^(1/ξh) .* data.wages.high.^((ξh-1)/ξh))
     )
-    replace!(data.wages.logW, NaN => 0.0)
+    replace!(logW, NaN => 0.0)
+
+    return logW
 
 end
