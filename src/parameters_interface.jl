@@ -138,11 +138,6 @@ function compute_production_parameter(data::CleanData, prices::DataFrame, log_sc
                             similar(m0), similar(v0),
                             similar(m0), similar(m0), similar(m0), similar(t0))
 
-    m_uk = Matrix(data.industry.regional.input_matrices.uk)
-    m_eu = Matrix(data.industry.regional.input_matrices.eu)
-    m_world = Matrix(data.industry.regional.input_matrices.world)
-    m_agg = Matrix(data.industry.regional.input_matrices.agg)
-
     logW = compute_agg_wages(data.household, data.constants.elasticities.production)
 
     val.input_low_skill .= data.household.payments.low .* (data.household.wages.low ./ (exp.(logW))) .^ (data.constants.elasticities.production.skill_substitution - 1)
@@ -175,13 +170,6 @@ function compute_production_parameter(data::CleanData, prices::DataFrame, log_sc
             grad.input_world[row, col] = param_regional.derivs[2][3]
 
         end
-
-        # logPm = log_price_index.(data.constants.elasticities.production.armington,
-        #                                      prices.uk, prices.eu, prices.world,
-        #                                      m_uk[row,:],
-        #                                      m_eu[row,:],
-        #                                      m_world[row,:])
-        # logPm[isinf.(logPm)] .= 0.0
 
         # We are missing this from our data struct. Temporarily compute it on the fly.
         tau = (data.industry.tax.products[row] .+ data.industry.tax.production[row]) ./ data.industry.regional.total_use.agg[row]
