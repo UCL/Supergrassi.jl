@@ -294,8 +294,10 @@ function productivity_shock_mean(elasticity::Elasticity, prices_uk::Vector{T}, p
                                  input_uk::Vector{T}, input_eu::Vector{T}, input_world::Vector{T}, input_agg::Vector{T},
                                  capital::T, demand0::T, output::T, labor::T, log_wages::T, tau::T, row::Int, log_scale::Bool) where {T <: Real}
 
-
-    logPm = log_price_index.(elasticity.armington, prices_uk, prices_eu, prices_world, input_uk, input_eu, input_world)
+    logPm = Vector{T}(undef, length(prices_uk))
+    for i in 1:length(prices_uk)
+        logPm[i] = log_price_index(elasticity.armington, prices_uk[i], prices_eu[i], prices_world[i], input_uk[i], input_eu[i], input_world[i])
+    end
     replace!(logPm, Inf => 0.0)
 
     tauP = tauPdMu(elasticity.substitution, logPm, input_agg, capital, demand0, output, labor, log_wages, tau)
