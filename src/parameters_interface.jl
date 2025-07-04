@@ -10,8 +10,6 @@ using Enzyme
 """
 function compute_all_parameters(data::CleanData, prices::DataFrame, log_scale::Bool = false)
 
-    #@assert fun in [parameters_by_region, log_parameters_by_region] "fun argument should be either parameters_by_region or log_parameters_by_region"
-
     reg = data.industry.regional
     constants = data.constants
 
