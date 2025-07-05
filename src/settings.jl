@@ -44,7 +44,17 @@ function classify_dict(dict::Dict{Any, Any})
 
 end
 
+"""
+    read_settings(file_path::FilePath)
 
+Reads settings from a YAML file and classifies the dictionary.
+
+# Arguments
+- `file_path::FilePath`: The path to the YAML file containing settings.
+
+# Returns
+- `Dict{key_type, value_type}`: The classified settings dictionary.
+"""
 function read_settings(file_path::FilePath)
     settings = YAML.load_file(file_path.path)
     settings = classify_dict(settings)
