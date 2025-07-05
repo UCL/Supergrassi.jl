@@ -55,7 +55,7 @@ flags:
   random_initial_values: false
 
 files:
-  input_dir: input/uk_data
+  input_dir: input/reduced_uk_data
   output_dir: output
   scenario: 0 # 0: noCovid, 1: covid
 

@@ -1,3 +1,4 @@
+using Logging
 """
     FilePath(path::String)
 
@@ -138,7 +139,7 @@ function check_file_availability(settings::Dict{<:Any, <:Any})
 
     filepaths = Dict{String, FilePath}()
 
-    println("Verifying data from $base_path")
+    @info "Verifying data from $base_path"
 
     # Define the categories and paths
     sources = [
@@ -149,7 +150,7 @@ function check_file_availability(settings::Dict{<:Any, <:Any})
 
     for (category, files, path_prefix) in sources
         for (key, value) in files
-            println("Verifying datafiles for $key")
+            @debug "Verifying datafiles for $key"
 
             # Handle scenario-dependent files by modifying the filename
             if category == "scenario_dependent"

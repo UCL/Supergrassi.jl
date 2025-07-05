@@ -246,8 +246,8 @@ struct ParamsProduction
     input_capital::Array{Float64}        # gamma_ki
     input_low_skill::Vector{Float64}      # gamma_Li
     input_high_skill::Vector{Float64}     # gamma_Hi
-    shock_mean::Vector{Float64}           # mu
-    shock_stddev::Vector{Float64}         # sigmaBar
+    shock_mean::Array{Float64}           # mu
+    shock_stddev::Array{Float64}         # sigmaBar
 
     input_uk::Matrix{Float64}             # gamma_mdij
     input_eu::Matrix{Float64}             # gamma_meuij

@@ -123,6 +123,9 @@ function price_index(elasticity::T,
 
 end
 
+"""
+TODO
+"""
 function log_price_index(elasticity::T,
                          log_price_uk::T, log_price_eu::T, log_price_world::T,
                          demand_uk::T, demand_eu::T, demand_world::T) where {T <: Real}
@@ -179,19 +182,27 @@ end
 
   Matlab code reference ComputeTheta.m line 251
 """
-function total_input_parameters(log_price_index::Vector{T}, input::Vector{T},
-                            capital::T, demand0::T, output::T, labor::T, log_wages::T, elasticity::T, tau::T) where T
+function total_input_parameters(prices_uk::Vector{T}, prices_eu::Vector{T}, prices_world::Vector{T},
+                                input_uk::Vector{T}, input_eu::Vector{T}, input_world::Vector{T}, input_agg::Vector{T},
+                                capital::T, demand0::T, output::T, labor::T, log_wages::T, elasticity::Elasticity, tau::T, log_scale::Bool) where {T <: Real}
 
-    length(log_price_index) == length(input) || error()
-    tauP = tauPdMu(elasticity, log_price_index, input, capital, demand0, output, labor, log_wages, tau)
-
-    parameters = Vector{T}(undef, length(log_price_index))
-
-    for i in axes(log_price_index,1)
-        parameters[i] = weight_kernel(input[i], exp(log_price_index[i])/tauP, elasticity)
+    logPm = Vector{T}(undef, length(prices_uk))
+    for i in 1:length(prices_uk)
+        logPm[i] = log_price_index(elasticity.armington, prices_uk[i], prices_eu[i], prices_world[i], input_uk[i], input_eu[i], input_world[i])
     end
 
-    return parameters
+    replace!(logPm, Inf => 0.0)
+
+    length(logPm) == length(input_agg) || error()
+    tauP = tauPdMu(elasticity.substitution, logPm, input_agg, capital, demand0, output, labor, log_wages, tau)
+
+    parameters = Vector{T}(undef, length(logPm))
+
+    for i in axes(logPm,1)
+        parameters[i] = weight_kernel(input_agg[i], exp(logPm[i])/tauP, elasticity.substitution)
+    end
+
+    return log_scale ? replace!(log.(parameters), -Inf => 0.0) : parameters
 
     #return [weight_kernel(input[i], exp(log_price_index[i]) / tauP, elasticity) for i in eachindex(input, log_price_index)]
 
@@ -202,12 +213,25 @@ end
 
   Matlab code reference ComputeTheta.m line 249
 """
-function total_labor_parameters(log_price_index::Vector{T}, input::Vector{T},
-                            capital::T, demand0::T, output::T, labor::T, log_wages::T, elasticity::T, tau::T) where T
+function total_labor_parameters(prices_uk::Vector{T}, prices_eu::Vector{T}, prices_world::Vector{T},
+                                input_uk::Vector{T}, input_eu::Vector{T}, input_world::Vector{T}, input_agg::Vector{T},
+                                capital::T, demand0::T, output::T, labor::T, log_wages::T, elasticity::Elasticity, tau::T, log_scale::Bool) where T
 
-    length(log_price_index) == length(input) || error()
-    tauP = tauPdMu(elasticity, log_price_index, input, capital, demand0, output, labor, log_wages, tau)
-    return weight_kernel(labor, exp(log_wages) / tauP, elasticity)
+    logPm = Vector{T}(undef, length(prices_uk))
+    for i in 1:length(prices_uk)
+        logPm[i] = log_price_index(elasticity.armington, prices_uk[i], prices_eu[i], prices_world[i], input_uk[i], input_eu[i], input_world[i])
+    end
+    replace!(logPm, Inf => 0.0)
+
+    length(logPm) == length(input_agg) || error()
+    tauP = tauPdMu(elasticity.substitution, logPm, input_agg, capital, demand0, output, labor, log_wages, tau)
+    val = weight_kernel(labor, exp(log_wages) / tauP, elasticity.substitution)
+
+    if log_scale
+        return isinf(log(val)) ? 0.0 : log(val)
+    else
+        return val
+    end
 
 end
 
@@ -216,13 +240,26 @@ end
 
   Matlab code reference ComputeTheta.m line 254
 """
-function total_capital_parameters(log_price_index::Vector{T}, input::Vector{T},
-                            capital::T, demand0::T, output::T, labor::T, log_wages::T, elasticity::T, tau::T) where T
+function total_capital_parameters(prices_uk::Vector{T}, prices_eu::Vector{T}, prices_world::Vector{T},
+                                  input_uk::Vector{T}, input_eu::Vector{T}, input_world::Vector{T}, input_agg::Vector{T},
+                                  capital::T, demand0::T, output::T, labor::T, log_wages::T, elasticity::Elasticity, tau::T, log_scale::Bool) where T
 
-    length(log_price_index) == length(input) || error()
-    tauP = tauPdMu(elasticity, log_price_index, input, capital, demand0, output, labor, log_wages, tau)
+    logPm = Vector{T}(undef, length(prices_uk))
+    for i in 1:length(prices_uk)
+        logPm[i] = log_price_index(elasticity.armington, prices_uk[i], prices_eu[i], prices_world[i], input_uk[i], input_eu[i], input_world[i])
+    end
+    replace!(logPm, Inf => 0.0)
+
+    length(logPm) == length(input_agg) || error()
+    tauP = tauPdMu(elasticity.substitution, logPm, input_agg, capital, demand0, output, labor, log_wages, tau)
     tauY = (1 - tau) * output / demand0
-    return capital ^ elasticity * (tauY / tauP) ^ (elasticity - 1)
+    val =  capital ^ elasticity.substitution * (tauY / tauP) ^ (elasticity.substitution - 1)
+
+    if log_scale
+        return isinf(log(val)) ? 0.0 : log(val)
+    else
+        return val
+    end
 
 end
 
@@ -253,10 +290,24 @@ end
 """
   Compute the productivity shock mean μ
 """
-function productivity_shock_mean(elasticity::T, log_price_uk::T, log_price_index::Vector{T}, input::Vector{T}, capital::T, demand0::T, output::T, labor::T, log_wages::T, tau::T) where {T <: Real}
+function productivity_shock_mean(elasticity::Elasticity, prices_uk::Vector{T}, prices_eu::Vector{T}, prices_world::Vector{T},
+                                 input_uk::Vector{T}, input_eu::Vector{T}, input_world::Vector{T}, input_agg::Vector{T},
+                                 capital::T, demand0::T, output::T, labor::T, log_wages::T, tau::T, row::Int, log_scale::Bool) where {T <: Real}
 
-    tauP = tauPdMu(elasticity, log_price_index, input, capital, demand0, output, labor, log_wages, tau)
-    return tauP / ((1-tau) * exp(log_price_uk))
+    logPm = Vector{T}(undef, length(prices_uk))
+    for i in 1:length(prices_uk)
+        logPm[i] = log_price_index(elasticity.armington, prices_uk[i], prices_eu[i], prices_world[i], input_uk[i], input_eu[i], input_world[i])
+    end
+    replace!(logPm, Inf => 0.0)
+
+    tauP = tauPdMu(elasticity.substitution, logPm, input_agg, capital, demand0, output, labor, log_wages, tau)
+    mu = tauP / ((1-tau) * exp(prices_uk[row]))
+
+    if log_scale
+        return isinf(log(mu)) ? 0.0 : log(mu)
+    else
+        return mu
+    end
 
     # logTauP = logTauPdMu(elasticity, log_price_index, input, capital, demand0, output, labor, log_wages, tau)
     # logMu = logTauP - log(1.0 - tau) - log_price_uk
