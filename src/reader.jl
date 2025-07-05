@@ -33,62 +33,6 @@ function read_csv(file::String)
 end
 
 
-"""
-    read_data(file::String)
-
-Reads a data file and returns a DataFrame.
-
-# Arguments
-- `file::String`: The path to the file.
-
-# Examples
-```julia
-df = read_data("data.csv")
-```
-"""
-function read_data(file::String)
-
-    if !isfile(file)
-        error("File not found: $file")
-    end
-
-    if endswith(file, ".csv")
-        return read_csv(file)
-    else
-        error("Invalid file format: $file")
-    end
-
-end
-
-"""
-    read_data(file::String, sheet::String, range::String)
-
-Reads a data file and returns a DataFrame.
-
-# Arguments
-- `file::String`: The path to the file.
-- `sheet::String`: The name of the sheet.
-- `range::String`: The range of cells to read.
-
-# Examples
-```julia
-df = read_data("data.xlsx", "Sheet1", "A1:Z1000")
-```
-"""
-function read_data(file::String, sheet::String, range::String)
-
-    if !isfile(file)
-        error("File not found: $file")
-    end
-
-    if !endswith(file, ".xlsx")
-        error("Invalid file format: $file")
-    end
-
-    return read_excel(file, sheet=sheet, range=range)
-
-end
-
 function read_data(filepaths::Dict{String, FilePath}, settings::Dict{String, Any})
     data = Dict{String, DataFrame}()
 
