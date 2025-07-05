@@ -3,10 +3,22 @@ using DataFrames
 using Enzyme
 
 """
-  Compute all utility function parameters from regional data, elasticities and prices.
-  Currently missing some of the γ parameters
+    function compute_all_parameters(data::CleanData, prices::DataFrame, fun::Function = parameters_by_region)
 
-  fun parameter should be either parameters_by_region or log_parameters_by_region
+Compute all utility function parameters and their derivativesfrom regional data, elasticities and prices.
+
+For description of the parameters, see Table 2  of Nesheim et al (in prep). Return two [`Parameters`](@ref) structs,
+the first one contains values of parameters α, β1, β2, ρ and γ, the second one contains their derivatives with
+respect to `prices.uk`.
+
+See the tests in [test_parameters_with_data.jl](https://github.com/UCL/Supergrassi.jl/blob/main/test/test_parameters_with_data.jl) for an example of use.
+
+# Arguments
+- `data::CleanData`: Data structure created by [`clean_data`](@ref)
+- `prices::DataFrame`: Logarithm of price index equilibrium variable. Has three components (uk, eu, world)
+- `fun::Function=parameters_by_region`: Function that computes three parameters by region. Either [`parameters_by_region`](@ref) or [`log_parameters_by_region`](@ref)
+
+See also [`compute_parameter`](@ref), [`compute_foreign_share`](@ref), [`compute_production_parameter`](@ref), [`Parameters`](@ref)
 """
 function compute_all_parameters(data::CleanData, prices::DataFrame, log_scale::Bool = false)
 
@@ -41,8 +53,15 @@ function compute_all_parameters(data::CleanData, prices::DataFrame, log_scale::B
 end
 
 """
-  Compute 1d utility function parameters from a regional demand data frame and the corresponding elasticity.
-  Currently missing the tilde parameters for exports.
+    function compute_parameter(demand::DataFrame, elasticity::Elasticity, prices::DataFrame, fun::Function = parameters_by_region)
+
+Compute 1d utility function parameters and their derivatives from a regional demand DataFrame and the corresponding elasticity.
+
+# Arguments
+- `demand::DataFrame`: Demand data disaggregated by region
+- `elasticity::Elasticity`: Values for elasticity of substitution
+- `prices::DataFrame`: Logarithm of price index equilibrium variable. Disagregated by region.
+- `fun::Function = parameters_by_region`: Function that computes three parameters by region. Either [`parameters_by_region`](@ref) or [`log_parameters_by_region`](@ref)
 """
 function compute_parameter(demand::DataFrame, elasticity::Elasticity, prices::DataFrame, log_scale::Bool)
 
@@ -92,9 +111,30 @@ end
 
 using Accessors
 
-# Ptilde = 1
-# Ex = totals.imports.{eu, world}
-# Etilde = Ex / E = totals.imports.{eu, world} / totals.savings
+
+
+"""
+    compute_foreign_share(param::ParamsStruct, dparam::ParamsStruct, demand::DataFrame,
+                          elasticity::Elasticity, prices::DataFrame, E::T, Ex::T,
+                          PTilde::T, exchange_rate::T) where {T<:Real}
+
+Compute the share of foreign expenditure on UK exports, β̃  in the paper by Nesheim et al.
+
+Computes the value and derivative of β̃  and adds them to the structures `param` and `dparam`, respectively. Because
+the strucs are immutable, a copy is created. Requires input outside of the regional demand data which is why this has
+been split into a different function from [`compute_parameter`](@ref).
+
+# Arguments
+- `param::ParamsStruct`: Parameters.
+- `dparam::ParamsStruct`: Derivatives of parameters.
+- `demand::DataFrame`: Demand data disaggregated by region.
+- `elasticity::Elasticity`: Values for elasticity of substitution
+- `prices::DataFrame`: Logarithm of price index equilibrium variable. Disagregated by region.
+- `E::Real`: Household expenditure
+- `Ex::Real`: Foreign expenditure on UK exports
+- `PTilde::Real`: The foreign price index.
+- `exchange_rate::Real`: The exchange rate between domestic and foreign currency.
+"""
 function compute_foreign_share(param::ParamsStruct, dparam::ParamsStruct, demand::DataFrame, elasticity::Elasticity, prices::DataFrame, E::T, Ex::T, PTilde::T, exchange_rate::T) where {T<:Real}
 
     logPf = Supergrassi.log_price_index.(elasticity.armington, prices.uk, prices.eu, prices.world,
@@ -119,8 +159,15 @@ function compute_foreign_share(param::ParamsStruct, dparam::ParamsStruct, demand
 end
 
 """
-  Compute the 2d utility function parameters from regional InputMatrices and the corresponding elasticity.
-  Currently missing the jacobian, and the 1d parameters gammaL and gammaH
+    function compute_production_parameter(data::CleanData, prices::DataFrame, fun::Function = parameters_by_region)
+
+Compute the 2d utility function parameters γM, γH, γK from regional InputMatrices and the corresponding elasticity.
+
+# Arguments
+- `data::CleanData`: Data structure created by [`clean_data`](@ref)
+- `prices::DataFrame`: Logarithm of price index equilibrium variable. Has three components (uk, eu, world)
+- `fun::Function=parameters_by_region`: Function that computes three parameters by region. Either [`parameters_by_region`](@ref) or [`log_parameters_by_region`](@ref)
+
 """
 function compute_production_parameter(data::CleanData, prices::DataFrame, log_scale::Bool)
 
@@ -263,9 +310,18 @@ function compute_production_parameter(data::CleanData, prices::DataFrame, log_sc
 
 end
 
-function compute_agg_wages(data::HouseholdData, elasticity::Elasticity)
+"""
+    compute_agg_wages(data::HouseholdData, elasticity::Elasticity)
 
-    # ref. https://github.com/UCL/Supergrassi/blob/29510a8c9f50427068a475be01583b544975bd5c/code/matlab/macro_v2/B1_SetupParameters.m#L328-L332
+Computes and updates aggregate wages for households based on household data and elasticity of production.
+
+[ref](https://github.com/UCL/Supergrassi/blob/29510a8c9f50427068a475be01583b544975bd5c/code/matlab/macro_v2/B1_SetupParameters.m#L328-L332)
+
+# Arguments
+- `data::HouseholdData`: Data structure containing `wages` and `payments` DataFrames [`HouseholdData`](@ref)
+- `elasticity::Elasticity`: Elasticity of substitution for production parameters (ξ)
+"""
+function compute_agg_wages(data::HouseholdData, elasticity::Elasticity)
 
     ξh = elasticity.skill_substitution
     logW = ξh/(ξh-1) * log.(
