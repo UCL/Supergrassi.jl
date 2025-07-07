@@ -1,5 +1,8 @@
 using YAML
 
+"""
+Data type dictionary for settings validation.
+"""
 const data_type_dict = Dict(
     "int" => Int64,
     "float" => Float64,
