@@ -1,3 +1,17 @@
+"""
+    function compute_objective_function(log_price_uk::Vector{<:Number}, zOC::Vector{<:Number}, data::CleanData, params::Parameters)
+
+Computes the objective function value based on the log prices and zOC values.
+
+# Arguments
+- `log_price_uk::Vector{<:Number}`: Logarithm of UK prices.
+- `zOC::Vector{<:Number}`: Vector of zOC values.
+- `data::CleanData`: Cleaned data structure containing industry and regional information.
+- `params::Parameters`: Parameters structure containing production and constants.
+
+# Returns
+- `objective_value::Float64`: The computed objective function value.
+"""
 function compute_objective_function(log_price_uk::Vector{<:Number}, zOC::Vector{<:Number}, data::CleanData, params::Parameters)
 
     tau = (data.industry.tax.products .+ data.industry.tax.production) ./ data.industry.regional.total_use.agg
@@ -17,6 +31,19 @@ function compute_objective_function(log_price_uk::Vector{<:Number}, zOC::Vector{
 
 end
 
+"""
+    compute_objective_function(x::Vector{<:Number}, data::CleanData, params::Parameters)
+
+Computes the objective function value based on a vector of parameters.
+
+# Arguments
+- `x::Vector{<:Number}`: Vector containing log prices and zOC values.
+- `data::CleanData`: Cleaned data structure containing industry and regional information.
+- `params::Parameters`: Parameters structure containing production and constants.
+
+# Returns
+- `objective_value::Float64`: The computed objective function value.
+"""
 function compute_objective_function(x::Vector{<:Number}, data::CleanData, params::Parameters)
 
     n = length(data.industry.regional.total_use.agg)
