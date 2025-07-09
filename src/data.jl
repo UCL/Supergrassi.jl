@@ -1,14 +1,32 @@
+"""
+Data structures for the model.
+"""
 
+"""
+    struct RawIncomeData
+
+Stores high and low income data as DataFrames.
+"""
 struct RawIncomeData
     high::DataFrame
     low::DataFrame
 end
 
+"""
+    struct RawHouseHoldData
+
+Stores household data (income and hours worked).
+"""
 struct RawHouseHoldData
     income::RawIncomeData
     hours::RawIncomeData
 end
 
+"""
+    struct RawIndustryData
+
+Stores raw industry data (capital, turnover, and inventory) as DataFrames.
+"""
 struct RawIndustryData
     capital::DataFrame
     turnover::DataFrame
@@ -16,6 +34,24 @@ struct RawIndustryData
 end
 
 
+"""
+    struct InputOutput
+
+Stores input-output data matrix and other related information.
+
+Contains:
+
+- `raw_data`: The raw input-output data as a DataFrame.
+- `input_output_matrix`: The input-output matrix as a DataFrame.
+- `industry_names`: An array of industry names.
+- `final_consumption`: An array of final consumption values.
+- `gross_fixed_capital_formation`: An array of gross fixed capital formation values.
+- `delta_v_value_uk`: An array of delta V values for the UK.
+- `exports_eu_to_uk`: An array of exports from the EU to the UK.
+- `export_world_to_uk`: An array of exports from the world to the UK.
+- `total_use`: An array of total use values.
+- `services_export`: An array of services export values.
+"""
 struct InputOutput
 
 
@@ -37,8 +73,19 @@ struct InputOutput
     services_export::Array{Number, 1}
 
 
-    function InputOutput(raw_data::DataFrame, settings::Dict{String, Any})
+    """
+        InputOutput(raw_data::DataFrame, settings::Dict{String, Any})
 
+    Constructs an `InputOutput` object from raw data and settings.
+
+    # Arguments
+    - `raw_data::DataFrame`: The raw datafrom the input files.
+    - `settings::Dict{String, Any}`: A dictionary containing settings, including limits for processing the data.
+
+    # Returns
+    - `InputOutput`: An instance of the `InputOutput` struct containing processed data.
+    """
+    function InputOutput(raw_data::DataFrame, settings::Dict{String, Any})
 
         limits = settings["excel_limits"]["input_output"]
 
@@ -73,6 +120,26 @@ struct InputOutput
 
 end
 
+
+"""
+    struct Data
+
+Stores all the data required for the model, including household, industry, input-output data, and other relevant information.
+
+# Contains:
+
+- `household`: An instance of `RawHouseHoldData` containing household income and hours worked data.
+- `industry`: An instance of `RawIndustryData` containing industry capital, turnover, and inventory data.
+- `input_output`: An instance of `InputOutput` containing input-output data and matrices.
+- `imports`: An instance of `InputOutput` containing import data and matrices.
+- `depreciation`: A DataFrame containing depreciation data.
+- `risk_free_rate`: A DataFrame containing risk-free rate data.
+- `assets`: A DataFrame containing asset data.
+- `model_results`: A DataFrame containing model results.
+- `merge_codes_105`: A DataFrame containing merge codes for 105 industries.
+- `merge_codes_64`: A DataFrame containing merge codes for 64 industries.
+- `others`: A DataFrame containing other relevant data such as taxes and subsidies.
+"""
 struct Data
 
     household::RawHouseHoldData
@@ -94,6 +161,18 @@ struct Data
 
     # gdp::DataFrame
 
+    """
+        Data(data_struct::Dict{String, DataFrame}, settings::Dict{String, Any})
+
+    Constructs a `Data` object from a dictionary of DataFrames and settings.
+
+    # Arguments
+    - `data_struct::Dict{String, DataFrame}`: A dictionary containing DataFrames for various data categories.
+    - `settings::Dict{String, Any}`: A dictionary containing settings for processing the data.
+
+    # Returns
+    - `Data`: An instance of the `Data` struct containing all the processed data.
+    """
     function Data(data_struct::Dict{String, DataFrame}, settings::Dict{String, Any})
 
         household = RawHouseHoldData(
