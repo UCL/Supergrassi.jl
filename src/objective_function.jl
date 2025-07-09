@@ -18,7 +18,7 @@ function compute_objective_function(log_price_uk::Vector{<:Number}, data::CleanD
 
     w = sqrt.(data.industry.regional.total_use.agg)
     e = w.*(excess_demand .- data.industry.regional.total_use.agg)
-    objective_value = sum(e.^2)
+    objective_value = 0.5 * sum(e.^2)
 
     return objective_value
 
