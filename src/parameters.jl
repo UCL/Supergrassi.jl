@@ -18,7 +18,7 @@ end
 """
     function log_parameter_by_region(elasticity::T, quantity_region::T, logP_region::T, logP::T) where {T <: Real}
 
-Compute log of an utility function parameter for a single region. See [parameter_by_region](@ref)
+Compute log of an utility function parameter for a single region. See [`parameter_by_region`](@ref)
 """
 function log_parameter_by_region(elasticity::T, quantity_region::T, logP_region::T, logP::T) where {T <: Real}
 
@@ -58,7 +58,7 @@ end
     function log_parameters_by_region(elasticity::T,log_price_uk::T,log_price_eu::T,log_price_world::T,quantity_uk::T,quantity_eu::T,quantity_world::T) where {T <: Real}
 
 
-Compute log of utility function parameters. See [parameters_by_region](@ref).
+Compute log of utility function parameters. See [`parameters_by_region`](@ref).
 """
 function log_parameters_by_region(elasticity::T,
                                log_price_uk::T,log_price_eu::T,log_price_world::T,
@@ -83,7 +83,7 @@ in the paper, and are annotated (at least) α, β1, β2, γ and ρ.
 This is refactored from the Matlab code in e.g. ComputeTheta.m line 59
 
 # Arguments
-- `log_price_index::Vector{Real}` : price index computed by [log_price_index](@ref)
+- `log_price_index::Vector{Real}` : price index computed by [`log_price_index`](@ref)
 - `quantity:Vector{Real}` : aggregate quantity [f, x1, x2, I, m]
 - `elasticity::Real` : substitution elasticity. One of [ϵ, χ1, χ2, η, ξ]
 """
@@ -111,7 +111,7 @@ Compute the share of EU expenditure on UK exports, defined in section 2.2.1 of t
 for the export parameters β, this is the share of foreign expenditure on UK exports.
 
 # Arguments
-- `log_price_index::Vector{Real}` : price index computed by [log_price_index](@ref)
+- `log_price_index::Vector{Real}` : price index computed by [`log_price_index`](@ref)
 - `quantity::Vector{Real}` : Quantity of domestically-produced good i exported to the EU
 - `Ex::Real` : sum of imports
 - `Etilde::Real`: EU expenditure on UK exports
@@ -120,7 +120,7 @@ for the export parameters β, this is the share of foreign expenditure on UK exp
 - `elasticity::Real` : substitution elasticity
 - `elasticity_tilde::Real` : substitution from uk to other elasticity
 
-# See also [ParamsStruct](@ref).
+# See also [`ParamsStruct`](@ref).
 """
 function log_eu_expenditure_on_uk_exports(log_price_index::Vector{T}, quantity::Vector{T},
                                           Ex::T, ETilde::T, ePx::T, PTilde::T, elasticity::T,
@@ -159,7 +159,7 @@ end
 """
     function log_price_index(elasticity::T,log_price_uk::T, log_price_eu::T, log_price_world::T,demand_uk::T, demand_eu::T, demand_world::T) where {T <: Real}
 
-Compute the log of the consumer price index. See [price_index](@ref)
+Compute the log of the consumer price index. See [`price_index`](@ref)
 """
 function log_price_index(elasticity::T,
                          log_price_uk::T, log_price_eu::T, log_price_world::T,
@@ -183,7 +183,7 @@ Matlab code reference e.g. ComputeTheta.m line 58.
 
 # Arguments
 - `elasticity::Real` : substitution elasticity
-- `log_price_index::Vector{Real}` : price index computed by [log_price_index](@ref)
+- `log_price_index::Vector{Real}` : price index computed by [`log_price_index`](@ref)
 - `quantity:Vector{Real}` : aggregate quantity [f, x1, x2, I, m]
 """
 function log_total_price_index(elasticity::T, log_price_index::Vector{T}, quantity::Vector{T}) where {T <: Real}
@@ -222,7 +222,7 @@ Matlab code reference ComputeTheta.m line 251
 - `log_scale::Bool` : return parameters in log scale
 
 # See also
-[compute_agg_wages](@ref)
+[`compute_agg_wages`](@ref)
 """
 function total_input_parameters(prices_uk::Vector{T}, prices_eu::Vector{T}, prices_world::Vector{T},
                                 input_uk::Vector{T}, input_eu::Vector{T}, input_world::Vector{T}, input_agg::Vector{T},
@@ -277,7 +277,7 @@ Matlab code reference ComputeTheta.m line 249
 - `log_scale::Bool` : return parameters in log scale
 
 # See also
-[compute_agg_wages](@ref)
+[`compute_agg_wages`](@ref)
 """
 function total_labor_parameters(prices_uk::Vector{T}, prices_eu::Vector{T}, prices_world::Vector{T},
                                 input_uk::Vector{T}, input_eu::Vector{T}, input_world::Vector{T}, input_agg::Vector{T},
@@ -328,7 +328,7 @@ Matlab code reference ComputeTheta.m line 254
 - `log_scale::Bool` : return parameters in log scale
 
 # See also
-[compute_agg_wages](@ref)
+[`compute_agg_wages`](@ref)
 """
 function total_capital_parameters(prices_uk::Vector{T}, prices_eu::Vector{T}, prices_world::Vector{T},
                                   input_uk::Vector{T}, input_eu::Vector{T}, input_world::Vector{T}, input_agg::Vector{T},
@@ -496,7 +496,7 @@ end
 - `elasticity`: Elasticity parameter.
 
 # See also
-[compute_agg_wages](@ref)
+[`compute_agg_wages`](@ref)
 """
 function labor_fun(labor::T, log_wages::T, elasticity::T) where T
 
