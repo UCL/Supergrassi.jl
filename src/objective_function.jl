@@ -1,13 +1,6 @@
-# function compute_objective_function(x::Vector{<:Number}, data::CleanData, params::Parameters)
-# function compute_objective_function(log_price_uk::Vector{<:Number}, zOC::Vector{<:Number}, data::CleanData, params::Parameters)
-function compute_objective_function(log_price_uk::Vector{<:Number}, data::CleanData, params::Parameters)
-
-    zOC = data.industry.surplus.val
-
+function compute_objective_function(log_price_uk::Vector{<:Number}, zOC::Vector{<:Number}, data::CleanData, params::Parameters)
 
     tau = (data.industry.tax.products .+ data.industry.tax.production) ./ data.industry.regional.total_use.agg
-
-    @show typeof(tau)
 
     mu = params.production.shock_mean
     gammaK = params.production.input_capital
@@ -22,5 +15,15 @@ function compute_objective_function(log_price_uk::Vector{<:Number}, data::CleanD
 
     return objective_value
 
+end
+
+function compute_objective_function(x::Vector{<:Number}, data::CleanData, params::Parameters)
+
+    n = length(data.industry.regional.total_use.agg)
+
+    log_price_uk = x[1:n]
+    zOC = x[(n+1):end]
+
+    return compute_objective_function(log_price_uk, zOC, data, params)
 
 end

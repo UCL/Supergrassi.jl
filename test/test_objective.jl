@@ -22,7 +22,11 @@ Supergrassi.postprocess_clean_data!(clean)
 params, ∂params = Supergrassi.compute_all_parameters(clean, prices, false)
 log_params, ∂log_params = Supergrassi.compute_all_parameters(clean, prices, true)
 
-objective_function = Supergrassi.compute_objective_function(df.logP_uk, clean, params)
+zOC = clean.industry.surplus.val
+
+x = vcat(df.logP_uk, zOC)
+
+objective_function = Supergrassi.compute_objective_function(x, clean, params)
 
 @testset "Objective function" begin
 
