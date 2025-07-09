@@ -1,7 +1,7 @@
 # Supergrassi
 
 [![Aqua QA](https://raw.githubusercontent.com/JuliaTesting/Aqua.jl/master/badge.svg)](https://github.com/JuliaTesting/Aqua.jl)
-[![Build Status](https://github.com/UCL/Supergrassi.jl/actions/workflows/CI.yml/badge.svg?branch=main)](https://github.com/UCL/Supergrassi.jl/actions/workflows/CI.yml?query=branch%3Amain)
+[![Build Status](https://github.com/UCL/Supergrassi.jl/actions/workflows/UnitTests.yml/badge.svg?branch=main)](https://github.com/UCL/Supergrassi.jl/actions/workflows/UnitTests.yml?query=branch%3Amain)
 [![codecov](https://codecov.io/gh/UCL/Supergrassi.jl/graph/badge.svg?token=LU852FO3FP)](https://codecov.io/gh/UCL/Supergrassi.jl)
 
 Multi-sector dynamic macroeconomics model with debt and default

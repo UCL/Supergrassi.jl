@@ -13,8 +13,11 @@ include("parameters.jl")
 include("parameters_interface.jl")
 include("excess_demand.jl")
 # include("capital_market.jl")
+include("objective_function.jl")
 
 export create_filepath, read_data, read_settings, check_file_availability
 export clean_data
+
+export compute_objective_function
 
 end
