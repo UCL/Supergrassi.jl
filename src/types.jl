@@ -270,8 +270,8 @@ struct ParamsProduction
     input_capital::Array{Float64}
     input_low_skill::Vector{Float64}
     input_high_skill::Vector{Float64}
-    shock_mean::Vector{Float64}
-    shock_stddev::Vector{Float64}
+    shock_mean::Array{Float64}
+    shock_stddev::Array{Float64}
 
     input_uk::Matrix{Float64}
     input_eu::Matrix{Float64}

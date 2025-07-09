@@ -196,15 +196,22 @@ function log_total_price_index(elasticity::T, log_price_index::Vector{T}, quanti
 end
 
 """
-    function total_input_parameters(log_price_index::Vector{T}, input::Vector{T}, surplus::T, capital::T, output::T, labor::T, log_wages::T, elasticity::T, tau::T) where T
+    function total_input_parameters(prices_uk::Vector{T}, prices_eu::Vector{T}, prices_world::Vector{T},
+                                input_uk::Vector{T}, input_eu::Vector{T}, input_world::Vector{T}, input_agg::Vector{T},
+                                surplus::T, capital::T, output::T, labor::T, log_wages::T, elasticity::Elasticity, tau::T, log_scale::Bool) where {T <: Real}
 
 Compute the total parameter (γM) for the firms input utility function.
 
 Matlab code reference ComputeTheta.m line 251
 
 # Arguments
-- `log_price_index::Vector{Real}` : price index computed by [log_price_index](@ref)
-- `input::Vector{Real}` : intermediate input from firm i to firms j. mValue in matlab code
+- `prices_uk::Vector{Real}` : uk price index
+- `prices_eu::Vector{Real}` : eu price index
+- `prices_world::Vector{Real}` : rest of world price index
+- `input_uk::Vector{Real}` : uk firms intermediate input
+- `input_eu::Vector{Real}` : eu firms intermediate input
+- `input_world::Vector{Real}` : rest of world firms intermediate input
+- `input_agg::Vector{Real}` : aggreagete firms intermediate input
 - `suprlus::Real` : firms suprlus, data.kValue
 - `capital::Real` : firms capital, data.k0
 - `output::Real` : total household use, data.yValue
@@ -212,30 +219,40 @@ Matlab code reference ComputeTheta.m line 251
 - `log_wages::Real` : aggregate wages of households
 - `elasticity::Real` : substitution elasticity
 - `tau::Real` : ratio of taxes to household use
+- `log_scale::Bool` : return parameters in log scale
 
 # See also
 [compute_agg_wages](@ref)
 """
-function total_input_parameters(log_price_index::Vector{T}, input::Vector{T},
-                            surplus::T, capital::T, output::T, labor::T, log_wages::T, elasticity::T, tau::T) where T
+function total_input_parameters(prices_uk::Vector{T}, prices_eu::Vector{T}, prices_world::Vector{T},
+                                input_uk::Vector{T}, input_eu::Vector{T}, input_world::Vector{T}, input_agg::Vector{T},
+                                surplus::T, capital::T, output::T, labor::T, log_wages::T, elasticity::Elasticity, tau::T, log_scale::Bool) where {T <: Real}
 
-    length(log_price_index) == length(input) || error()
-    tauP = tauPdMu(elasticity, log_price_index, input, surplus, capital, output, labor, log_wages, tau)
-
-    parameters = Vector{T}(undef, length(log_price_index))
-
-    for i in axes(log_price_index,1)
-        parameters[i] = weight_kernel(input[i], exp(log_price_index[i])/tauP, elasticity)
+    logPm = Vector{T}(undef, length(prices_uk))
+    for i in 1:length(prices_uk)
+        logPm[i] = log_price_index(elasticity.armington, prices_uk[i], prices_eu[i], prices_world[i], input_uk[i], input_eu[i], input_world[i])
     end
 
-    return parameters
+    replace!(logPm, Inf => 0.0)
 
-    #return [weight_kernel(input[i], exp(log_price_index[i]) / tauP, elasticity) for i in eachindex(input, log_price_index)]
+    length(logPm) == length(input_agg) || error()
+    tauP = tauPdMu(elasticity.substitution, logPm, input_agg, surplus, capital, output, labor, log_wages, tau)
+
+    parameters = Vector{T}(undef, length(logPm))
+
+    for i in axes(logPm,1)
+        parameters[i] = weight_kernel(input_agg[i], exp(logPm[i])/tauP, elasticity.substitution)
+    end
+
+    return log_scale ? replace!(log.(parameters), -Inf => 0.0) : parameters
 
 end
 
 """
-    function total_labor_parameters(log_price_index::Vector{T}, input::Vector{T}, surplus::T, capital::T, output::T, labor::T, log_wages::T, elasticity::T, tau::T) where T
+    function total_labor_parameters(prices_uk::Vector{T}, prices_eu::Vector{T}, prices_world::Vector{T},
+                                input_uk::Vector{T}, input_eu::Vector{T}, input_world::Vector{T}, input_agg::Vector{T},
+                                surplus::T, capital::T, output::T, labor::T, log_wages::T, elasticity::Elasticity, tau::T, log_scale::Bool) where T
+
 
 Compute the total parameter (γH) for the firms labor utility function.
 
@@ -243,8 +260,13 @@ Matlab code reference ComputeTheta.m line 249
 
 
 # Arguments
-- `log_price_index::Vector{Real}` : price index computed by [log_price_index](@ref)
-- `input::Vector{Real}` : intermediate input from firm i to firms j. mValue in matlab code
+- `prices_uk::Vector{Real}` : uk price index
+- `prices_eu::Vector{Real}` : eu price index
+- `prices_world::Vector{Real}` : rest of world price index
+- `input_uk::Vector{Real}` : uk firms intermediate input
+- `input_eu::Vector{Real}` : eu firms intermediate input
+- `input_world::Vector{Real}` : rest of world firms intermediate input
+- `input_agg::Vector{Real}` : aggreagete firms intermediate input
 - `suprlus::Real` : firms suprlus, data.kValue
 - `capital::Real` : firms capital, data.k0
 - `output::Real` : total household use, data.yValue
@@ -252,29 +274,50 @@ Matlab code reference ComputeTheta.m line 249
 - `log_wages::Real` : aggregate wages of households
 - `elasticity::Real` : substitution elasticity
 - `tau::Real` : ratio of taxes to household use
+- `log_scale::Bool` : return parameters in log scale
 
 # See also
 [compute_agg_wages](@ref)
 """
-function total_labor_parameters(log_price_index::Vector{T}, input::Vector{T},
-                            surplus::T, capital::T, output::T, labor::T, log_wages::T, elasticity::T, tau::T) where T
+function total_labor_parameters(prices_uk::Vector{T}, prices_eu::Vector{T}, prices_world::Vector{T},
+                                input_uk::Vector{T}, input_eu::Vector{T}, input_world::Vector{T}, input_agg::Vector{T},
+                                surplus::T, capital::T, output::T, labor::T, log_wages::T, elasticity::Elasticity, tau::T, log_scale::Bool) where T
 
-    length(log_price_index) == length(input) || error()
-    tauP = tauPdMu(elasticity, log_price_index, input, surplus, capital, output, labor, log_wages, tau)
-    return weight_kernel(labor, exp(log_wages) / tauP, elasticity)
+    logPm = Vector{T}(undef, length(prices_uk))
+    for i in 1:length(prices_uk)
+        logPm[i] = log_price_index(elasticity.armington, prices_uk[i], prices_eu[i], prices_world[i], input_uk[i], input_eu[i], input_world[i])
+    end
+    replace!(logPm, Inf => 0.0)
+
+    length(logPm) == length(input_agg) || error()
+    tauP = tauPdMu(elasticity.substitution, logPm, input_agg, surplus, capital, output, labor, log_wages, tau)
+    val = weight_kernel(labor, exp(log_wages) / tauP, elasticity.substitution)
+
+    if log_scale
+        return isinf(log(val)) ? 0.0 : log(val)
+    else
+        return val
+    end
 
 end
 
 """
-    function total_surplus_parameters(log_price_index::Vector{T}, input::Vector{T}, surplus::T, capital::T, output::T, labor::T, log_wages::T, elasticity::T, tau::T) where T
+    function total_capital_parameters(prices_uk::Vector{T}, prices_eu::Vector{T}, prices_world::Vector{T},
+                                  input_uk::Vector{T}, input_eu::Vector{T}, input_world::Vector{T}, input_agg::Vector{T},
+                                  surplus::T, capital::T, output::T, labor::T, log_wages::T, elasticity::Elasticity, tau::T, log_scale::Bool) where T
 
 Compute the total parameter (γK) for the firms capital utility function.
 
 Matlab code reference ComputeTheta.m line 254
 
 # Arguments
-- `log_price_index::Vector{Real}` : price index computed by [log_price_index](@ref)
-- `input::Vector{Real}` : intermediate input from firm i to firms j. mValue in matlab code
+- `prices_uk::Vector{Real}` : uk price index
+- `prices_eu::Vector{Real}` : eu price index
+- `prices_world::Vector{Real}` : rest of world price index
+- `input_uk::Vector{Real}` : uk firms intermediate input
+- `input_eu::Vector{Real}` : eu firms intermediate input
+- `input_world::Vector{Real}` : rest of world firms intermediate input
+- `input_agg::Vector{Real}` : aggreagete firms intermediate input
 - `suprlus::Real` : firms suprlus, data.kValue
 - `capital::Real` : firms capital, data.k0
 - `output::Real` : total household use, data.yValue
@@ -282,17 +325,77 @@ Matlab code reference ComputeTheta.m line 254
 - `log_wages::Real` : aggregate wages of households
 - `elasticity::Real` : substitution elasticity
 - `tau::Real` : ratio of taxes to household use
+- `log_scale::Bool` : return parameters in log scale
 
 # See also
 [compute_agg_wages](@ref)
 """
-function total_surplus_parameters(log_price_index::Vector{T}, input::Vector{T},
-                            surplus::T, capital::T, output::T, labor::T, log_wages::T, elasticity::T, tau::T) where T
+function total_capital_parameters(prices_uk::Vector{T}, prices_eu::Vector{T}, prices_world::Vector{T},
+                                  input_uk::Vector{T}, input_eu::Vector{T}, input_world::Vector{T}, input_agg::Vector{T},
+                                  surplus::T, capital::T, output::T, labor::T, log_wages::T, elasticity::Elasticity, tau::T, log_scale::Bool) where T
 
-    length(log_price_index) == length(input) || error()
-    tauP = tauPdMu(elasticity, log_price_index, input, surplus, capital, output, labor, log_wages, tau)
+    logPm = Vector{T}(undef, length(prices_uk))
+    for i in 1:length(prices_uk)
+        logPm[i] = log_price_index(elasticity.armington, prices_uk[i], prices_eu[i], prices_world[i], input_uk[i], input_eu[i], input_world[i])
+    end
+    replace!(logPm, Inf => 0.0)
+
+    length(logPm) == length(input_agg) || error()
+    tauP = tauPdMu(elasticity.substitution, logPm, input_agg, surplus, capital, output, labor, log_wages, tau)
     tauY = (1 - tau) * output / capital
-    return surplus ^ elasticity * (tauY / tauP) ^ (elasticity - 1)
+    val =  surplus ^ elasticity.substitution * (tauY / tauP) ^ (elasticity.substitution - 1)
+
+    if log_scale
+        return isinf(log(val)) ? 0.0 : log(val)
+    else
+        return val
+    end
+
+end
+
+"""
+    function productivity_shock_mean(elasticity::Elasticity, prices_uk::Vector{T}, prices_eu::Vector{T}, prices_world::Vector{T},
+                                 input_uk::Vector{T}, input_eu::Vector{T}, input_world::Vector{T}, input_agg::Vector{T},
+                                 surplus::T, capital::T, output::T, labor::T, log_wages::T, tau::T, row::Int, log_scale::Bool) where {T <: Real}
+
+Compute the productivity shock mean μ
+
+- `prices_uk::Vector{Real}` : uk price index
+- `prices_eu::Vector{Real}` : eu price index
+- `prices_world::Vector{Real}` : rest of world price index
+- `input_uk::Vector{Real}` : uk firms intermediate input
+- `input_eu::Vector{Real}` : eu firms intermediate input
+- `input_world::Vector{Real}` : rest of world firms intermediate input
+- `input_agg::Vector{Real}` : aggreagete firms intermediate input
+- `suprlus::Real` : firms suprlus, data.kValue
+- `capital::Real` : firms capital, data.k0
+- `output::Real` : total household use, data.yValue
+- `labor::Real` : payments for labor, data.hValue
+- `log_wages::Real` : aggregate wages of households
+- `elasticity::Real` : substitution elasticity
+- `tau::Real` : ratio of taxes to household use
+- `row::Int` : index of firm i
+- `log_scale::Bool` : return parameters in log scale
+
+"""
+function productivity_shock_mean(elasticity::Elasticity, prices_uk::Vector{T}, prices_eu::Vector{T}, prices_world::Vector{T},
+                                 input_uk::Vector{T}, input_eu::Vector{T}, input_world::Vector{T}, input_agg::Vector{T},
+                                 surplus::T, capital::T, output::T, labor::T, log_wages::T, tau::T, row::Int, log_scale::Bool) where {T <: Real}
+
+    logPm = Vector{T}(undef, length(prices_uk))
+    for i in 1:length(prices_uk)
+        logPm[i] = log_price_index(elasticity.armington, prices_uk[i], prices_eu[i], prices_world[i], input_uk[i], input_eu[i], input_world[i])
+    end
+    replace!(logPm, Inf => 0.0)
+
+    tauP = tauPdMu(elasticity.substitution, logPm, input_agg, surplus, capital, output, labor, log_wages, tau)
+    mu = tauP / ((1-tau) * exp(prices_uk[row]))
+
+    if log_scale
+        return isinf(log(mu)) ? 0.0 : log(mu)
+    else
+        return mu
+    end
 
 end
 
@@ -345,18 +448,6 @@ function sum_kernel(var::Vector{T}, logP::Vector{T}, elasticity::T) where {T <: 
     return s
 
     #return sum(x -> x[1] ^ (1 / elasticity) * exp((elasticity - 1) * x[2] / elasticity), zip(var, logP))
-
-end
-
-
-function productivity_shock_mean(elasticity::T, log_price_uk::T, log_price_index::Vector{T}, input::Vector{T}, surplus::T, capital::T, output::T, labor::T, log_wages::T, tau::T) where {T <: Real}    
-
-    tauP = tauPdMu(elasticity, log_price_index, input, surplus, capital, output, labor, log_wages, tau)
-    return tauP / ((1-tau) * exp(log_price_uk))
-
-    # logTauP = logTauPdMu(elasticity, log_price_index, input, surplus, capital, output, labor, log_wages, tau)
-    # logMu = logTauP - log(1.0 - tau) - log_price_uk
-    # return exp(logMu)
 
 end
 
