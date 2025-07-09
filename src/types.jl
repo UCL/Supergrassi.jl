@@ -27,10 +27,10 @@ Stores components of an elasticity constant.
 
 Names for reference in paper/matlab code for e.g. production elasticity ξ:
 
-- `substitution`: ξ
-- `armington`: ξ_a
-- `substitution_uk_other`: ~ξ
-- `skill_substitution`: ξ_h
+- `substitution::Float64`: ξ
+- `armington::Float64`: ξ_a
+- `substitution_uk_other::Float64`: ~ξ
+- `skill_substitution::Float64`: ξ_h
 """
 struct Elasticity
     substitution::Float64
@@ -86,9 +86,9 @@ Stores sums of quantities over industries before renormalisation.
 
 Names for reference with the paper/matlab code:
 
-- `savings`: E
-- `investments`: ISum
-- `imports`: EX1, EX2
+- `savings::Float64`: E
+- `investments::Float64`: ISum
+- `imports::ForeignRegionalValues`: EX1, EX2 [`ForeignRegionalValues`](@ref)
 """
 struct Totals
 
@@ -134,14 +134,14 @@ Stores industries data that is split between uk/eu/rest of the world.
 The data is vectors with one value per industry stored in a DataFrame. Names for reference with
 the matlab code/paper:
 
-- `total_use`: data.yValue / y
-- `consumption`:data.fValue / f
-- `delta_v`: data.deltaVValue / Δv
-- `export_eu`: data.x1Value / x1
-- `export_world`: data.x2Value / x2
-- `investment`: data.IValue / I
-- `input_matrices`: data.mValue / m
-- `totals`: data.{E, ISum, EX1, EX2}
+- `total_use::DataFrame`: data.yValue / y
+- `consumption::DataFrame`:data.fValue / f
+- `delta_v::DataFrame`: data.deltaVValue / Δv
+- `export_eu::DataFrame`: data.x1Value / x1
+- `export_world::DataFrame`: data.x2Value / x2
+- `investment::DataFrame`: data.IValue / I
+- `input_matrices::InputMatrices`: data.mValue / m [`InputMatrices`](@ref)
+- `totals::Totals`: data.{E, ISum, EX1, EX2} [`Totals`](@ref)
 
 """
 struct RegionalData
@@ -164,10 +164,10 @@ Stores data on households
 
 Names reference for matlab code/paper
 
-- `income`: `data.income_{lo, hi}`
-- `payments`: `data.{hValueLO, hValueHI, hValue}`
-- `hours`: `data.h{LO, HI}`
-- `wages`: `data.w{LO, HI}`
+- `income::DataFrame`: `data.income_{lo, hi}`
+- `payments::DataFrame`: `data.{hValueLO, hValueHI, hValue}`
+- `hours::DataFrame`: `data.h{LO, HI}`
+- `wages::DataFrame`: `data.w{LO, HI}`
 
 """
 struct HouseholdData
@@ -186,13 +186,13 @@ Stores data on industries
 
 Names reference for matlab code/paper
 
-- `depreciation`: `data.depreciation`
-- `tax`: `data.taxValue{1,2}`
-- `capital`: `data.k{0,1}`
-- `surplus`: `data.kValue`
-- `shock_stdev`: `data.sigmaBar`
-- `assets_liabilities`: [`AssetsLiabilities`](@ref)
-- `regional`: [`RegionalData`](@ref)
+- `depreciation::DataFrame`: `data.depreciation`
+- `tax::DataFrame`: `data.taxValue{1,2}`
+- `capital::DataFrame`: `data.k{0,1}`
+- `surplus::DataFrame`: `data.kValue`
+- `shock_stdev::DataFrame`: `data.sigmaBar`
+- `assets_liabilities::AssetsLiabilities`: [`AssetsLiabilities`](@ref)
+- `regional::RegionalData`: [`RegionalData`](@ref)
 
 """
 struct IndustryData
@@ -253,16 +253,16 @@ These require a different structure from [ParamsStruct](@ref) because firms trad
 and the parameter is a matrix that contains a value for each combination of firms.
 
 Names reference
-- `input_human::Vector` : `γ_h`
-- `input_capital::Vector` :  `γ_k`
-- `input_low_skill::Vector` : `γ_L`
-- `input_high_skill::Vector` : `γ_H`
-- `shock_mean::Vector` : `μ`
-- `shock_stddev::Vector` : ̄`σ`
-- `input_uk::Matrix` : `γ_Md`
-- `input_eu::Matrix` : `γ_Meu`
-- `input_world::Matrix` : `γ_Mw`
-- `input_agg::Matrix` : `γ_M`
+- `input_human::Vector{Float64}` : `γ_h`
+- `input_capital::Vector{Float64}` :  `γ_k`
+- `input_low_skill::Vector{Float64}` : `γ_L`
+- `input_high_skill::Vector{Float64}` : `γ_H`
+- `shock_mean::Vector{Float64}` : `μ`
+- `shock_stddev::Vector{Float64}` : ̄`σ`
+- `input_uk::Matrix{Float64}` : `γ_Md`
+- `input_eu::Matrix{Float64}` : `γ_Meu`
+- `input_world::Matrix{Float64}` : `γ_Mw`
+- `input_agg::Matrix{Float64}` : `γ_M`
 """
 struct ParamsProduction
 
