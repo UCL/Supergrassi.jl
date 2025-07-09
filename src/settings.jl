@@ -1,15 +1,5 @@
 using YAML
 
-const data_type_dict = Dict(
-    "int" => Int64,
-    "float" => Float64,
-    "str" => String,
-    "bool" => Bool,
-    "elas" => Vector{Vector{Float64}},
-    "date" => String,
-    "list" => Vector{Int64},
-)
-
 """
     classify_dict(dict::Dict)
 
@@ -54,36 +44,19 @@ function classify_dict(dict::Dict{Any, Any})
 
 end
 
+"""
+    read_settings(file_path::FilePath)
 
+Reads settings from a YAML file and classifies the dictionary.
+
+# Arguments
+- `file_path::FilePath`: The path to the YAML file containing settings.
+
+# Returns
+- `Dict{key_type, value_type}`: The classified settings dictionary.
+"""
 function read_settings(file_path::FilePath)
     settings = YAML.load_file(file_path.path)
     settings = classify_dict(settings)
     return settings
-end
-
-function validate_settings(settings::Dict{<:Any, <:Any}, structure::Dict{<:Any, <:Any})
-
-    for key in keys(structure)
-        if !haskey(settings, key)
-            error("Missing key in settings YAML: $key")
-        end
-    end
-
-    for (key, value) in settings
-        
-        if !haskey(structure, key)
-            @warn "Unvalidated Key in settings YAML: $key"
-            continue
-        end
-
-        if isa(value, Dict)
-            validate_settings(value, structure[key])
-        else
-            if !isa(value, data_type_dict[structure[key]])
-                error("Invalid value type for key: $key")
-            end
-        end
-
-    end
-    
 end
