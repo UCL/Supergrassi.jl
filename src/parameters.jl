@@ -472,7 +472,7 @@ function tauPdMu(elasticity::T, log_price_index::Vector{T}, input::Vector{T}, su
 end
 
 """
-    capital_fun(surplus::T, tau::T, output::T, capital::T, elasticity::T) where T
+    capital_fun(surplus::T, tau::T, output::T, capital::T, elasticity::T) where {T <: Real}
 
 # Argument:
 - `surplus`: Surplus value.
@@ -481,14 +481,14 @@ end
 - `capital`: firms capital.
 - `elasticity`: substitution elasticity parameter.
 """
-function capital_fun(surplus::T, tau::T, output::T, capital::T, elasticity::T) where T
+function capital_fun(surplus::T, tau::T, output::T, capital::T, elasticity::T) where {T <: Real}
 
     return surplus * exp((elasticity - 1) / elasticity * log((1 - tau) * output / capital))
 
 end
 
 """
-    labor_fun(labor::T, log_wages::T, elasticity::T) where T
+    labor_fun(labor::T, log_wages::T, elasticity::T) where {T <: Real}
 
 # Argument:
 - `labor`: Labor input.
@@ -498,7 +498,7 @@ end
 # See also
 [`compute_agg_wages`](@ref)
 """
-function labor_fun(labor::T, log_wages::T, elasticity::T) where T
+function labor_fun(labor::T, log_wages::T, elasticity::T) where {T <: Real}
 
     return labor ^ ( 1 / elasticity ) * exp(( elasticity - 1 ) / elasticity * log_wages)
 
