@@ -27,10 +27,10 @@ Stores components of an elasticity constant.
 
 Names for reference in paper/matlab code for e.g. production elasticity ξ:
 
-- substitution: ξ
-- armington: ξ_a
-- substitution_uk_other: ~ξ
-- skill_substitution: ξ_h
+- `substitution`: ξ
+- `armington`: ξ_a
+- `substitution_uk_other`: ~ξ
+- `skill_substitution`: ξ_h
 """
 struct Elasticity
     substitution::Float64
@@ -46,11 +46,11 @@ Stores sets of elasticity constants.
 
 Names for reference in paper/matlab code:
 
-- consumption: α
-- eu_export_demand: β1
-- world_export_demand: β2
-- investment: ρ
-- production: ξ
+- `consumption`: α
+- `eu_export_demand`: β1
+- `world_export_demand`: β2
+- `investment`: ρ
+- `production`: ξ
 """
 struct Elasticities
     production::Elasticity
@@ -86,9 +86,9 @@ Stores sums of quantities over industries before renormalisation.
 
 Names for reference with the paper/matlab code:
 
-- savings: E
-- investments: ISum
-- imports: EX1, EX2
+- `savings`: E
+- `investments`: ISum
+- `imports`: EX1, EX2
 """
 struct Totals
 
@@ -134,14 +134,14 @@ Stores industries data that is split between uk/eu/rest of the world.
 The data is vectors with one value per industry stored in a DataFrame. Names for reference with
 the matlab code/paper:
 
-- total_use: data.yValue / y
-- consumption:data.fValue / f
-- delta_v: data.deltaVValue / Δv
-- export_eu: data.x1Value / x1
-- export_world: data.x2Value / x2
-- investment:: data.IValue / I
-- input_matrices:: data.mValue / m
-- totals: data.{E, ISum, EX1, EX2}
+- `total_use`: data.yValue / y
+- `consumption`:data.fValue / f
+- `delta_v`: data.deltaVValue / Δv
+- `export_eu`: data.x1Value / x1
+- `export_world`: data.x2Value / x2
+- `investment`: data.IValue / I
+- `input_matrices`: data.mValue / m
+- `totals`: data.{E, ISum, EX1, EX2}
 
 """
 struct RegionalData
@@ -164,10 +164,10 @@ Stores data on households
 
 Names reference for matlab code/paper
 
-- income: data.income_{lo, hi}
-- payments: data.{hValueLO, hValueHI, hValue}
-- hours: data.h{LO, HI}
-- wages: data.w{LO, HI}
+- `income`: `data.income_{lo, hi}`
+- `payments`: `data.{hValueLO, hValueHI, hValue}`
+- `hours`: `data.h{LO, HI}`
+- `wages`: `data.w{LO, HI}`
 
 """
 struct HouseholdData
@@ -186,13 +186,13 @@ Stores data on industries
 
 Names reference for matlab code/paper
 
-- depreciation: data.depreciation
-- tax: data.taxValue{1,2}
-- capital: data.k{0,1}
-- surplus: data.kValue
-- shock_stdev: data.sigmaBar
-- assets_liabilities: [AssetsLiabilities](@ref)
-- regional: [RegionalData](@ref)
+- `depreciation`: `data.depreciation`
+- `tax`: `data.taxValue{1,2}`
+- `capital`: `data.k{0,1}`
+- `surplus`: `data.kValue`
+- `shock_stdev`: `data.sigmaBar`
+- `assets_liabilities`: [`AssetsLiabilities`](@ref)
+- `regional`: [`RegionalData`](@ref)
 
 """
 struct IndustryData
@@ -214,9 +214,9 @@ Top level structure for cleaned up input data.
 
 Contains
 
-- [HouseholdData](@ref)
-- [IndustryData](@ref)
-- [Constants](@ref)
+- [`HouseholdData`](@ref)
+- [`IndustryData`](@ref)
+- [`Constants`](@ref)
 """
 struct CleanData
 
@@ -253,16 +253,16 @@ These require a different structure from [ParamsStruct](@ref) because firms trad
 and the parameter is a matrix that contains a value for each combination of firms.
 
 Names reference
-- `input_human::Vector` : γ_h
-- `input_capital::Vector` :  γ_k
-- `input_low_skill::Vector` : γ_L
-- `input_high_skill::Vector` : γ_H
-- `shock_mean::Vector` : μ
-- `shock_stddev::Vector` : ̄σ
-- `input_uk::Matrix` : γ_Md
-- `input_eu::Matrix` : γ_Meu
-- `input_world::Matrix` : γ_Mw
-- `input_agg::Matrix` : γ_M
+- `input_human::Vector` : `γ_h`
+- `input_capital::Vector` :  `γ_k`
+- `input_low_skill::Vector` : `γ_L`
+- `input_high_skill::Vector` : `γ_H`
+- `shock_mean::Vector` : `μ`
+- `shock_stddev::Vector` : ̄`σ`
+- `input_uk::Matrix` : `γ_Md`
+- `input_eu::Matrix` : `γ_Meu`
+- `input_world::Matrix` : `γ_Mw`
+- `input_agg::Matrix` : `γ_M`
 """
 struct ParamsProduction
 
@@ -301,11 +301,11 @@ Main structure for parameters
 Contains
 
 - `constants::ParameterConstants` : constant values
-- `consumption::ParamsStruct` : α
-- `export_eu::ParamsStruct` : β1
-- `export_world::ParamsStruct` : β2
-- `production::ParamsProduction` : γ
-- `investment::ParamsStruct` : ρ
+- `consumption::ParamsStruct` : `α`
+- `export_eu::ParamsStruct` : `β1`
+- `export_world::ParamsStruct` : `β2`
+- `production::ParamsProduction` : `γ`
+- `investment::ParamsStruct` : `ρ`
 """
 struct Parameters
 
