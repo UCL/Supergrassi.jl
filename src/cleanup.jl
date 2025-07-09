@@ -3,6 +3,16 @@ using Printf
 using StatsBase
 using Dates
 
+"""
+Create a mapping from SIC 105 industry names to SIC 64 industry names.
+
+# Arguments
+- `merge_codes::DataFrame`: A DataFrame containing the mapping between SIC 105 and SIC 64 industry names. It should have two columns: `sic105` containing SIC 105 industry names and `sic64` containing SIC 64 industry names.
+- `verbose::Bool`: If true, prints the initial and final industry names.
+
+# Returns
+- `Dict{String, String}`: A dictionary mapping SIC 105 industry names to SIC 64 industry names.
+"""
 function create_map_105_to_64(merge_codes::DataFrame, verbose::Bool = false)
 
     initial_industry_names = merge_codes[!, :sic105]
@@ -25,6 +35,15 @@ function create_map_105_to_64(merge_codes::DataFrame, verbose::Bool = false)
 
 end
 
+"""
+Create a mapping from SIC 64 industry names to SIC 16 industry names.
+# Arguments
+- `merge_codes::DataFrame`: A DataFrame containing the mapping between SIC 64 and SIC 16 industry names. It should have two columns: `x1` containing SIC 64 industry names and `x7` containing SIC 16 industry names.
+- `verbose::Bool`: If true, prints the initial and final industry names.
+
+# Returns
+- `Dict{String, String}`: A dictionary mapping SIC 64 industry names to SIC 16 industry names.
+"""
 function create_map_64_to_16(merge_codes::DataFrame, verbose::Bool = false)
 
     initial_industry_names = merge_codes[2:end, :x1]
@@ -47,7 +66,17 @@ function create_map_64_to_16(merge_codes::DataFrame, verbose::Bool = false)
 
 end
 
-function reduce_columns_by_group_sum(df::DataFrame, mapping::Dict{String, String};)
+"""
+Reduce columns in a DataFrame by summing them based on a mapping.
+
+# Arguments
+- `df::DataFrame`: The DataFrame containing the columns to be reduced.
+- `mapping::Dict{String, String}`: A dictionary mapping old column names to new column names.
+
+# Returns
+- `DataFrame`: A new DataFrame with reduced columns, where each new column is the sum of the old columns that map to it.
+"""
+function reduce_columns_by_group_sum(df::DataFrame, mapping::Dict{String, String})
 
     grouped = group_columns_by_new_name(mapping)
 
@@ -60,6 +89,16 @@ function reduce_columns_by_group_sum(df::DataFrame, mapping::Dict{String, String
     return DataFrame(new_cols)
 end
 
+"""
+Reduce columns in a DataFrame by calculating the weighted mean based on a mapping.
+# Arguments
+- `df::DataFrame`: The DataFrame containing the columns to be reduced.
+- `mapping::Dict{String, String}`: A dictionary mapping old column names to new column names.
+- `weights::DataFrame`: A DataFrame containing weights for each column. Defaults to a DataFrame of ones.
+
+# Returns
+- `DataFrame`: A new DataFrame with reduced columns, where each new column is the weighted mean of the old columns that map to it.
+"""
 function reduce_columns_by_group_weighted_mean(df::DataFrame, mapping::Dict{String, String}; weights::DataFrame = DataFrame(ones(1,ncol(df)), names(df)))
 
     grouped = group_columns_by_new_name(mapping)
