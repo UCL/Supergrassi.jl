@@ -1,4 +1,4 @@
-using Supergrassi, CSV, DataFrames
+using Supergrassi, CSV, DataFrames, Test
 
 tol = 1e-12
 
@@ -21,3 +21,20 @@ clean = Supergrassi.clean_data(data,settings)
 Supergrassi.postprocess_clean_data!(clean)
 
 params, _ = Supergrassi.compute_all_parameters(clean, prices, false)
+
+
+@testset "Fixtures Typecheck" begin
+
+    @test isa(clean, Supergrassi.CleanData)
+    @test isa(params, Supergrassi.Parameters)
+    @test isa(prices, DataFrame)
+    @test isa(df, DataFrame)
+    @test isa(settings, Dict{String, Any})
+    @test isa(filepaths, Dict{String, Supergrassi.FilePath})
+    @test isa(data, Supergrassi.Data)
+    @test isa(data_path, String)
+    @test isa(config_path, String)
+    @test isa(settings_path, Supergrassi.FilePath)
+    @test isa(tol, Float64)
+
+end
