@@ -1,5 +1,6 @@
 using Supergrassi, DataFrames, CSV, Enzyme, Test
 
+n = 16
 @testset "Parameter values" begin
 
     @test isapprox(params.consumption.uk, df1d.alphaUK, atol = tol)

@@ -26,16 +26,10 @@ df2d = CSV.read(joinpath(data_path, "parms_2d.csv"), DataFrame)
 ∂df1d = CSV.read(joinpath(data_path, "dparms_1d.csv"), DataFrame)
 ∂df2d = CSV.read(joinpath(data_path, "dparms_2d.csv"), DataFrame)
 
-n = 16
-gammaM_ref = reshape(df2d.gammaM, (n,n))
-gammaMUK_ref = reshape(df2d.gammaMUK, (n,n))
-gammaMEU_ref = reshape(df2d.gammaMEU, (n,n))
-gammaMW_ref = reshape(df2d.gammaMW, (n,n))
-
 prices = DataFrame([df.logP_uk, df.logP_eu, df.logP_w], ["uk", "eu", "world"])
 
 clean = Supergrassi.clean_data(data,settings)
 Supergrassi.postprocess_clean_data!(clean)
 
-params, ∂params = Supergrassi.compute_all_parameters(clean, prices, false)
-log_params, ∂log_params = Supergrassi.compute_all_parameters(clean, prices, true)
+params, _ = Supergrassi.compute_all_parameters(clean, prices, false)
+_, ∂log_params = Supergrassi.compute_all_parameters(clean, prices, true)
