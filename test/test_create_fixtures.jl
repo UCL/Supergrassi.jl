@@ -2,27 +2,29 @@ using Supergrassi, CSV, DataFrames
 
 tol = 1e-12
 
-path = joinpath(@__DIR__, "..", "config","settings.yml")
-settings_path = create_filepath(path)
+config_path = joinpath(@__DIR__, "..", "config","settings.yml")
+settings_path = create_filepath(config_path)
 settings = read_settings(settings_path)
 filepaths = check_file_availability(settings)
 data = read_data(filepaths, settings)
 
-df_clean_data = CSV.read(joinpath(@__DIR__, "..", "data", "test_load_data.csv"), DataFrame)
-df2d_clean_data = CSV.read(joinpath(@__DIR__, "..", "data", "test_load_data_2d.csv"), DataFrame)
+data_path = joinpath(@__DIR__, "..", "data")
+
+df_clean_data = CSV.read(joinpath(data_path, "test_load_data.csv"), DataFrame)
+df2d_clean_data = CSV.read(joinpath(data_path, "test_load_data_2d.csv"), DataFrame)
 
 
-df = outerjoin(CSV.read(joinpath(@__DIR__,"..","data", "data_for_household_demand.csv"), DataFrame),
-               CSV.read(joinpath(@__DIR__, "..", "data", "data_for_eu_demand.csv"), DataFrame),
-               CSV.read(joinpath(@__DIR__, "..", "data", "data_for_row_demand.csv"), DataFrame),
-               CSV.read(joinpath(@__DIR__, "..", "data", "data_for_capital_production.csv"), DataFrame),
+df = outerjoin(CSV.read(joinpath(data_path, "data_for_household_demand.csv"), DataFrame),
+               CSV.read(joinpath(data_path, "data_for_eu_demand.csv"), DataFrame),
+               CSV.read(joinpath(data_path, "data_for_row_demand.csv"), DataFrame),
+               CSV.read(joinpath(data_path, "data_for_capital_production.csv"), DataFrame),
                on = [:logP_uk, :logP_eu, :logP_w], makeunique = true)
 
-df1d = CSV.read(joinpath(@__DIR__, "..", "data", "parms_1d.csv"), DataFrame)
-df2d = CSV.read(joinpath(@__DIR__, "..", "data", "parms_2d.csv"), DataFrame)
+df1d = CSV.read(joinpath(data_path, "parms_1d.csv"), DataFrame)
+df2d = CSV.read(joinpath(data_path, "parms_2d.csv"), DataFrame)
 
-∂df1d = CSV.read(joinpath(@__DIR__, "..", "data", "dparms_1d.csv"), DataFrame)
-∂df2d = CSV.read(joinpath(@__DIR__, "..", "data", "dparms_2d.csv"), DataFrame)
+∂df1d = CSV.read(joinpath(data_path, "dparms_1d.csv"), DataFrame)
+∂df2d = CSV.read(joinpath(data_path, "dparms_2d.csv"), DataFrame)
 
 n = 16
 gammaM_ref = reshape(df2d.gammaM, (n,n))
