@@ -1,4 +1,4 @@
-using Supergrassi, DataFrames, CSV, Enzyme, Test
+using Supergrassi, Test
 
 zOC = clean.industry.surplus.val
 x = vcat(df.logP_uk, zOC)
