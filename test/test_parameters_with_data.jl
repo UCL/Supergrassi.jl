@@ -1,6 +1,15 @@
 using Supergrassi, DataFrames, CSV, Enzyme, Test
 
 n = 16
+
+df1d = CSV.read(joinpath(data_path, "parms_1d.csv"), DataFrame)
+df2d = CSV.read(joinpath(data_path, "parms_2d.csv"), DataFrame)
+
+∂df1d = CSV.read(joinpath(data_path, "dparms_1d.csv"), DataFrame)
+∂df2d = CSV.read(joinpath(data_path, "dparms_2d.csv"), DataFrame)
+
+_, ∂log_params = Supergrassi.compute_all_parameters(clean, prices, true)
+
 @testset "Parameter values" begin
 
     @test isapprox(params.consumption.uk, df1d.alphaUK, atol = tol)

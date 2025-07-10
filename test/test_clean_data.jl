@@ -3,6 +3,9 @@ using CSV
 using Supergrassi
 using Test
 
+df_clean_data = CSV.read(joinpath(data_path, "test_load_data.csv"), DataFrame)
+df2d_clean_data = CSV.read(joinpath(data_path, "test_load_data_2d.csv"), DataFrame)
+
 m = Supergrassi.InputMatrices(Matrix(reshape(df2d_clean_data.mValueUK, (16, 16))),
                               Matrix(reshape(df2d_clean_data.mValueEU, (16, 16))),
                               Matrix(reshape(df2d_clean_data.mValueW, (16, 16))),
