@@ -14,4 +14,21 @@ using Supergrassi, Test
         @test length(Supergrassi.log_parameters_by_region(1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0)) == 3
     end
 
+    @testset "Total parameters" begin
+        
+        log_price_index = [1.0, 2.0, 3.0]
+        quantity = [4.0, 5.0, 6.0]
+        elas = 12.3
+
+        @test length(Supergrassi.total_parameters(log_price_index, quantity, elas)) == 3
+
+        try
+            Supergrassi.total_parameters(log_price_index, quantity[1:2], elas)
+        catch e
+            @test isa(e, ErrorException)
+            @test occursin("log_price_index and quantity must have the same length", e.msg)
+
+        end
+    end
+
 end
