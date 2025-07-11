@@ -121,4 +121,10 @@ using Supergrassi, Test
         @test !any(isinf, Supergrassi.productivity_shock_mean(elasticity, prices_uk, prices_eu, prices_world, input_uk, input_eu, input_world, input_agg, surplus, capital, output, labour, low_wages, tau, 1, true))
     end
 
+    @testset "Mathematical Functions" begin
+        @test isa(Supergrassi.weight_kernel(1.1, 2.2, 3.3), Float64)
+        @test isa(Supergrassi.log_weight_kernel(1.1, 2.2, 3.3), Float64)
+        @test isa(Supergrassi.sum_kernel([1.2, 3.4], [5.6, 6.7], 7.8), Float64)
+    end
+
 end
