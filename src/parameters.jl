@@ -89,7 +89,7 @@ This is refactored from the Matlab code in e.g. ComputeTheta.m line 59
 """
 function total_parameters(log_price_index::Vector{T}, quantity::Vector{T}, elasticity::T ) where {T <: Real}
 
-    if !(length(log_price_index) == length(quantity))
+    if length(log_price_index) != length(quantity)
         error("log_price_index and quantity must have the same length")
     end
 
@@ -128,7 +128,10 @@ function log_eu_expenditure_on_uk_exports(log_price_index::Vector{T}, quantity::
                                           Ex::T, ETilde::T, ePx::T, PTilde::T, elasticity::T,
                                           elasticity_tilde::T) where {T <: Real}
 
-    length(log_price_index) == length(quantity) || error()
+    if length(log_price_index) != length(quantity)
+        error("log_price_index and quantity must have the same length")
+    end
+
     logPBar = log_total_price_index(elasticity, log_price_index, quantity)
 
     return log_weight_kernel(Ex/ETilde, exp(logPBar) * ePx / PTilde, elasticity_tilde)

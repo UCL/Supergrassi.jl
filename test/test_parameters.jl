@@ -31,4 +31,24 @@ using Supergrassi, Test
         end
     end
 
+    @testset "Log EU Expenditure on UK Exports" begin
+        log_price_index = [1.0, 2.0, 3.0]
+        quantity = [4.0, 5.0, 6.0]
+        Ex = 1.2
+        ETilde = 0.8
+        ePx = 0.5
+        PTilde = 0.3
+        elas = 12.3
+        elasticity_tilde = 0.1
+
+        @test isa(Supergrassi.log_eu_expenditure_on_uk_exports(log_price_index, quantity, Ex, ETilde, ePx, PTilde, elas, elasticity_tilde), Float64)
+
+        try
+            Supergrassi.log_eu_expenditure_on_uk_exports(log_price_index, quantity[1:2], Ex, ETilde, ePx, PTilde, elas, elasticity_tilde)
+        catch e
+            @test isa(e, ErrorException)
+            @test occursin("log_price_index and quantity must have the same length", e.msg)
+        end
+    end
+
 end
