@@ -25,17 +25,14 @@ function compute_all_parameters(data::CleanData, prices::DataFrame, log_scale::B
     reg = data.industry.regional
     constants = data.constants
 
-    imports_uk_share_eu = constants.total_imports_from_uk.eu / (constants.total_imports_from_all_sources.eu
-                                                                / constants.exchange_rates.eur )
-    imports_uk_share_world = constants.total_imports_from_uk.world / (constants.total_imports_from_all_sources.world
-                                                                      / constants.exchange_rates.usd )
+    imports_uk_share_eu, imports_uk_share_world = compute_imports_shares(constants)
 
     α, ∂α = compute_parameter(reg.consumption, constants.elasticities.consumption, prices, log_scale)
-    β1, ∂β1 = compute_parameter(reg.export_eu, constants.elasticities.eu_export_demand, prices, log_scale)
-    β1, ∂β1 = compute_foreign_share(β1, ∂β1, reg.export_eu, constants.elasticities.eu_export_demand, prices,
+    β1, ∂β1 = compute_parameter(reg.export_eu, constants.elasticities.export_eu, prices, log_scale)
+    β1, ∂β1 = compute_foreign_share(β1, ∂β1, reg.export_eu, constants.elasticities.export_eu, prices,
                            imports_uk_share_eu, reg.totals.imports.eu, 1.0, constants.exchange_rates.eur)
-    β2, ∂β2 = compute_parameter(reg.export_world, constants.elasticities.world_export_demand, prices, log_scale)
-    β2, ∂β2 = compute_foreign_share(β2, ∂β2, reg.export_world, constants.elasticities.world_export_demand, prices,
+    β2, ∂β2 = compute_parameter(reg.export_world, constants.elasticities.export_world, prices, log_scale)
+    β2, ∂β2 = compute_foreign_share(β2, ∂β2, reg.export_world, constants.elasticities.export_world, prices,
                            imports_uk_share_world, reg.totals.imports.world, 1.0, constants.exchange_rates.usd)
     ρ, ∂ρ = compute_parameter(reg.investment, constants.elasticities.investment, prices, log_scale)
 
@@ -73,7 +70,7 @@ function compute_parameter(demand::DataFrame, elasticity::Elasticity, prices::Da
     grad = ParamsStruct(similar(v0), similar(v0), similar(v0), similar(m0), nothing)
 
     fun = log_scale ? log_parameters_by_region : parameters_by_region
-    
+
     for row in 1:n
 
         param_regional = gradient(ForwardWithPrimal,
@@ -192,7 +189,7 @@ function compute_production_parameter(data::CleanData, prices::DataFrame, log_sc
     replace!(val.input_high_skill, NaN => 0.0)
 
     fun = log_scale ? log_parameters_by_region : parameters_by_region
-    
+
     for row in 1:n
         for col in 1:n
 
@@ -300,7 +297,7 @@ function compute_production_parameter(data::CleanData, prices::DataFrame, log_sc
                       Const(tau),
                       Const(row),
                       Const(log_scale))
-        
+
         val.shock_mean[row] = mu.val
         grad.shock_mean[row,:] .= mu.derivs[2]
 
@@ -331,5 +328,16 @@ function compute_agg_wages(data::HouseholdData, elasticity::Elasticity)
     replace!(logW, NaN => 0.0)
 
     return logW
+
+end
+
+function compute_imports_shares(constants::Constants)
+
+    imports_uk_share_eu = constants.total_imports_from_uk.eu / (constants.total_imports_from_all_sources.eu
+                                                                / constants.exchange_rates.eur )
+    imports_uk_share_world = constants.total_imports_from_uk.world / (constants.total_imports_from_all_sources.world
+                                                                      / constants.exchange_rates.usd )
+
+    return imports_uk_share_eu, imports_uk_share_world
 
 end
