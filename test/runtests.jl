@@ -18,6 +18,9 @@ include("test_parameters.jl")
 
 settings = YAML.load_file(joinpath(@__DIR__, "..", "config", "settings.yml"))
 if(isdir(joinpath(@__DIR__,"..",settings["files"]["input_dir"])))
+
+    include("test_create_fixtures.jl")
+
     include("test_clean_data.jl")
     include("test_parameters_with_data.jl")
     include("test_objective.jl")
