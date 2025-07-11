@@ -11,7 +11,7 @@ Compute an utility function parameter for a single region
 """
 function parameter_by_region(elasticity::T, quantity_region::T, logP_region::T, logP::T) where {T <: Real}
 
-    return quantity_region == 0.0 ? 0.0 : quantity_region * exp((elasticity - 1) * (logP_region - logP))
+    return quantity_region * exp((elasticity - 1) * (logP_region - logP))
 
 end
 
@@ -89,7 +89,9 @@ This is refactored from the Matlab code in e.g. ComputeTheta.m line 59
 """
 function total_parameters(log_price_index::Vector{T}, quantity::Vector{T}, elasticity::T ) where {T <: Real}
 
-    length(log_price_index) == length(quantity) || error()
+    if length(log_price_index) != length(quantity)
+        error("log_price_index and quantity must have the same length")
+    end
 
     logPBar = log_total_price_index(elasticity, log_price_index, quantity)
 
@@ -126,7 +128,10 @@ function log_eu_expenditure_on_uk_exports(log_price_index::Vector{T}, quantity::
                                           Ex::T, ETilde::T, ePx::T, PTilde::T, elasticity::T,
                                           elasticity_tilde::T) where {T <: Real}
 
-    length(log_price_index) == length(quantity) || error()
+    if length(log_price_index) != length(quantity)
+        error("log_price_index and quantity must have the same length")
+    end
+
     logPBar = log_total_price_index(elasticity, log_price_index, quantity)
 
     return log_weight_kernel(Ex/ETilde, exp(logPBar) * ePx / PTilde, elasticity_tilde)
@@ -228,14 +233,18 @@ function total_input_parameters(prices_uk::Vector{T}, prices_eu::Vector{T}, pric
                                 input_uk::Vector{T}, input_eu::Vector{T}, input_world::Vector{T}, input_agg::Vector{T},
                                 surplus::T, capital::T, output::T, labor::T, log_wages::T, elasticity::Elasticity, tau::T, log_scale::Bool) where {T <: Real}
 
+
+    if length(prices_uk) != length(input_agg)
+        error("logPm and input_agg must have the same length")
+    end
     logPm = Vector{T}(undef, length(prices_uk))
+
     for i in 1:length(prices_uk)
         logPm[i] = log_price_index(elasticity.armington, prices_uk[i], prices_eu[i], prices_world[i], input_uk[i], input_eu[i], input_world[i])
     end
 
     replace!(logPm, Inf => 0.0)
 
-    length(logPm) == length(input_agg) || error()
     tauP = tauPdMu(elasticity.substitution, logPm, input_agg, surplus, capital, output, labor, log_wages, tau)
 
     parameters = Vector{T}(undef, length(logPm))
@@ -284,12 +293,14 @@ function total_labor_parameters(prices_uk::Vector{T}, prices_eu::Vector{T}, pric
                                 surplus::T, capital::T, output::T, labor::T, log_wages::T, elasticity::Elasticity, tau::T, log_scale::Bool) where T
 
     logPm = Vector{T}(undef, length(prices_uk))
+    if length(prices_uk) != length(input_agg)
+        error("logPm and input_agg must have the same length")
+    end
     for i in 1:length(prices_uk)
         logPm[i] = log_price_index(elasticity.armington, prices_uk[i], prices_eu[i], prices_world[i], input_uk[i], input_eu[i], input_world[i])
     end
     replace!(logPm, Inf => 0.0)
 
-    length(logPm) == length(input_agg) || error()
     tauP = tauPdMu(elasticity.substitution, logPm, input_agg, surplus, capital, output, labor, log_wages, tau)
     val = weight_kernel(labor, exp(log_wages) / tauP, elasticity.substitution)
 
@@ -335,12 +346,15 @@ function total_capital_parameters(prices_uk::Vector{T}, prices_eu::Vector{T}, pr
                                   surplus::T, capital::T, output::T, labor::T, log_wages::T, elasticity::Elasticity, tau::T, log_scale::Bool) where T
 
     logPm = Vector{T}(undef, length(prices_uk))
+    if length(prices_uk) != length(input_agg)
+        error("logPm and input_agg must have the same length")
+    end
+
     for i in 1:length(prices_uk)
         logPm[i] = log_price_index(elasticity.armington, prices_uk[i], prices_eu[i], prices_world[i], input_uk[i], input_eu[i], input_world[i])
     end
     replace!(logPm, Inf => 0.0)
 
-    length(logPm) == length(input_agg) || error()
     tauP = tauPdMu(elasticity.substitution, logPm, input_agg, surplus, capital, output, labor, log_wages, tau)
     tauY = (1 - tau) * output / capital
     val =  surplus ^ elasticity.substitution * (tauY / tauP) ^ (elasticity.substitution - 1)
@@ -448,16 +462,6 @@ function sum_kernel(var::Vector{T}, logP::Vector{T}, elasticity::T) where {T <: 
     return s
 
     #return sum(x -> x[1] ^ (1 / elasticity) * exp((elasticity - 1) * x[2] / elasticity), zip(var, logP))
-
-end
-
-function logTauPdMu(elasticity::T, log_price_index::Vector{T}, input::Vector{T}, surplus::T, capital::T, output::T, labor::T, log_wages::T, tau::T) where {T <: Real}
-
-    s = Supergrassi.sum_kernel(input, log_price_index, elasticity)
-    k = capital_fun(surplus, tau, output, capital, elasticity)
-    h = labor_fun(labor, log_wages, elasticity)
-
-    return elasticity / ( elasticity - 1 ) * log(s + k + h)
 
 end
 
