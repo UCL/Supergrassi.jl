@@ -465,16 +465,6 @@ function sum_kernel(var::Vector{T}, logP::Vector{T}, elasticity::T) where {T <: 
 
 end
 
-function logTauPdMu(elasticity::T, log_price_index::Vector{T}, input::Vector{T}, surplus::T, capital::T, output::T, labor::T, log_wages::T, tau::T) where {T <: Real}
-
-    s = Supergrassi.sum_kernel(input, log_price_index, elasticity)
-    k = capital_fun(surplus, tau, output, capital, elasticity)
-    h = labor_fun(labor, log_wages, elasticity)
-
-    return elasticity / ( elasticity - 1 ) * log(s + k + h)
-
-end
-
 function tauPdMu(elasticity::T, log_price_index::Vector{T}, input::Vector{T}, surplus::T, capital::T, output::T, labor::T, log_wages::T, tau::T) where {T <: Real}
 
     s = Supergrassi.sum_kernel(input, log_price_index, elasticity)
