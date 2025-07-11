@@ -52,13 +52,41 @@ using Supergrassi, Test
     end
 
     @testset "Price Index" begin
-        
         @test isa(Supergrassi.price_index(1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0), Float64)
         @test isa(Supergrassi.log_price_index(1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0), Float64)
         @test Supergrassi.price_index(1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0) == exp(Supergrassi.log_price_index(1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0))
         @test Supergrassi.log_price_index(1.0, 2.0, 3.0, 4.0, 0.0, 0.0, 0.0) == 0.0
         @test isa(Supergrassi.log_total_price_index(1.0, [2.0, 3.0], [4.0, 5.0, 6.0]), Float64)
+    end
 
+    prices_uk = [1.0, 2.0, 3.0]
+    prices_eu = [4.0, 5.0, 6.0]
+    prices_world = [7.0, 8.0, 9.0]
+
+    input_uk = [10.0, 11.0, 12.0]
+    input_eu = [13.0, 14.0, 15.0]
+    input_world = [16.0, 17.0, 18.0]
+    input_agg = [19.0, 20.0, 21.0]
+
+    surplus = 22.0
+    capital = 23.0
+    output = 24.0
+    labour = 25.0
+    low_wages = 26.0
+    elasticity = Supergrassi.Elasticity(0.5, 0.5, 0.5, 0.5)
+    tau = 0.1
+
+    @testset "Total Input Parameters" begin
+        @test isa(Supergrassi.total_input_parameters(prices_uk, prices_eu, prices_world, input_uk, input_eu, input_world, input_agg, surplus, capital, output, labour, low_wages, elasticity, tau, false), Vector{Float64})
+        @test isa(Supergrassi.total_input_parameters(prices_uk, prices_eu, prices_world, input_uk, input_eu, input_world, input_agg, surplus, capital, output, labour, low_wages, elasticity, tau, true), Vector{Float64})
+        @test !any(isinf, Supergrassi.total_input_parameters(prices_uk, prices_eu, prices_world, input_uk, input_eu, input_world, input_agg, surplus, capital, output, labour, low_wages, elasticity, tau, true))
+
+        try
+            Supergrassi.total_input_parameters(prices_uk, prices_eu, prices_world, input_uk[1:2], input_eu[1:2], input_world[1:2], input_agg[1:2], surplus, capital, output, labour, low_wages, elasticity, tau, true)
+        catch e
+            @test isa(e, ErrorException)
+            @test occursin("logPm and input_agg must have the same length", e.msg)
+        end
     end
 
 end
