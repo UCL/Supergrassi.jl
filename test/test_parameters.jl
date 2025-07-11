@@ -125,6 +125,9 @@ using Supergrassi, Test
         @test isa(Supergrassi.weight_kernel(1.1, 2.2, 3.3), Float64)
         @test isa(Supergrassi.log_weight_kernel(1.1, 2.2, 3.3), Float64)
         @test isa(Supergrassi.sum_kernel([1.2, 3.4], [5.6, 6.7], 7.8), Float64)
+        @test isa(Supergrassi.tauPdMu(4.2, [1.2, 3.4], [5.6, 6.7], 7.8, 1.4, 2.8, 3.2, 4.6, 0.5), Float64)
+        @test isa(Supergrassi.capital_fun(1.1, 0.2, 3.3, 4.4, 5.5), Float64)
+        @test isa(Supergrassi.labor_fun(1.1, 2.2, 3.3), Float64)
     end
 
 end
