@@ -89,7 +89,9 @@ This is refactored from the Matlab code in e.g. ComputeTheta.m line 59
 """
 function total_parameters(log_price_index::Vector{T}, quantity::Vector{T}, elasticity::T ) where {T <: Real}
 
-    length(log_price_index) == length(quantity) || error()
+    if not length(log_price_index) == length(quantity)
+        error("log_price_index and quantity must have the same length")
+    end
 
     logPBar = log_total_price_index(elasticity, log_price_index, quantity)
 
