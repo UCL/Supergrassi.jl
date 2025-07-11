@@ -54,7 +54,8 @@ Calculate the market clearing price, equation 4.1.
 - `params::Parameters`
 - `data::IndustryData`
 """
-function market_clearing_price(prices::DataFrame, operating_cost::Vector{T}, household_expenditure::T,
+function market_clearing_price(price_uk::Vector{T}, operating_cost::Vector{T}, household_expenditure::T,
+                               price_eu::Vector{T}, price_world::Vector{T},
                                params::Parameters, data::IndustryData, constants::Constants) where {T <: Real}
 
     # Needs:
@@ -92,6 +93,8 @@ function market_clearing_price(prices::DataFrame, operating_cost::Vector{T}, hou
     # logTauPdMu = log(1 - τ) + logPd + log(μ)
     # logTauPdYBar = logTauPdMu + (log(γK) + ξ * log(1 - TOCθ)) / (ξ - 1) + logK0
 
+    prices = DataFrame([price_uk, price_eu, price_world], ["uk", "eu", "world"])
+
     elasticity = constants.elasticities
 
     tau = (data.tax.products .+ data.tax.production) ./ data.regional.total_use.agg
@@ -123,7 +126,6 @@ function market_clearing_price(prices::DataFrame, operating_cost::Vector{T}, hou
     logPX1 = log_price_index(params.export_eu, prices, elasticity.export_eu.armington, constants.export_costs.eu)
     logPX1Bar = log_agg_price_index(params.export_eu.agg, logPX1, elasticity.export_eu.substitution)
     eu_spending = export_spending(elasticity.export_eu.substitution_uk_other, params.export_eu.tilde, logPX1Bar, constants.exchange_rates.eur, E1tilde, Ptilde)
-    @show eu_spending
     logEX1 = log_expenditure(params.export_eu.agg, eu_spending, elasticity.export_eu.substitution, logPX1, logPX1Bar)
     EX1_uk = expenditure_by_region(params.export_eu, elasticity.export_eu, prices, logEX1)
 
@@ -140,8 +142,13 @@ function market_clearing_price(prices::DataFrame, operating_cost::Vector{T}, hou
     logPI = log_price_index(params.investment, prices, elasticity.investment.armington)
     logPIBar = log_agg_price_index(params.investment.agg, logPI, elasticity.investment.substitution)
     new_capital_supply = capital_market()
-    logEf = log_expenditure(params.investment.agg, logPIBar .+ new_capital_supply,
+    logEI = log_expenditure(params.investment.agg, logPIBar .+ new_capital_supply,
                             elasticity.investment.substitution, logPI, logPIBar)
+    EI_uk = expenditure_by_region(params.investment, elasticity.investment, prices, logEI)
+
+    @show logPI
+    @show logPIBar
+    @show logEI
 
     # Production intermediates
 
@@ -156,12 +163,20 @@ function market_clearing_price(prices::DataFrame, operating_cost::Vector{T}, hou
     n = nrow(prices)
     EM_uk = zeros(n)
     for i = 1:n
-        logPm = log_price_index(params.production, prices, elasticity.production.armington)
-        logEm = log_expenditure(params.production.agg[i,:], logTauPdYBar, elasticity.production.substitution, logPm, logTauPdMu)
+        logPM = log_price_index(params.production, i, prices, elasticity.production.armington)
+        logEM = log_expenditure(params.production.input_agg[i,:], logTauPdYBar[i], elasticity.production.substitution, logPM, logTauPdMu[i])
         EM_uk .+= expenditure_by_region(params.production, i, elasticity.production, prices, logEM)
     end
 
-    F = PdYBar + EF_uk + EX1_uk + EX2_uk + EI_uk + EM_uk + clean.industry.regional.delta_v.agg
+    @show PdYBar
+    @show EF_uk
+    @show EX1_uk
+    @show EX2_uk
+    @show EI_uk
+    @show EM_uk
+    @show data.regional.delta_v.agg
+
+    F = PdYBar + EF_uk + EX1_uk + EX2_uk + EI_uk + EM_uk + data.regional.delta_v.agg
 
 end
 
@@ -179,16 +194,15 @@ Compute the log of final price index (logP) for each commodity
 # See also
 [`ParamsStruct`](@ref)
 """
-
 function log_price_index(param::ParamsStruct, prices::DataFrame, elasticity::T) where {T<:Real}
 
-    logP = 1 / (1 - elasticity) .* log.(
-        param.uk .* prices.uk .^ (1 - elasticity)
-        + param.eu .* prices.eu .^ (1 - elasticity)
-        + param.world .* prices.world .^ (1 - elasticity)
-    )
+    return log_price_index(param.uk, param.eu, param.world, prices, elasticity)
 
-    return logP
+end
+
+function log_price_index(param::ParamsProduction, row::Int, prices::DataFrame, elasticity::T) where {T<:Real}
+
+    return log_price_index(param.input_uk[row,:], param.input_eu[row,:], param.input_world[row,:], prices, elasticity)
 
 end
 
@@ -213,6 +227,18 @@ function log_price_index(param::ParamsStruct, prices::DataFrame, elasticity::T, 
     logP = log_price_index(param, prices, elasticity)
     logP .+= log.(1 + export_cost)
 
+    return logP
+
+end
+
+function log_price_index(uk::Vector{T}, eu::Vector{T}, world::Vector{T}, prices::DataFrame, elasticity::T) where {T<:Real}
+
+    logP = 1 / (1 - elasticity) .* log.(
+        uk .* prices.uk .^ (1 - elasticity)
+        + eu .* prices.eu .^ (1 - elasticity)
+        + world .* prices.world .^ (1 - elasticity)
+    )
+    replace!(logP, Inf => 0.0)
     return logP
 
 end
@@ -271,15 +297,16 @@ function expenditure_by_region(param::ParamsStruct, elasticity::Elasticity, pric
 end
 
 # EF (logEF, E)
-function expenditure_by_region(param::ParamsProduction, row::Int, elasticity::Elasticity, prices::DataFrame, expenditure::Vector{T}, region::Symbol=:uk) where {T<:Real}
+function expenditure_by_region(param::ParamsProduction, row::Int, elasticity::Elasticity, prices::DataFrame, log_expenditure::Vector{T}, region::Symbol=:uk) where {T<:Real}
 
     n = nrow(prices)
     EF = Vector{T}(undef, n)
 
-    logP = log_price_index(param, prices, elasticity.substitution)
+    logP = log_price_index(param, row, prices, elasticity.substitution)
 
+    fieldname = Symbol("input_", region)
     for i = 1:n
-        EF[i] = getfield(param, region)[row,i] * exp(log(expenditure) .+ (1.0 .- elasticity.armington) .* (prices[i,region] - logPf[i]))
+        EF[i] = getfield(param, fieldname)[row,i] * exp(log_expenditure[i] .+ (1.0 .- elasticity.armington) .* (prices[i,region] - logP[i]))
     end
 
     return EF
@@ -290,7 +317,8 @@ end
 # LogEF (logPf, logPBar)
 function log_expenditure(param_agg::Vector{T}, expenditure::T, elasticity::T, logPf::Vector{T}, logPBar::T) where {T <: Real}
 
-    return log.(param_agg) .+ log(expenditure) .+ (1.0 - elasticity) .* (logPf .- logPBar)
+    logE = log.(param_agg) .+ log(expenditure) .+ (1.0 - elasticity) .* (logPf .- logPBar)
+    return logE
 
 end
 
