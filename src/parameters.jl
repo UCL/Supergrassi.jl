@@ -238,7 +238,7 @@ function total_input_parameters(prices_uk::Vector{T}, prices_eu::Vector{T}, pric
         error("logPm and input_agg must have the same length")
     end
     logPm = Vector{T}(undef, length(prices_uk))
-    
+
     for i in 1:length(prices_uk)
         logPm[i] = log_price_index(elasticity.armington, prices_uk[i], prices_eu[i], prices_world[i], input_uk[i], input_eu[i], input_world[i])
     end
@@ -293,12 +293,14 @@ function total_labor_parameters(prices_uk::Vector{T}, prices_eu::Vector{T}, pric
                                 surplus::T, capital::T, output::T, labor::T, log_wages::T, elasticity::Elasticity, tau::T, log_scale::Bool) where T
 
     logPm = Vector{T}(undef, length(prices_uk))
+    if length(prices_uk) != length(input_agg)
+        error("logPm and input_agg must have the same length")
+    end
     for i in 1:length(prices_uk)
         logPm[i] = log_price_index(elasticity.armington, prices_uk[i], prices_eu[i], prices_world[i], input_uk[i], input_eu[i], input_world[i])
     end
     replace!(logPm, Inf => 0.0)
 
-    length(logPm) == length(input_agg) || error()
     tauP = tauPdMu(elasticity.substitution, logPm, input_agg, surplus, capital, output, labor, log_wages, tau)
     val = weight_kernel(labor, exp(log_wages) / tauP, elasticity.substitution)
 

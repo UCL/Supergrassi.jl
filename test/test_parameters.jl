@@ -89,4 +89,17 @@ using Supergrassi, Test
         end
     end
 
+    @testset "Total Labour Parameters" begin
+        @test isa(Supergrassi.total_labor_parameters(prices_uk, prices_eu, prices_world, input_uk, input_eu, input_world, input_agg, surplus, capital, output, labour, low_wages, elasticity, tau, false), Float64)
+        @test isa(Supergrassi.total_labor_parameters(prices_uk, prices_eu, prices_world, input_uk, input_eu, input_world, input_agg, surplus, capital, output, labour, low_wages, elasticity, tau, true), Float64)
+        @test !any(isinf, Supergrassi.total_labor_parameters(prices_uk, prices_eu, prices_world, input_uk, input_eu, input_world, input_agg, surplus, capital, output, labour, low_wages, elasticity, tau, true))
+
+        try
+            Supergrassi.total_labor_parameters(prices_uk, prices_eu, prices_world, input_uk[1:2], input_eu[1:2], input_world[1:2], input_agg[1:2], surplus, capital, output, labour, low_wages, elasticity, tau, true)
+        catch e
+            @test isa(e, ErrorException)
+            @test occursin("logPm and input_agg must have the same length", e.msg)
+        end
+    end
+
 end
