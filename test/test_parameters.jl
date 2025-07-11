@@ -115,4 +115,10 @@ using Supergrassi, Test
         end
     end
 
+    @testset "Productivity Shock Mean" begin
+        @test isa(Supergrassi.productivity_shock_mean(elasticity, prices_uk, prices_eu, prices_world, input_uk, input_eu, input_world, input_agg, surplus, capital, output, labour, low_wages, tau, 1, false), Float64)
+        @test isa(Supergrassi.productivity_shock_mean(elasticity, prices_uk, prices_eu, prices_world, input_uk, input_eu, input_world, input_agg, surplus, capital, output, labour, low_wages, tau, 1, true), Float64)
+        @test !any(isinf, Supergrassi.productivity_shock_mean(elasticity, prices_uk, prices_eu, prices_world, input_uk, input_eu, input_world, input_agg, surplus, capital, output, labour, low_wages, tau, 1, true))
+    end
+
 end
