@@ -51,4 +51,14 @@ using Supergrassi, Test
         end
     end
 
+    @testset "Price Index" begin
+        
+        @test isa(Supergrassi.price_index(1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0), Float64)
+        @test isa(Supergrassi.log_price_index(1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0), Float64)
+        @test Supergrassi.price_index(1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0) == exp(Supergrassi.log_price_index(1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0))
+        @test Supergrassi.log_price_index(1.0, 2.0, 3.0, 4.0, 0.0, 0.0, 0.0) == 0.0
+        @test isa(Supergrassi.log_total_price_index(1.0, [2.0, 3.0], [4.0, 5.0, 6.0]), Float64)
+
+    end
+
 end
