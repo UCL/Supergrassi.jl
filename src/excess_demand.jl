@@ -112,7 +112,7 @@ function market_clearing_price(price_uk::Vector{T}, operating_cost::Vector{T}, h
 
     elasticity = constants.elasticities
 
-    tau = (data.tax.products .+ data.tax.production) ./ data.regional.total_use.agg
+    tau = compute_advalorem_tax(data)
 
     PdYBar = intermediate_goods_price_index(prices.uk,
                                             data.surplus.val,
@@ -161,35 +161,33 @@ function market_clearing_price(price_uk::Vector{T}, operating_cost::Vector{T}, h
                             elasticity.investment.substitution, logPI, logPIBar)
     EI_uk = expenditure_by_region(params.investment, elasticity.investment, prices, logEI)
 
-    @show logPI
-    @show logPIBar
-    @show logEI
-
     # Production intermediates
-
-    TOCTheta = exp.(operating_cost) / (1 .+ exp.(operating_cost))
-    logTauPdMu = log.(1 .- tau) .+ prices.uk .+ log.(params.production.shock_mean)
-    logTauPdYBar = (logTauPdMu
-                    .+ log.(params.production.input_capital) ./ (elasticity.production.substitution .- 1)
-                    .+ elasticity.production.substitution ./ (1 .- elasticity.production.substitution) .* log.(1 .- TOCTheta)
-                    .+ data.capital.current_year
-                    )
 
     n = nrow(prices)
     EM_uk = zeros(n)
+
     for i = 1:n
+
+        TOCTheta = exp(operating_cost[i]) / (1 + exp(operating_cost[i]))
+        logTauPdMu = log(1 - tau[i]) + prices.uk[i] + log(params.production.shock_mean[i])
+        logTauPdYBar = (logTauPdMu
+                        + log(params.production.input_capital[i]) / (elasticity.production.substitution - 1)
+                        + elasticity.production.substitution / (1 - elasticity.production.substitution) * log(1 - TOCTheta)
+                        + data.capital.current_year[i]
+                        )
+
         logPM = log_price_index(params.production, i, prices, elasticity.production.armington)
-        logEM = log_expenditure(params.production.input_agg[i,:], logTauPdYBar[i], elasticity.production.substitution, logPM, logTauPdMu[i])
-        EM_uk .+= expenditure_by_region(params.production, i, elasticity.production, prices, logEM)
+        logEM = log_expenditure(params.production.input_agg[i,:], logTauPdYBar, elasticity.production.substitution, logPM, logTauPdMu)
+        EM_uk += expenditure_by_region(params.production, i, elasticity.production, prices, logEM)
     end
 
-    @show PdYBar
-    @show EF_uk
-    @show EX1_uk
-    @show EX2_uk
-    @show EI_uk
-    @show EM_uk
-    @show data.regional.delta_v.agg
+    # @show PdYBar
+    # @show EF_uk
+    # @show EX1_uk
+    # @show EX2_uk
+    # @show EI_uk
+    # @show EM_uk
+    # @show data.regional.delta_v.agg
 
     F = PdYBar + EF_uk + EX1_uk + EX2_uk + EI_uk + EM_uk + data.regional.delta_v.agg
 
@@ -248,12 +246,18 @@ end
 
 function log_price_index(uk::Vector{T}, eu::Vector{T}, world::Vector{T}, prices::DataFrame, elasticity::T) where {T<:Real}
 
-    logP = 1 / (1 - elasticity) .* log.(
-        uk .* prices.uk .^ (1 - elasticity)
-        + eu .* prices.eu .^ (1 - elasticity)
-        + world .* prices.world .^ (1 - elasticity)
-    )
+    n = length(uk)
+    logP = Vector{T}(undef, n)
+
+    for i in 1:n
+        logP[i] = 1 / (1 - elasticity) * log(
+            uk[i] * prices.uk[i] ^ (1 - elasticity)
+            + eu[i] * prices.eu[i] ^ (1 - elasticity)
+            + world[i] * prices.world[i] ^ (1 - elasticity)
+        )
+    end
     replace!(logP, Inf => 0.0)
+
     return logP
 
 end
@@ -278,7 +282,13 @@ Compute the log of aggregate price index (logPBar)
 """
 function log_agg_price_index(param_agg::Vector{T}, log_price_index::Vector{T}, elasticity::T) where {T<:Real}
 
-    N = param_agg .* exp.((1.0 - elasticity) .* log_price_index)
+    n = length(param_agg)
+    N = Vector{T}(undef, n)
+
+    for i in 1:n
+        N[i] = param_agg[i] * exp((1.0 - elasticity) * log_price_index[i])
+    end
+
     logPBar = 1.0 / (1.0 - elasticity) * log(sum(N))
     return logPBar
 
@@ -332,7 +342,13 @@ end
 # LogEF (logPf, logPBar)
 function log_expenditure(param_agg::Vector{T}, expenditure::T, elasticity::T, logPf::Vector{T}, logPBar::T) where {T <: Real}
 
-    logE = log.(param_agg) .+ log(expenditure) .+ (1.0 - elasticity) .* (logPf .- logPBar)
+    n = length(param_agg)
+    logE = Vector{T}(undef, n)
+
+    for i in 1:n
+        logE[i] = log(param_agg[i]) + log(expenditure) + (1.0 - elasticity) * (logPf[i] - logPBar)
+    end
+
     return logE
 
 end
@@ -360,9 +376,9 @@ function export_spending(elasticity::T, tilde_param::Vector{T}, logPXBar::T, exc
 end
 
 """
-    function capital_market(n::Int)
+    function capital_market()
 
-Dummy function for capital market. Returns a vector of n random numbers.
+Dummy function for capital market. Returns a number.
 """
 function capital_market()
 
