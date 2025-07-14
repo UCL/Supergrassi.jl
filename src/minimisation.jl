@@ -9,7 +9,7 @@ function minimisation()
 
     @objective(model, Min, (x - 1)^2 + (y - 2)^2)
 
-    # @constraint(model, x + y == 3)
+    @constraint(model, x + y == 5)
 
     optimize!(model)
 
