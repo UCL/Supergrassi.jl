@@ -27,7 +27,7 @@ prices = DataFrame([exp.(df.logP_uk), exp.(df.logP_eu), exp.(df.logP_w)], ["uk",
 params, ∂params = Supergrassi.compute_all_parameters(clean, log_prices)
 #log_params, ∂log_params = Supergrassi.compute_all_parameters(clean, prices, Supergrassi.log_parameters_by_region)
 
-operating_cost = randn(nrow(prices))
+operating_cost = rand(nrow(prices))
 household_expenditure = 7.2742 # Copied from matlab code to avoid numerical issues
 
 @testset "Market Clearing" begin
