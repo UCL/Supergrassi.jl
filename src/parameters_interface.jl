@@ -308,7 +308,7 @@ end
 """
     compute_wage_index(data::HouseholdData, elasticity::Elasticity)
 
-Computes and updates aggregate wages for households based on household data and elasticity of production.
+Computes aggregate wage index for households based on household data and elasticity of production.
 
 [ref](https://github.com/UCL/Supergrassi/blob/29510a8c9f50427068a475be01583b544975bd5c/code/matlab/macro_v2/B1_SetupParameters.m#L328-L332)
 
@@ -329,6 +329,14 @@ function compute_wage_index(data::HouseholdData, elasticity::Elasticity)
 
 end
 
+"""
+    compute_advalorem_tax(data::IndustryData)
+
+Compute the ad valorem tax rate by combining product and production taxes, normalized by total use.
+
+# Arguments
+- `data::IndustryData`: Industry data containing tax and regional total use information
+"""
 function compute_advalorem_tax(data::IndustryData)
 
     tau = (data.tax.products .+ data.tax.production) ./ data.regional.total_use.agg
@@ -336,6 +344,15 @@ function compute_advalorem_tax(data::IndustryData)
 
 end
 
+"""
+    compute_input_by_skill(data::HouseholdData, elasticity::Elasticity)
+
+Compute input shares by skill level (low and high skill) based on household payments and wages.
+
+# Arguments
+- `data::HouseholdData`: Household data containing payments and wages information
+- `elasticity::Elasticity`: Elasticity of substitution for production parameters
+"""
 function compute_input_by_skill(data::HouseholdData, elasticity::Elasticity)
 
     logW = compute_wage_index(data, elasticity)
@@ -350,6 +367,14 @@ function compute_input_by_skill(data::HouseholdData, elasticity::Elasticity)
 
 end
 
+"""
+    compute_imports_shares(constants::Constants)
+
+Compute the share of UK imports in total imports for EU and world regions.
+
+# Arguments
+- `constants::Constants`: Constants containing import and exchange rate information
+"""
 function compute_imports_shares(constants::Constants)
 
     imports_uk_share_eu = constants.total_imports_from_uk.eu / (constants.total_imports_from_all_sources.eu
