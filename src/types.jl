@@ -317,4 +317,36 @@ struct Parameters
     production::ParamsProduction
     investment::ParamsStruct
 
+    function Parameters(
+        constants::ParameterConstants,
+        consumption::ParamsStruct,
+        export_eu::ParamsStruct,
+        export_world::ParamsStruct,
+        production::ParamsProduction,
+        investment::ParamsStruct
+    )
+
+    if any(x -> x < 0, consumption.uk) ||
+       any(x -> x < 0, consumption.eu) ||
+       any(x -> x < 0, consumption.world) ||
+       any(x -> x < 0, consumption.agg) ||
+       !isnothing(consumption.tilde) && any(x -> x < 0, consumption.tilde)
+
+        throw(ArgumentError("Consumption parameters must be non-negative. but got: " *
+                            "$(consumption.uk), $(consumption.eu), $(consumption.world), " *
+                            "$(consumption.agg), $(consumption.tilde)"))
+    end
+
+
+
+    return new(
+        constants,
+        consumption,
+        export_eu,
+        export_world,
+        production,
+        investment
+    )
+    end
+
 end
