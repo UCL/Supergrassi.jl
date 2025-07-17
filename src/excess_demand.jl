@@ -179,8 +179,6 @@ function market_clearing_price(price_uk::Vector{T}, operating_cost::Vector{T}, h
                         + elasticity.production.substitution / (1 - elasticity.production.substitution) * log(1 - TOCTheta)
                         + data.capital.current_year[i]
                         )
-#        logTauPdMu = price_uk[i]
-#        logTauPdYBar = 1.0
 
         logPM = log_price_index(params.production.uk[i,:], params.production.eu[i,:],
                                 params.production.world[i,:],
@@ -192,16 +190,7 @@ function market_clearing_price(price_uk::Vector{T}, operating_cost::Vector{T}, h
                                        price_uk, price_eu, price_world, logEM, elasticity.production)
     end
 
-    # @show PdYBar
-    # @show EF_uk
-    # @show EX1_uk
-    # @show EX2_uk
-    # @show EI_uk
-    # @show EM_uk
-    # @show data.regional.delta_v.agg
-
-    F = PdYBar + EF_uk + EX1_uk + EX2_uk + EI_uk + EM_uk + data.regional.delta_v.agg
-    #F = EF_uk + EX1_uk + EX2_uk + EI_uk + EM_uk
+    F = PdYBar + EF_uk + EX1_uk + EX2_uk + EI_uk + EM_uk #+ data.regional.delta_v.agg
     return F
 
 end
@@ -246,7 +235,7 @@ Compute the log of final price index (logP) for each commodity
 [`ParamsStruct`](@ref)
 """
 function log_price_index(param_uk::Vector{T}, param_eu::Vector{T}, param_world::Vector{T}, price_uk::Vector{T}, price_eu::Vector{T}, price_world::Vector{T}, elasticity::T) where {T<:Real}
-    
+
     n = length(price_uk)
     logP = Vector{T}(undef, n)
 
@@ -309,7 +298,7 @@ Compute expenditure for region `region`. Called [EF, EX1, EX2, EI, EM] in Matlab
 """
 #function expenditure_by_region(param::ParamsStruct, elasticity::Elasticity, prices::DataFrame, log_expenditure::Vector{T}, region::Symbol) where {T<:Real}
 function expenditure_by_region(param_uk::Vector{T}, param_eu::Vector{T}, param_world::Vector{T}, price_uk::Vector{T}, price_eu::Vector{T}, price_world::Vector{T}, log_expenditure::Vector{T}, elasticity::Elasticity) where {T<:Real}
-    
+
     n = length(price_uk)
     EF = Vector{T}(undef, n)
 

@@ -54,23 +54,26 @@ F = Supergrassi.market_clearing_price(price_uk, operating_cost, household_expend
 
 @testset "Market Clearing" begin
 
-    # Jac = jacobian(ForwardWithPrimal,
-    #                Supergrassi.market_clearing_price,
-    #                price_uk,
-    #                operating_cost,
-    #                household_expenditure,
-    #                Const(price_eu),
-    #                Const(price_world),
-    #                Const(params),
-    #                Const(clean.industry),
-    #                Const(clean.constants))
+    Jac = jacobian(set_runtime_activity(ForwardWithPrimal),
+                   Supergrassi.market_clearing_price,
+                   price_uk,
+                   operating_cost,
+                   household_expenditure,
+                   Const(price_eu),
+                   Const(price_world),
+                   Const(params),
+                   Const(clean.industry),
+                   Const(clean.constants))
 
-    # F = Jac.val
-    # ∂F_∂Pd = Jac.derivs[1]
-    # ∂F_∂zOC = Jac.derivs[2]
-    # ∂F_∂E = Jac.derivs[3]
+    F = Jac.val
+    ∂F_∂Pd = Jac.derivs[1]
+    ∂F_∂zOC = Jac.derivs[2]
+    ∂F_∂E = Jac.derivs[3]
 
     @test length(F) == nrow(df)
+    @test ndims(∂F_∂Pd) == 2
+    @test ndims(∂F_∂zOC) == 2
+    @test ndims(∂F_∂E) == 1
     @show F
 
 end
