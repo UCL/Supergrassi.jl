@@ -32,17 +32,17 @@ _, ∂log_params = Supergrassi.compute_all_parameters(clean, prices, true)
     @test isapprox(params.investment.world, df1d.rhoW, atol = tol)
     @test isapprox(params.investment.agg, df1d.rho, atol = tol)
 
-    @test isapprox(params.production.input_uk, reshape(df2d.gammaMUK, (n,n)), atol = tol)
-    @test isapprox(params.production.input_eu, reshape(df2d.gammaMEU, (n,n)), atol = tol)
-    @test isapprox(params.production.input_world, reshape(df2d.gammaMW, (n,n)), atol = tol)
-    @test isapprox(params.production.input_agg, reshape(df2d.gammaM, (n,n)), atol = tol)
-    @test isapprox(params.production.input_human, df1d.gammaH, atol = tol)
-    @test isapprox(params.production.input_capital, df1d.gammaK, atol = tol)
+    @test isapprox(params.production.uk, reshape(df2d.gammaMUK, (n,n)), atol = tol)
+    @test isapprox(params.production.eu, reshape(df2d.gammaMEU, (n,n)), atol = tol)
+    @test isapprox(params.production.world, reshape(df2d.gammaMW, (n,n)), atol = tol)
+    @test isapprox(params.production.agg, reshape(df2d.gammaM, (n,n)), atol = tol)
+    @test isapprox(params.production.human, df1d.gammaH, atol = tol)
+    @test isapprox(params.production.capital, df1d.gammaK, atol = tol)
 
     @test isapprox(params.production.shock_mean, df1d.mu, atol = tol)
 
-    @test isapprox(params.production.input_low_skill, df1d.gammaHL, atol = tol)
-    @test isapprox(params.production.input_high_skill, df1d.gammaHH, atol = tol)
+    @test isapprox(params.production.low_skill, df1d.gammaHL, atol = tol)
+    @test isapprox(params.production.high_skill, df1d.gammaHH, atol = tol)
     
 end
 
@@ -64,8 +64,8 @@ end
     @test isapprox(∂log_params.investment.eu, ∂df1d.logRhoEU, atol = tol)
     @test isapprox(∂log_params.investment.world, ∂df1d.logRhoW, atol = tol)
 
-    @test isapprox(∂log_params.production.input_human, reshape(∂df2d.logGammaH, (n,n)), atol = tol)
-    @test isapprox(∂log_params.production.input_capital, reshape(∂df2d.logGammaK, (n,n)), atol = tol)
+    @test isapprox(∂log_params.production.human, reshape(∂df2d.logGammaH, (n,n)), atol = tol)
+    @test isapprox(∂log_params.production.capital, reshape(∂df2d.logGammaK, (n,n)), atol = tol)
     @test isapprox(∂log_params.production.shock_mean, reshape(∂df2d.logMu, (n,n)), atol = tol)
     
 end

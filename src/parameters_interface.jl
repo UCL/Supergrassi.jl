@@ -45,8 +45,9 @@ function compute_all_parameters(data::CleanData, prices::DataFrame, log_scale::B
 
     consts = ParameterConstants(constants.elasticities, loss_given_default, constants.interest_rate)
 
-    vals = Parameters(consts, α, β1, β2, γ, ρ)
-    derivs = Parameters(consts, ∂α, ∂β1, ∂β2, ∂γ, ∂ρ)
+    vals = Parameters(consts, α, β1, β2, γ, ρ, log_scale, false)
+    derivs = Parameters(consts, ∂α, ∂β1, ∂β2, ∂γ, ∂ρ, log_scale, true)
+
 
     return vals, derivs
 
@@ -183,11 +184,12 @@ function compute_production_parameter(data::CleanData, prices::DataFrame, log_sc
                             similar(m0), similar(v0),
                             similar(m0), similar(m0), similar(m0), similar(t0))
 
+
     logW = compute_wage_index(data.household, data.constants.elasticities.production)
     tau = compute_advalorem_tax(data.industry)
     ih,il = compute_input_by_skill(data.household, data.constants.elasticities.production)
-    val.input_low_skill .= il
-    val.input_high_skill .= ih
+    val.low_skill .= il
+    val.high_skill .= ih
 
     fun = log_scale ? log_parameters_by_region : parameters_by_region
 
@@ -204,13 +206,13 @@ function compute_production_parameter(data::CleanData, prices::DataFrame, log_sc
                                       Const(data.industry.regional.input_matrices.eu[row, col]),
                                       Const(data.industry.regional.input_matrices.world[row, col]))
 
-            val.input_uk[row, col] = param_regional.val[1]
-            val.input_eu[row, col] = param_regional.val[2]
-            val.input_world[row, col] = param_regional.val[3]
+            val.uk[row, col] = param_regional.val[1]
+            val.eu[row, col] = param_regional.val[2]
+            val.world[row, col] = param_regional.val[3]
 
-            grad.input_uk[row, col] = param_regional.derivs[2][1]
-            grad.input_eu[row, col] = param_regional.derivs[2][2]
-            grad.input_world[row, col] = param_regional.derivs[2][3]
+            grad.uk[row, col] = param_regional.derivs[2][1]
+            grad.eu[row, col] = param_regional.derivs[2][2]
+            grad.world[row, col] = param_regional.derivs[2][3]
 
         end
 
@@ -232,8 +234,8 @@ function compute_production_parameter(data::CleanData, prices::DataFrame, log_sc
                         Const(tau[row]),
                         Const(log_scale))
 
-        val.input_agg[row, :] = jacM.val
-        grad.input_agg[row,:,:] .= first(jacM.derivs)
+        val.agg[row, :] = jacM.val
+        grad.agg[row,:,:] .= first(jacM.derivs)
 
         jacH = jacobian(ForwardWithPrimal,
                         total_labor_parameters,
@@ -253,8 +255,8 @@ function compute_production_parameter(data::CleanData, prices::DataFrame, log_sc
                         Const(tau[row]),
                         Const(log_scale))
 
-        val.input_human[row] = jacH.val
-        grad.input_human[row,:] .= first(jacH.derivs)
+        val.human[row] = jacH.val
+        grad.human[row,:] .= first(jacH.derivs)
 
         jacK = jacobian(ForwardWithPrimal,
                         total_capital_parameters,
@@ -274,8 +276,8 @@ function compute_production_parameter(data::CleanData, prices::DataFrame, log_sc
                         Const(tau[row]),
                         Const(log_scale))
 
-        val.input_capital[row] = jacK.val
-        grad.input_capital[row,:] .= first(jacK.derivs)
+        val.capital[row] = jacK.val
+        grad.capital[row,:] .= first(jacK.derivs)
 
         mu = jacobian(ForwardWithPrimal,
                       productivity_shock_mean,
