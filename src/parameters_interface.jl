@@ -336,7 +336,12 @@ Compute the ad valorem tax rate by combining product and production taxes, norma
 """
 function compute_advalorem_tax(data::IndustryData)
 
-    tau = (data.tax.products .+ data.tax.production) ./ data.regional.total_use.agg
+    n = nrow(data.tax)
+    tau = Vector{Float64}(undef, n)
+    
+    for i = 1:n
+        tau[i] = (data.tax.products[i] + data.tax.production[i]) / data.regional.total_use.agg[i]
+    end
     return tau
 
 end
