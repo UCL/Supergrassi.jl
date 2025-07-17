@@ -266,17 +266,17 @@ Names reference
 """
 struct ParamsProduction
 
-    input_human::Array{Float64}
-    input_capital::Array{Float64}
-    input_low_skill::Vector{Float64}
-    input_high_skill::Vector{Float64}
+    human::Array{Float64}
+    capital::Array{Float64}
+    low_skill::Vector{Float64}
+    high_skill::Vector{Float64}
     shock_mean::Array{Float64}
     shock_stddev::Array{Float64}
 
-    input_uk::Matrix{Float64}
-    input_eu::Matrix{Float64}
-    input_world::Matrix{Float64}
-    input_agg::Array{Float64}
+    uk::Matrix{Float64}
+    eu::Matrix{Float64}
+    world::Matrix{Float64}
+    agg::Array{Float64}
 
 end
 
@@ -316,6 +316,8 @@ struct Parameters
     export_world::ParamsStruct
     production::ParamsProduction
     investment::ParamsStruct
+    log::Bool
+    derivatives::Bool
 
     function Parameters(
         constants::ParameterConstants,
@@ -323,20 +325,56 @@ struct Parameters
         export_eu::ParamsStruct,
         export_world::ParamsStruct,
         production::ParamsProduction,
-        investment::ParamsStruct
+        investment::ParamsStruct,
+        log::Bool,
+        derivatives::Bool
     )
 
-    if any(x -> x < 0, consumption.uk) ||
-       any(x -> x < 0, consumption.eu) ||
-       any(x -> x < 0, consumption.world) ||
-       any(x -> x < 0, consumption.agg) ||
-       !isnothing(consumption.tilde) && any(x -> x < 0, consumption.tilde)
 
-        throw(ArgumentError("Consumption parameters must be non-negative. but got: " *
-                            "$(consumption.uk), $(consumption.eu), $(consumption.world), " *
-                            "$(consumption.agg), $(consumption.tilde)"))
+    if !log && !derivatives
+
+        to_check = [
+            consumption,
+            export_eu,
+            export_world,
+            production,
+            investment
+        ]
+
+        for param in to_check
+
+            for field in [:uk, :eu, :world, :agg, :tilde]
+
+                if !hasproperty(param, field)
+                    continue
+                end
+
+                val = getfield(param, field)
+
+                if isnothing(val) && field == :tilde
+                    continue
+                end
+
+                if any(x -> x < 0, val)
+                    throw(ArgumentError("Parameter $field must be non-negative, but got: $val"))
+                end
+            end
+        end
+
+            
+
+        # if any(x -> x < 0, consumption.uk) ||
+        # any(x -> x < 0, consumption.eu) ||
+        # any(x -> x < 0, consumption.world) ||
+        # any(x -> x < 0, consumption.agg) ||
+        # !isnothing(consumption.tilde) && any(x -> x < 0, consumption.tilde)
+
+        #     throw(ArgumentError("Consumption parameters must be non-negative. but got: " *
+        #                         "uk: $(consumption.uk), eu: $(consumption.eu), world: $(consumption.world), " *
+        #                         "agg: $(consumption.agg), tilde: $(consumption.tilde)"))
+        # end
+
     end
-
 
 
     return new(
@@ -345,7 +383,9 @@ struct Parameters
         export_eu,
         export_world,
         production,
-        investment
+        investment,
+        log,
+        derivatives
     )
     end
 
