@@ -227,7 +227,7 @@ Matlab code reference ComputeTheta.m line 251
 - `log_scale::Bool` : return parameters in log scale
 
 # See also
-[`compute_agg_wages`](@ref)
+[`compute_wage_index`](@ref)
 """
 function total_input_parameters(prices_uk::Vector{T}, prices_eu::Vector{T}, prices_world::Vector{T},
                                 input_uk::Vector{T}, input_eu::Vector{T}, input_world::Vector{T}, input_agg::Vector{T},
@@ -286,7 +286,7 @@ Matlab code reference ComputeTheta.m line 249
 - `log_scale::Bool` : return parameters in log scale
 
 # See also
-[`compute_agg_wages`](@ref)
+[`compute_wage_index`](@ref)
 """
 function total_labor_parameters(prices_uk::Vector{T}, prices_eu::Vector{T}, prices_world::Vector{T},
                                 input_uk::Vector{T}, input_eu::Vector{T}, input_world::Vector{T}, input_agg::Vector{T},
@@ -339,7 +339,7 @@ Matlab code reference ComputeTheta.m line 254
 - `log_scale::Bool` : return parameters in log scale
 
 # See also
-[`compute_agg_wages`](@ref)
+[`compute_wage_index`](@ref)
 """
 function total_capital_parameters(prices_uk::Vector{T}, prices_eu::Vector{T}, prices_world::Vector{T},
                                   input_uk::Vector{T}, input_eu::Vector{T}, input_world::Vector{T}, input_agg::Vector{T},
@@ -500,7 +500,7 @@ end
 - `elasticity`: Elasticity parameter.
 
 # See also
-[`compute_agg_wages`](@ref)
+[`compute_wage_index`](@ref)
 """
 function labor_fun(labor::T, log_wages::T, elasticity::T) where {T <: Real}
 

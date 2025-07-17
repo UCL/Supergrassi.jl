@@ -74,7 +74,7 @@ function compute_parameter(demand::DataFrame, elasticity::Elasticity, prices::Da
     grad = ParamsStruct(similar(v0), similar(v0), similar(v0), similar(m0), nothing)
 
     fun = log_scale ? log_parameters_by_region : parameters_by_region
-    
+
     for row in 1:n
 
         param_regional = gradient(ForwardWithPrimal,
@@ -184,16 +184,15 @@ function compute_production_parameter(data::CleanData, prices::DataFrame, log_sc
                             similar(m0), similar(v0),
                             similar(m0), similar(m0), similar(m0), similar(t0))
 
-    logW = compute_agg_wages(data.household, data.constants.elasticities.production)
 
-    val.low_skill .= data.household.payments.low .* (data.household.wages.low ./ (exp.(logW))) .^ (data.constants.elasticities.production.skill_substitution - 1)
-    val.high_skill .= data.household.payments.high .* (data.household.wages.high ./ (exp.(logW))) .^ (data.constants.elasticities.production.skill_substitution - 1)
-
-    replace!(val.low_skill, NaN => 0.0)
-    replace!(val.high_skill, NaN => 0.0)
+    logW = compute_wage_index(data.household, data.constants.elasticities.production)
+    tau = compute_advalorem_tax(data.industry)
+    ih,il = compute_input_by_skill(data.household, data.constants.elasticities.production)
+    val.low_skill .= il
+    val.high_skill .= ih
 
     fun = log_scale ? log_parameters_by_region : parameters_by_region
-    
+
     for row in 1:n
         for col in 1:n
 
@@ -217,9 +216,6 @@ function compute_production_parameter(data::CleanData, prices::DataFrame, log_sc
 
         end
 
-        # We are missing this from our data struct. Temporarily compute it on the fly.
-        tau = (data.industry.tax.products[row] .+ data.industry.tax.production[row]) ./ data.industry.regional.total_use.agg[row]
-
         jacM = jacobian(ForwardWithPrimal,
                         total_input_parameters,
                         prices.uk,
@@ -235,7 +231,7 @@ function compute_production_parameter(data::CleanData, prices::DataFrame, log_sc
                         Const(data.household.payments.agg[row]),
                         Const(logW[row]),
                         Const(data.constants.elasticities.production),
-                        Const(tau),
+                        Const(tau[row]),
                         Const(log_scale))
 
         val.agg[row, :] = jacM.val
@@ -256,7 +252,7 @@ function compute_production_parameter(data::CleanData, prices::DataFrame, log_sc
                         Const(data.household.payments.agg[row]),
                         Const(logW[row]),
                         Const(data.constants.elasticities.production),
-                        Const(tau),
+                        Const(tau[row]),
                         Const(log_scale))
 
         val.human[row] = jacH.val
@@ -277,7 +273,7 @@ function compute_production_parameter(data::CleanData, prices::DataFrame, log_sc
                         Const(data.household.payments.agg[row]),
                         Const(logW[row]),
                         Const(data.constants.elasticities.production),
-                        Const(tau),
+                        Const(tau[row]),
                         Const(log_scale))
 
         val.capital[row] = jacK.val
@@ -298,10 +294,10 @@ function compute_production_parameter(data::CleanData, prices::DataFrame, log_sc
                       Const(data.industry.regional.total_use.agg[row]),
                       Const(data.household.payments.agg[row]),
                       Const(logW[row]),
-                      Const(tau),
+                      Const(tau[row]),
                       Const(row),
                       Const(log_scale))
-        
+
         val.shock_mean[row] = mu.val
         grad.shock_mean[row,:] .= mu.derivs[2]
 
@@ -312,9 +308,9 @@ function compute_production_parameter(data::CleanData, prices::DataFrame, log_sc
 end
 
 """
-    compute_agg_wages(data::HouseholdData, elasticity::Elasticity)
+    compute_wage_index(data::HouseholdData, elasticity::Elasticity)
 
-Computes and updates aggregate wages for households based on household data and elasticity of production.
+Computes aggregate wage index for households based on household data and elasticity of production.
 
 [ref](https://github.com/UCL/Supergrassi/blob/29510a8c9f50427068a475be01583b544975bd5c/code/matlab/macro_v2/B1_SetupParameters.m#L328-L332)
 
@@ -322,7 +318,7 @@ Computes and updates aggregate wages for households based on household data and 
 - `data::HouseholdData`: Data structure containing `wages` and `payments` DataFrames [`HouseholdData`](@ref)
 - `elasticity::Elasticity`: Elasticity of substitution for production parameters (ξ)
 """
-function compute_agg_wages(data::HouseholdData, elasticity::Elasticity)
+function compute_wage_index(data::HouseholdData, elasticity::Elasticity)
 
     ξh = elasticity.skill_substitution
     logW = ξh/(ξh-1) * log.(
@@ -332,5 +328,66 @@ function compute_agg_wages(data::HouseholdData, elasticity::Elasticity)
     replace!(logW, NaN => 0.0)
 
     return logW
+
+end
+
+"""
+    compute_advalorem_tax(data::IndustryData)
+
+Compute the ad valorem tax rate by combining product and production taxes, normalized by total use.
+
+# Arguments
+- `data::IndustryData`: Industry data containing tax and regional total use information
+"""
+function compute_advalorem_tax(data::IndustryData)
+
+    tau = (data.tax.products .+ data.tax.production) ./ data.regional.total_use.agg
+    if any(x -> x < 0 && x >= 1, tau)
+        throw(ArgumentError("Expected 0 <= τ < 1, got: $tau"))
+    end
+
+    return tau
+
+end
+
+"""
+    compute_input_by_skill(data::HouseholdData, elasticity::Elasticity)
+
+Compute input shares by skill level (low and high skill) based on household payments and wages.
+
+# Arguments
+- `data::HouseholdData`: Household data containing payments and wages information
+- `elasticity::Elasticity`: Elasticity of substitution for production parameters
+"""
+function compute_input_by_skill(data::HouseholdData, elasticity::Elasticity)
+
+    logW = compute_wage_index(data, elasticity)
+
+    input_low_skill = data.payments.low .* (data.wages.low ./ (exp.(logW))) .^ (elasticity.skill_substitution - 1)
+    input_high_skill = data.payments.high .* (data.wages.high ./ (exp.(logW))) .^ (elasticity.skill_substitution - 1)
+
+    replace!(input_low_skill, NaN => 0.0)
+    replace!(input_high_skill, NaN => 0.0)
+
+    return input_low_skill, input_high_skill
+
+end
+
+"""
+    compute_imports_shares(constants::Constants)
+
+Compute the share of UK imports in total imports for EU and world regions.
+
+# Arguments
+- `constants::Constants`: Constants containing import and exchange rate information
+"""
+function compute_imports_shares(constants::Constants)
+
+    imports_uk_share_eu = constants.total_imports_from_uk.eu / (constants.total_imports_from_all_sources.eu
+                                                                / constants.exchange_rates.eur )
+    imports_uk_share_world = constants.total_imports_from_uk.world / (constants.total_imports_from_all_sources.world
+                                                                      / constants.exchange_rates.usd )
+
+    return imports_uk_share_eu, imports_uk_share_world
 
 end
