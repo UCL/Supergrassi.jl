@@ -49,8 +49,6 @@ function compute_all_parameters(data::CleanData, prices::DataFrame, log_scale::B
     derivs = Parameters(consts, ∂α, ∂β1, ∂β2, ∂γ, ∂ρ, log_scale, true)
 
 
-    @show vals.consumption.eu[1]
- 
     return vals, derivs
 
 end

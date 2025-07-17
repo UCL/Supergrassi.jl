@@ -306,6 +306,9 @@ Contains
 - `export_world::ParamsStruct` : `β2`
 - `production::ParamsProduction` : `γ`
 - `investment::ParamsStruct` : `ρ`
+
+
+Note: The constructor checks that all reasonable parameters are non-negative unless `log` or `derivatives` is set to true.
 """
 struct Parameters
 
@@ -343,36 +346,22 @@ struct Parameters
 
         for param in to_check
 
-            for field in [:uk, :eu, :world, :agg, :tilde]
+            for field in [:uk, :eu, :world, :agg, :tilde, :shock_stdev]
 
-                if !hasproperty(param, field)
-                    continue
-                end
+                if hasproperty(param, field)
 
-                val = getfield(param, field)
+                    val = getfield(param, field)
 
-                if isnothing(val) && field == :tilde
-                    continue
-                end
+                    if isnothing(val)
+                        continue
+                    end
 
-                if any(x -> x < 0, val)
-                    throw(ArgumentError("Parameter $field must be non-negative, but got: $val"))
+                    if any(x -> x < 0, val)
+                        throw(ArgumentError("Parameter $field must be non-negative, but got: $val"))
+                    end
                 end
             end
         end
-
-            
-
-        # if any(x -> x < 0, consumption.uk) ||
-        # any(x -> x < 0, consumption.eu) ||
-        # any(x -> x < 0, consumption.world) ||
-        # any(x -> x < 0, consumption.agg) ||
-        # !isnothing(consumption.tilde) && any(x -> x < 0, consumption.tilde)
-
-        #     throw(ArgumentError("Consumption parameters must be non-negative. but got: " *
-        #                         "uk: $(consumption.uk), eu: $(consumption.eu), world: $(consumption.world), " *
-        #                         "agg: $(consumption.agg), tilde: $(consumption.tilde)"))
-        # end
 
     end
 

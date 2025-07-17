@@ -17,7 +17,7 @@ function compute_objective_function(log_price_uk::Vector{<:Number}, zOC::Vector{
     tau = (data.industry.tax.products .+ data.industry.tax.production) ./ data.industry.regional.total_use.agg
 
     mu = params.production.shock_mean
-    gammaK = params.production.input_capital
+    gammaK = params.production.capital
     k0 = data.industry.capital.current_year
     xi = params.constants.elasticities.production.substitution
 
