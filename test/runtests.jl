@@ -14,6 +14,8 @@ include("test_assets_cleaning.jl")
 include("test_weighted_mean.jl")
 include("test_round_shares.jl")
 
+include("test_parameters.jl")
+
 settings = YAML.load_file(joinpath(@__DIR__, "..", "config", "settings.yml"))
 if(isdir(joinpath(@__DIR__,"..",settings["files"]["input_dir"])))
 
