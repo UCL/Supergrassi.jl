@@ -73,7 +73,7 @@ function compute_parameter(demand::DataFrame, elasticity::Elasticity, prices::Da
     grad = ParamsStruct(similar(v0), similar(v0), similar(v0), similar(m0), nothing)
 
     fun = log_scale ? log_parameters_by_region : parameters_by_region
-    
+
     for row in 1:n
 
         param_regional = gradient(ForwardWithPrimal,
@@ -190,7 +190,7 @@ function compute_production_parameter(data::CleanData, prices::DataFrame, log_sc
     val.input_high_skill .= ih
 
     fun = log_scale ? log_parameters_by_region : parameters_by_region
-    
+
     for row in 1:n
         for col in 1:n
 
@@ -295,7 +295,7 @@ function compute_production_parameter(data::CleanData, prices::DataFrame, log_sc
                       Const(tau[row]),
                       Const(row),
                       Const(log_scale))
-        
+
         val.shock_mean[row] = mu.val
         grad.shock_mean[row,:] .= mu.derivs[2]
 
@@ -340,6 +340,10 @@ Compute the ad valorem tax rate by combining product and production taxes, norma
 function compute_advalorem_tax(data::IndustryData)
 
     tau = (data.tax.products .+ data.tax.production) ./ data.regional.total_use.agg
+    if any(x -> x < 0 && x >= 1, tau)
+        throw(ArgumentError("Expected 0 <= τ < 1, got: $tau"))
+    end
+
     return tau
 
 end
