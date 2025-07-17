@@ -111,13 +111,13 @@ function market_clearing_price(price_uk::Vector{T}, operating_cost::Vector{T}, h
 
     tau = compute_advalorem_tax(data)
 
-    # PdYBar = intermediate_goods_price_index(price_uk,
-    #                                         data.surplus.val,
-    #                                         tau,
-    #                                         params.production.shock_mean,
-    #                                         params.production.input_capital,
-    #                                         data.capital.current_year,
-    #                                         elasticity.production.substitution)
+    PdYBar = intermediate_goods_price_index(price_uk,
+                                            data.surplus.val,
+                                            tau,
+                                            params.production.shock_mean,
+                                            params.production.capital,
+                                            data.capital.current_year,
+                                            elasticity.production.substitution)
 
     imports_uk_share_eu, imports_uk_share_world = compute_imports_shares(constants)
     E1tilde = data.regional.totals.imports.eu / imports_uk_share_eu
@@ -165,7 +165,7 @@ function market_clearing_price(price_uk::Vector{T}, operating_cost::Vector{T}, h
     EI_uk = expenditure_by_region(params.investment.uk, params.investment.eu, params.investment.world,
                                   price_uk, price_eu, price_world, logEI, elasticity.investment)
 
-    # # Production intermediates
+    # Production intermediates
 
     n = length(price_uk)
     EM_uk = zeros(n)
@@ -173,22 +173,22 @@ function market_clearing_price(price_uk::Vector{T}, operating_cost::Vector{T}, h
     for i = 1:n
 
         TOCTheta = exp(operating_cost[i]) / (1 + exp(operating_cost[i]))
-        # logTauPdMu = log(1 - tau[i]) + price_uk[i] + log(params.production.shock_mean[i])
-        # logTauPdYBar = (logTauPdMu
-        #                 + log(params.production.input_capital[i]) / (elasticity.production.substitution - 1)
-        #                 + elasticity.production.substitution / (1 - elasticity.production.substitution) * log(1 - TOCTheta)
-        #                 + data.capital.current_year[i]
-        #                 )
-        logTauPdMu = price_uk[i]
-        logTauPdYBar = 1.0
+        logTauPdMu = log(1 - tau[i]) + price_uk[i] + log(params.production.shock_mean[i])
+        logTauPdYBar = (logTauPdMu
+                        + log(params.production.capital[i]) / (elasticity.production.substitution - 1)
+                        + elasticity.production.substitution / (1 - elasticity.production.substitution) * log(1 - TOCTheta)
+                        + data.capital.current_year[i]
+                        )
+#        logTauPdMu = price_uk[i]
+#        logTauPdYBar = 1.0
 
-        logPM = log_price_index(params.production.input_uk[i,:], params.production.input_eu[i,:],
-                                params.production.input_world[i,:],
+        logPM = log_price_index(params.production.uk[i,:], params.production.eu[i,:],
+                                params.production.world[i,:],
                                 price_uk, price_eu, price_world, elasticity.production.armington)
-        logEM = log_expenditure(params.production.input_agg[i,:], logTauPdYBar, elasticity.production.substitution,
+        logEM = log_expenditure(params.production.agg[i,:], logTauPdYBar, elasticity.production.substitution,
                                 logPM, logTauPdMu)
-        EM_uk += expenditure_by_region(params.production.input_uk[i,:], params.production.input_eu[i,:],
-                                       params.production.input_world[i,:],
+        EM_uk += expenditure_by_region(params.production.uk[i,:], params.production.eu[i,:],
+                                       params.production.world[i,:],
                                        price_uk, price_eu, price_world, logEM, elasticity.production)
     end
 
@@ -200,8 +200,8 @@ function market_clearing_price(price_uk::Vector{T}, operating_cost::Vector{T}, h
     # @show EM_uk
     # @show data.regional.delta_v.agg
 
-    #F = PdYBar + EF_uk + EX1_uk + EX2_uk + EI_uk + EM_uk + data.regional.delta_v.agg
-    F = EF_uk + EX1_uk + EX2_uk + EI_uk + EM_uk
+    F = PdYBar + EF_uk + EX1_uk + EX2_uk + EI_uk + EM_uk + data.regional.delta_v.agg
+    #F = EF_uk + EX1_uk + EX2_uk + EI_uk + EM_uk
     return F
 
 end
