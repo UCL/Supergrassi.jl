@@ -14,7 +14,7 @@ Computes the objective function value based on the log prices and zOC values.
 """
 function compute_objective_function(log_price_uk::Vector{<:Number}, zOC::Vector{<:Number}, data::CleanData, params::Parameters)
 
-    tau = (data.industry.tax.products .+ data.industry.tax.production) ./ data.industry.regional.total_use.agg
+    tau = compute_advalorem_tax(data.industry)
 
     mu = params.production.shock_mean
     gammaK = params.production.input_capital
