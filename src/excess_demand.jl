@@ -127,6 +127,7 @@ function market_clearing_price(price_uk::Vector{T}, operating_cost::Vector{T}, h
     n = length(price_uk)
     keys = (:consumption, :export_eu, :export_world, :investment)
     logP = NamedTuple{keys}((zeros(n), zeros(n), zeros(n), zeros(n)))
+    taux = NamedTuple{keys}((0.0, constants.export_costs.eu, constants.export_costs.world, 0.0))
     logPBar = Vector{T}(undef, length(keys))
 
     # Compute logP and logPBar for paramters in keys. Store values in NamedTuples.
@@ -134,14 +135,14 @@ function market_clearing_price(price_uk::Vector{T}, operating_cost::Vector{T}, h
     for (i,key) in enumerate(keys)
         param = getfield(params, key)
         el = getfield(elasticity, key)
-        getfield(logP, key) .= log_price_index(param.uk, param.eu, param.world, price_uk, price_eu, price_world, el.armington)
+        getfield(logP, key) .= log_price_index(param.uk, param.eu, param.world, price_uk, price_eu, price_world, el.armington, getfield(taux, key))
         logPBar[i] = log_agg_price_index(param.agg, getfield(logP, key), el.substitution)
     end
     logPBar = NamedTuple{keys}(logPBar)
 
     # Household
 
-    logEf = log_expenditure(params.consumption.agg, household_expenditure, elasticity.consumption.substitution,
+    logEf = log_expenditure(params.consumption.agg, log(household_expenditure), elasticity.consumption.substitution,
                             logP.consumption, logPBar.consumption)
     EF_uk = expenditure_by_region(params.consumption.uk, params.consumption.eu, params.consumption.world,
                                   price_uk, price_eu, price_world, logEf, elasticity.consumption)
@@ -154,7 +155,6 @@ function market_clearing_price(price_uk::Vector{T}, operating_cost::Vector{T}, h
                              logP.export_eu, logPBar.export_eu)
     EX1_uk = expenditure_by_region(params.export_eu.uk, params.export_eu.eu, params.export_eu.world,
                                    price_uk, price_eu, price_world, logEX1, elasticity.export_eu)
-
     # Exports from rest of world
 
     world_spending = export_spending(elasticity.export_world.substitution_uk_other, params.export_world.tilde,
@@ -167,7 +167,8 @@ function market_clearing_price(price_uk::Vector{T}, operating_cost::Vector{T}, h
     # Investment
 
     new_capital_supply = capital_market()
-    logEI = log_expenditure(params.investment.agg, logPBar.investment .+ new_capital_supply,
+    muI = compute_muI(data, elasticity.investment)
+    logEI = log_expenditure(params.investment.agg, logPBar.investment .+ log(new_capital_supply ./ muI),
                             elasticity.investment.substitution, logP.investment, logPBar.investment)
     EI_uk = expenditure_by_region(params.investment.uk, params.investment.eu, params.investment.world,
                                   price_uk, price_eu, price_world, logEI, elasticity.investment)
@@ -176,19 +177,26 @@ function market_clearing_price(price_uk::Vector{T}, operating_cost::Vector{T}, h
 
     EM_uk = zeros(n)
 
+    @show operating_cost
+    @show tau
+
+    @show params.production.capital
+    @show log.(data.capital.current_year)
+
     for i = 1:n
 
         TOCTheta = exp(operating_cost[i]) / (1 + exp(operating_cost[i]))
-        logTauPdMu = log(1 - tau[i]) + price_uk[i] + log(params.production.shock_mean[i])
+        logTauPdMu = log(1 - tau[i]) + log(price_uk[i]) + log(params.production.shock_mean[i])
         logTauPdYBar = (logTauPdMu
                         + log(params.production.capital[i]) / (elasticity.production.substitution - 1)
                         + elasticity.production.substitution / (1 - elasticity.production.substitution) * log(1 - TOCTheta)
-                        + data.capital.current_year[i]
+                        + log(data.capital.current_year[i])
                         )
 
         logPM = log_price_index(params.production.uk[i,:], params.production.eu[i,:],
                                 params.production.world[i,:],
                                 price_uk, price_eu, price_world, elasticity.production.armington)
+
         logEM = log_expenditure(params.production.agg[i,:], logTauPdYBar, elasticity.production.substitution,
                                 logPM, logTauPdMu)
         EM_uk += expenditure_by_region(params.production.uk[i,:], params.production.eu[i,:],
@@ -196,17 +204,17 @@ function market_clearing_price(price_uk::Vector{T}, operating_cost::Vector{T}, h
                                        price_uk, price_eu, price_world, logEM, elasticity.production)
     end
 
-    @show PdYBar
-    @show EF_uk
-    @show EX1_uk
-    @show EX2_uk
-    @show EI_uk
+    # @show PdYBar
+    # @show EF_uk
+    # @show EX1_uk
+    # @show EX2_uk
+    # @show EI_uk
     @show EM_uk
 
-    F = PdYBar + EF_uk + EX1_uk + EX2_uk + EI_uk + EM_uk + data.regional.delta_v.agg
-    return F
+    #F = PdYBar + EF_uk + EX1_uk + EX2_uk + EI_uk + EM_uk + data.regional.delta_v.agg
+    #return F
 
-    #return PdYBar, EF_uk, EX1_uk, EX2_uk, EI_uk, EM_uk
+    return PdYBar, EF_uk, EX1_uk, EX2_uk, EI_uk, EM_uk
 
 end
 
@@ -229,7 +237,7 @@ Compute the log of final price index (logP) for export commodities, taking into 
 function log_price_index(param_uk::Vector{T}, param_eu::Vector{T}, param_world::Vector{T}, price_uk::Vector{T}, price_eu::Vector{T}, price_world::Vector{T}, elasticity::T, export_cost::T) where {T<:Real}
 
     logP = log_price_index(param_uk, param_eu, param_world, price_uk, price_eu, price_world, elasticity)
-    logP .+= log.(1 + export_cost)
+    logP .+= log(1 + export_cost)
 
     return logP
 
@@ -352,7 +360,7 @@ function log_expenditure(param_agg::Vector{T}, expenditure::T, elasticity::T, lo
     logE = Vector{T}(undef, n)
 
     for i in 1:n
-        logE[i] = log(param_agg[i]) + log(expenditure) + (1.0 - elasticity) * (logPf[i] - logPBar)
+        logE[i] = log(param_agg[i]) + expenditure + (1.0 - elasticity) * (logPf[i] - logPBar)
     end
 
     return logE
@@ -388,7 +396,23 @@ Dummy function for capital market. Returns a number.
 """
 function capital_market()
 
-    KS = 2.0172
+    KS = 2.0712
     return KS
+
+end
+
+
+"""
+    function compute_muI
+
+Compute μ_I parameter from industry data. Ref [L429 of B1_SetupParameters.m](https://github.com/UCL/Supergrassi/blob/2f147384f02f8eef85e3cb59c73fd64ebfc19f82/code/matlab/macro_v2/B1_SetupParameters.m#L425)
+"""
+function compute_muI(data::IndustryData, elasticity::Elasticity)
+
+    DeltaK = sum(data.capital.next_year) - sum((1 .- data.depreciation.val) .* data.capital.current_year)
+    muI = sum((data.regional.totals.investments .* data.regional.investment.agg ./ DeltaK) .^ (1 / elasticity.substitution))
+
+    return muI
+
 
 end
