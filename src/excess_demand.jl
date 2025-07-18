@@ -173,6 +173,9 @@ function market_clearing_price(price_uk::Vector{T}, operating_cost::Vector{T}, h
     EI_uk = expenditure_by_region(params.investment.uk, params.investment.eu, params.investment.world,
                                   price_uk, price_eu, price_world, logEI, elasticity.investment)
 
+    E = (household_expenditure, eu_spending, world_spending, logPBar.investment .+ log(new_capital_supply ./ muI))
+    # TODO: Call log_expenditure and expenditure_by_region in a loop over E and keys
+    
     # Production intermediates
 
     EM_uk = zeros(n)
