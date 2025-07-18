@@ -111,13 +111,13 @@ function market_clearing_price(price_uk::Vector{T}, operating_cost::Vector{T}, h
 
     tau = compute_advalorem_tax(data)
 
-    PdYBar = intermediate_goods_price_index(price_uk,
-                                            data.surplus.val,
-                                            tau,
-                                            params.production.shock_mean,
-                                            params.production.capital,
-                                            data.capital.current_year,
-                                            elasticity.production.substitution)
+    # PdYBar = intermediate_goods_price_index(price_uk,
+    #                                         data.surplus.val,
+    #                                         tau,
+    #                                         params.production.shock_mean,
+    #                                         params.production.capital,
+    #                                         data.capital.current_year,
+    #                                         elasticity.production.substitution)
 
     imports_uk_share_eu, imports_uk_share_world = compute_imports_shares(constants)
     E1tilde = data.regional.totals.imports.eu / imports_uk_share_eu
@@ -176,23 +176,21 @@ function market_clearing_price(price_uk::Vector{T}, operating_cost::Vector{T}, h
     # Production intermediates
 
     EM_uk = zeros(n)
-
-    @show operating_cost
-    @show tau
-
-    @show params.production.capital
-    @show log.(data.capital.current_year)
+    pdYBar = Vector{T}(undef, n)
 
     for i = 1:n
 
         TOCTheta = exp(operating_cost[i]) / (1 + exp(operating_cost[i]))
         logTauPdMu = log(1 - tau[i]) + log(price_uk[i]) + log(params.production.shock_mean[i])
+
+        # TODO: This is already computed as part of intermediate_goods_price_index. Refactor and reuse.
         logTauPdYBar = (logTauPdMu
                         + log(params.production.capital[i]) / (elasticity.production.substitution - 1)
                         + elasticity.production.substitution / (1 - elasticity.production.substitution) * log(1 - TOCTheta)
                         + log(data.capital.current_year[i])
                         )
-
+        pdYBar[i] = exp(logTauPdYBar - log(1 - tau[i]))
+        
         logPM = log_price_index(params.production.uk[i,:], params.production.eu[i,:],
                                 params.production.world[i,:],
                                 price_uk, price_eu, price_world, elasticity.production.armington)
@@ -204,17 +202,7 @@ function market_clearing_price(price_uk::Vector{T}, operating_cost::Vector{T}, h
                                        price_uk, price_eu, price_world, logEM, elasticity.production)
     end
 
-    # @show PdYBar
-    # @show EF_uk
-    # @show EX1_uk
-    # @show EX2_uk
-    # @show EI_uk
-    @show EM_uk
-
-    #F = PdYBar + EF_uk + EX1_uk + EX2_uk + EI_uk + EM_uk + data.regional.delta_v.agg
-    #return F
-
-    return PdYBar, EF_uk, EX1_uk, EX2_uk, EI_uk, EM_uk
+    return pdYBar, EF_uk, EX1_uk, EX2_uk, EI_uk, EM_uk
 
 end
 
@@ -413,6 +401,5 @@ function compute_muI(data::IndustryData, elasticity::Elasticity)
     muI = sum((data.regional.totals.investments .* data.regional.investment.agg ./ DeltaK) .^ (1 / elasticity.substitution))
 
     return muI
-
 
 end
