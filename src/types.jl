@@ -47,15 +47,15 @@ Stores sets of elasticity constants.
 Names for reference in paper/matlab code:
 
 - `consumption`: α
-- `eu_export_demand`: β1
-- `world_export_demand`: β2
+- `export_eu`: β1
+- `export_world`: β2
 - `investment`: ρ
 - `production`: ξ
 """
 struct Elasticities
     production::Elasticity
-    world_export_demand::Elasticity
-    eu_export_demand::Elasticity
+    export_world::Elasticity
+    export_eu::Elasticity
     consumption::Elasticity
     investment::Elasticity
 end
