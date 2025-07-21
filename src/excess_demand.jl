@@ -12,6 +12,8 @@ Calculate the market clearing price, equation 4.1.
 Uses a single vector `x` of equilibrium variables as input. Returns a single vector `F` as output.
 Note that the prices are NOT on log scale.
 
+TODO: There is an error when this function is called through Enzyme
+
 """
 function market_clearing_price(x::Vector{T}, price_eu::Vector{T}, price_world::Vector{T},
                                params::Parameters, data::IndustryData, constants::Constants) where {T <: Real}
@@ -86,6 +88,9 @@ function market_clearing_price(price_uk::Vector{T}, operating_cost::Vector{T}, h
     # logTauPdMu = log(1 - τ) + logPd + log(μ)
     # logTauPdYBar = logTauPdMu + (log(γK) + ξ * log(1 - TOCθ)) / (ξ - 1) + logK0
 
+    length(price_uk) == length(price_eu) == length(price_world) || error()
+    n = length(price_uk)
+
     elasticity = constants.elasticities
 
     tau = compute_advalorem_tax(data)
@@ -136,7 +141,6 @@ function market_clearing_price(price_uk::Vector{T}, operating_cost::Vector{T}, h
 
     # Production intermediates
 
-    n = length(price_uk)
     EM_uk = zeros(n)
     pdYBar = Vector{T}(undef, n)
 
@@ -163,6 +167,7 @@ function market_clearing_price(price_uk::Vector{T}, operating_cost::Vector{T}, h
     end
 
     return pdYBar, EF_uk, EX1_uk, EX2_uk, EI_uk, EM_uk
+    # return pdYBar + EF_uk + EX1_uk + EX2_uk + EI_uk + EM_uk
 
 end
 

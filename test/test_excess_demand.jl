@@ -32,15 +32,6 @@ household_expenditure = 7.27421398152353670952
 F = Supergrassi.market_clearing_price(price_uk, operating_cost, household_expenditure,
                                       price_eu, price_world, params, clean.industry, clean.constants)
 
-Jac = jacobian(set_runtime_activity(ForwardWithPrimal),
-               Supergrassi.market_clearing_price,
-               [price_uk; operating_cost; household_expenditure],
-               Const(price_eu),
-               Const(price_world),
-               Const(params),
-               Const(clean.industry),
-               Const(clean.constants))
-
 @testset "Market Clearing" begin
 
     @test isapprox(F[1][1:15], df.pdYBar[1:15], atol = tol)
@@ -49,10 +40,30 @@ Jac = jacobian(set_runtime_activity(ForwardWithPrimal),
     @test isapprox(F[4][1:15], df.EX2d[1:15], atol = tol)
     @test isapprox(F[5][1:15], df.EId[1:15], atol = tol)
     @test isapprox(F[6][1:15], df.EMd[1:15], atol = tol)
+
+end
+
+
+Jac = jacobian(set_runtime_activity(ForwardWithPrimal),
+               Supergrassi.market_clearing_price,
+               price_uk, operating_cost, household_expenditure,
+               Const(price_eu),
+               Const(price_world),
+               Const(params),
+               Const(clean.industry),
+               Const(clean.constants))
+
+@testset "Jacobian" begin
+
+    @test length(Jac.val) == 6
+    @test isapprox(sum(Jac.val), df.pdYBar + df.EFd + df.EX1d + df.EX2d + df.EId + df.EMd, atol = tol)
+    @test length(Jac.derivs[1]) == 16
+    @test length(Jac.derivs[2]) == 16
+    @test length(Jac.derivs[3]) == 6
     
-    @test length(Jac.val) == nrow(df)
-    @test ndims(Jac.derivs[1]) == 2
-    @test ndims(Jac.derivs[2]) == 2
-    @test ndims(Jac.derivs[3]) == 1
-    
+#    @test length(Jac.val) == nrow(df)
+#    @test ndims(Jac.derivs[1]) == 2
+#    @test ndims(Jac.derivs[2]) == 2
+#    @test ndims(Jac.derivs[3]) == 1
+
 end
