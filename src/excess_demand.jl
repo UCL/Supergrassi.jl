@@ -16,6 +16,7 @@ Note that the prices are NOT on log scale.
 function market_clearing_price(x::Vector{T}, price_eu::Vector{T}, price_world::Vector{T},
                                params::Parameters, data::IndustryData, constants::Constants) where {T <: Real}
 
+    length(x) == 2 * length(price_eu) + 1 || error("x must have 2n + 1 elements")
     F_terms = market_clearing_price(x[1:n], x[n+1:2*n], x[2*n+1], price_eu, price_world, params, data, constants)
     return sum(F_terms)
 
@@ -89,70 +90,53 @@ function market_clearing_price(price_uk::Vector{T}, operating_cost::Vector{T}, h
 
     tau = compute_advalorem_tax(data)
 
-    # PdYBar = intermediate_goods_price_index(price_uk,
-    #                                         data.surplus.val,
-    #                                         tau,
-    #                                         params.production.shock_mean,
-    #                                         params.production.capital,
-    #                                         data.capital.current_year,
-    #                                         elasticity.production.substitution)
-
     imports_uk_share_eu, imports_uk_share_world = compute_imports_shares(constants)
     E1tilde = data.regional.totals.imports.eu / imports_uk_share_eu
     E2tilde = data.regional.totals.imports.world / imports_uk_share_world
     Ptilde = 1.0
 
-    n = length(price_uk)
-    keys = (:consumption, :export_eu, :export_world, :investment)
-    logP = NamedTuple{keys}((zeros(n), zeros(n), zeros(n), zeros(n)))
-    taux = NamedTuple{keys}((0.0, constants.export_costs.eu, constants.export_costs.world, 0.0))
-    logPBar = Vector{T}(undef, length(keys))
-
-    # Compute logP and logPBar for paramters in keys. Store values in NamedTuples.
-
-    for (i,key) in enumerate(keys)
-        param = getfield(params, key)
-        el = getfield(elasticity, key)
-        getfield(logP, key) .= log_price_index(param.uk, param.eu, param.world, price_uk, price_eu, price_world, el.armington, getfield(taux, key))
-        logPBar[i] = log_agg_price_index(param.agg, getfield(logP, key), el.substitution)
-    end
-    logPBar = NamedTuple{keys}(logPBar)
-
     # Household
 
-    logEf = log_expenditure(params.consumption.agg, log(household_expenditure), elasticity.consumption.substitution,
-                            logP.consumption, logPBar.consumption)
-    EF_uk = expenditure_by_region(params.consumption.uk, price_uk, logEf, logP.consumption, elasticity.consumption)
+    logP = log_price_index(params.consumption.uk, params.consumption.eu, params.consumption.world, price_uk, price_eu, price_world, elasticity.consumption.armington)
+    logPBar = log_agg_price_index(params.consumption.agg, logP, elasticity.consumption.substitution)
+    logEf = log_expenditure(params.consumption.agg, log(household_expenditure), elasticity.consumption.substitution, logP, logPBar)
+    EF_uk = expenditure_by_region(params.consumption.uk, price_uk, logEf, logP, elasticity.consumption)
 
     # Exports from eu
-
-    eu_spending = export_spending(elasticity.export_eu.substitution_uk_other, params.export_eu.tilde, logPBar.export_eu,
+    logP = log_price_index(params.export_eu.uk, params.export_eu.eu, params.export_eu.world, price_uk, price_eu, price_world, elasticity.export_eu.armington, constants.export_costs.eu)
+    logPBar = log_agg_price_index(params.export_eu.agg, logP, elasticity.export_eu.substitution)
+    eu_spending = export_spending(elasticity.export_eu.substitution_uk_other, params.export_eu.tilde, logPBar,
                                   constants.exchange_rates.eur, E1tilde, Ptilde)
-    logEX1 = log_expenditure(params.export_eu.agg, eu_spending, elasticity.export_eu.substitution,
-                             logP.export_eu, logPBar.export_eu)
-    EX1_uk = expenditure_by_region(params.export_eu.uk, price_uk, logEX1, logP.export_eu, elasticity.export_eu)
+    logEX1 = log_expenditure(params.export_eu.agg, eu_spending, elasticity.export_eu.substitution, logP, logPBar)
+    EX1_uk = expenditure_by_region(params.export_eu.uk, price_uk, logEX1, logP, elasticity.export_eu)
 
     # Exports from rest of world
 
+    logP = log_price_index(params.export_world.uk, params.export_world.eu, params.export_world.world, price_uk, price_eu, price_world, elasticity.export_world.armington, constants.export_costs.world)
+    logPBar = log_agg_price_index(params.export_world.agg, logP, elasticity.export_world.substitution)
     world_spending = export_spending(elasticity.export_world.substitution_uk_other, params.export_world.tilde,
-                                     logPBar.export_world, constants.exchange_rates.usd, E2tilde, Ptilde)
+                                     logPBar, constants.exchange_rates.usd, E2tilde, Ptilde)
     logEX2 = log_expenditure(params.export_world.agg, world_spending, elasticity.export_world.substitution,
-                             logP.export_world, logPBar.export_world)
-    EX2_uk = expenditure_by_region(params.export_world.uk, price_uk, logEX2, logP.export_world, elasticity.export_world)
+                             logP, logPBar)
+    EX2_uk = expenditure_by_region(params.export_world.uk, price_uk, logEX2, logP, elasticity.export_world)
 
     # Investment
 
+    logP = log_price_index(params.investment.uk, params.investment.eu, params.investment.world, price_uk, price_eu, price_world, elasticity.investment.armington)
+    logPBar = log_agg_price_index(params.investment.agg, logP, elasticity.investment.substitution)
     new_capital_supply = capital_market()
     muI = compute_muI(data, elasticity.investment)
-    logEI = log_expenditure(params.investment.agg, logPBar.investment .+ log(new_capital_supply ./ muI),
-                            elasticity.investment.substitution, logP.investment, logPBar.investment)
-    EI_uk = expenditure_by_region(params.investment.uk, price_uk, logEI, logP.investment, elasticity.investment)
+    logEI = log_expenditure(params.investment.agg, logPBar .+ log(new_capital_supply ./ muI),
+                            elasticity.investment.substitution, logP, logPBar)
+    EI_uk = expenditure_by_region(params.investment.uk, price_uk, logEI, logP, elasticity.investment)
 
-    # E = (household_expenditure, eu_spending, world_spending, logPBar.investment .+ log(new_capital_supply ./ muI))
+    E = (household_expenditure, eu_spending, world_spending, logPBar .+ log(new_capital_supply ./ muI))
+    τx = (0.0, constants.export_costs.eu, constants.export_costs.world, 0.0)
     # TODO: Call log_expenditure and expenditure_by_region in a loop over E and keys
 
     # Production intermediates
 
+    n = length(price_uk)
     EM_uk = zeros(n)
     pdYBar = Vector{T}(undef, n)
 

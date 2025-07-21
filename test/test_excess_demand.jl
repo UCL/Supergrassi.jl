@@ -32,37 +32,27 @@ household_expenditure = 7.27421398152353670952
 F = Supergrassi.market_clearing_price(price_uk, operating_cost, household_expenditure,
                                       price_eu, price_world, params, clean.industry, clean.constants)
 
+Jac = jacobian(set_runtime_activity(ForwardWithPrimal),
+               Supergrassi.market_clearing_price,
+               [price_uk; operating_cost; household_expenditure],
+               Const(price_eu),
+               Const(price_world),
+               Const(params),
+               Const(clean.industry),
+               Const(clean.constants))
+
 @testset "Market Clearing" begin
 
-    tol = 1e-2
     @test isapprox(F[1][1:15], df.pdYBar[1:15], atol = tol)
     @test isapprox(F[2][1:15], df.EFd[1:15], atol = tol)
     @test isapprox(F[3][1:15], df.EX1d[1:15], atol = tol)
     @test isapprox(F[4][1:15], df.EX2d[1:15], atol = tol)
     @test isapprox(F[5][1:15], df.EId[1:15], atol = tol)
     @test isapprox(F[6][1:15], df.EMd[1:15], atol = tol)
-
-    Jac = jacobian(set_runtime_activity(ForwardWithPrimal),
-                   Supergrassi.market_clearing_price,
-                   price_uk,
-                   operating_cost,
-                   household_expenditure,
-                   Const(price_eu),
-                   Const(price_world),
-                   Const(params),
-                   Const(clean.industry),
-                   Const(clean.constants))
     
-    # F = Jac.val
-    # ∂F_∂Pd = Jac.derivs[1]
-    # ∂F_∂zOC = Jac.derivs[2]
-    # ∂F_∂E = Jac.derivs[3]
-
-    # @test length(F) == nrow(df)
-    # @test ndims(∂F_∂Pd) == 2
-    # @test ndims(∂F_∂zOC) == 2
-    # @test ndims(∂F_∂E) == 1
+    @test length(Jac.val) == nrow(df)
+    @test ndims(Jac.derivs[1]) == 2
+    @test ndims(Jac.derivs[2]) == 2
+    @test ndims(Jac.derivs[3]) == 1
     
-    @show F
-
 end
