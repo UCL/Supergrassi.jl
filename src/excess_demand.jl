@@ -125,8 +125,6 @@ function market_clearing_price(price_uk::Vector{T}, operating_cost::Vector{T}, h
     EF_uk = expenditure_by_region(params.consumption.uk, params.consumption.eu, params.consumption.world,
                                   price_uk, price_eu, price_world, logEf, elasticity.consumption)
 
-    #return logP.consumption, logPBar.consumption, logEf, EF_uk
-    
     # Exports from eu
 
     eu_spending = export_spending(elasticity.export_eu.substitution_uk_other, params.export_eu.tilde, logPBar.export_eu,
@@ -136,7 +134,6 @@ function market_clearing_price(price_uk::Vector{T}, operating_cost::Vector{T}, h
     EX1_uk = expenditure_by_region(params.export_eu.uk, params.export_eu.eu, params.export_eu.world,
                                    price_uk, price_eu, price_world, logEX1, elasticity.export_eu)
 
-    return logP.export_eu, logPBar.export_eu, logEX1, EX1_uk
     # Exports from rest of world
 
     world_spending = export_spending(elasticity.export_world.substitution_uk_other, params.export_world.tilde,
