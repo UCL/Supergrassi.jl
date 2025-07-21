@@ -1,72 +1,50 @@
 using Supergrassi
 
-"""
-    intermediate_goods_price_index(log_price_uk::Vector{T}, zOC::Vector{T}, tau::Vector{T}, mu::Vector{T}, gammaK::Vector{T}, K0::Vector{T}, xi::T) where {T <: Real}
-
-Computes the intermediate goods price index for multiple industries, Step 1 of ExcessDemand.m.
-
-# Arguments
-- `log_price_uk::Vector{T}`: Logarithm of UK prices
-- `zOC::Vector{T}`: Operating cost parameters
-- `tau::Vector{T}`: Ad Valorem tax rates
-- `mu::Vector{T}`: Productivity shock means
-- `gammaK::Vector{T}`: Capital input parameters
-- `K0::Vector{T}`: Current year capital values
-- `xi::T`: Production substitution elasticity
-"""
-function intermediate_goods_price_index(log_price_uk::Vector{T}, zOC::Vector{T}, tau::Vector{T}, mu::Vector{T},
-                                        gammaK::Vector{T}, K0::Vector{T}, xi::T) where {T <: Real}
-
-    pdYBar = Vector{T}(undef, length(log_price_uk))
-    for i in 1:length(log_price_uk)
-        pdYBar[i] = intermediate_goods_price_index(log_price_uk[i], zOC[i], tau[i], mu[i], gammaK[i], K0[i], xi)
-    end
-    return pdYBar
-
-    # return [intermediate_goods_price_index(log_price_uk[i], zOC[i], tau[i], mu[i], gammaK[i], K0[i], xi) for i in eachindex(log_price_uk, zOC, tau, mu, gammaK, K0)]
-
-end
-
-"""
-    intermediate_goods_price_index(log_price_uk::T, zOC::T, tau::T, mu::T, gammaK::T, K0::T, xi::T) where {T <: Real}
-
-Computes the intermediate goods price index for a single industry, Step 1 of ExcessDemand.m.
-
-# Arguments
-- `log_price_uk::T`: Logarithm of UK price
-- `zOC::T`: Operating cost parameter
-- `tau::T`: Ad Valorem tax rate
-- `mu::T`: Productivity shock mean
-- `gammaK::T`: Capital input parameter
-- `K0::T`: Current year capital value
-- `xi::T`: Production substitution elasticity
-"""
-function intermediate_goods_price_index(log_price_uk::T, zOC::T, tau::T, mu::T, gammaK::T, K0::T, xi::T) where {T <: Real}
-
-    return ( (1 - tau) * exp(log_price_uk) * mu * K0 * gammaK ^ (1 / (xi - 1) )
-             * (1 - (exp(zOC) ) / ( 1 + exp(zOC) ) ) ^ (xi / (1 - xi) ) / (1 - tau) )
-
-end
-
 # Below three functions calculate equations 4.1, 4.3 and 4.4 of main paper that describe the equilibrium
 # Equation 4.2 is the log_total_price_index in utility_function_paramerers.jl
 
+"""
+    function market_clearing_price(x::Vector{T}, price_eu::Vector{T}, price_world::Vector{T},
+                                   params::Parameters, data::IndustryData, constants::Constants) where {T <: Real}
+
+Calculate the market clearing price, equation 4.1.
+
+Uses a single vector `x` of equilibrium variables as input. Returns a single vector `F` as output.
+Note that the prices are NOT on log scale.
 
 """
-    function market_clearing_price(prices::DataFrame, operating_cost::Vector{T}, household_expenditure::T,
-                               elasticities::Elasticities, params::Parameters, data::IndustryData) where {T <: Real}
+function market_clearing_price(x::Vector{T}, price_eu::Vector{T}, price_world::Vector{T},
+                               params::Parameters, data::IndustryData, constants::Constants) where {T <: Real}
+
+    F_terms = market_clearing_price(x[1:n], x[n+1:2*n], x[2*n+1], price_eu, price_world, params, data, constants)
+    return sum(F_terms)
+    
+end
+"""
+    function market_clearing_price(price_uk::Vector{T}, operating_cost::Vector{T}, household_expenditure::T,
+                                   price_eu::Vector{T}, price_world::Vector{T},
+                                   elasticities::Elasticities, params::Parameters, data::IndustryData) where {T <: Real}
 
 
 Calculate the market clearing price, equation 4.1.
 
+Equilibrium variables `price_uk`, `operating_cost`, `household_expenditure` are independent arguments. Note
+that the prices are NOT on log scale.
+
 # Arguments
 
-- `prices::DataFrame` : prices for uk, eu, rest of world (pd, peu, pw)
+- `price_uk::Vector{Real}` : prices for uk (pd)
 - `operating_cost::Vector{Real}` : (zOC)
 - `household_expenditure::Real` : (E)
+- `price_eu::Vector{Real}` : prices for eu (peu)
+- `price_world::Vector{Real}` : prices for rest of world (pw)
 - `elasticities::Elasticities`
 - `params::Parameters`
 - `data::IndustryData`
+
+# Outputs
+
+- Terms of the price index F as a tuple of Vectors
 """
 function market_clearing_price(price_uk::Vector{T}, operating_cost::Vector{T}, household_expenditure::T,
                                price_eu::Vector{T}, price_world::Vector{T},
@@ -147,6 +125,8 @@ function market_clearing_price(price_uk::Vector{T}, operating_cost::Vector{T}, h
     EF_uk = expenditure_by_region(params.consumption.uk, params.consumption.eu, params.consumption.world,
                                   price_uk, price_eu, price_world, logEf, elasticity.consumption)
 
+    #return logP.consumption, logPBar.consumption, logEf, EF_uk
+    
     # Exports from eu
 
     eu_spending = export_spending(elasticity.export_eu.substitution_uk_other, params.export_eu.tilde, logPBar.export_eu,
@@ -155,6 +135,8 @@ function market_clearing_price(price_uk::Vector{T}, operating_cost::Vector{T}, h
                              logP.export_eu, logPBar.export_eu)
     EX1_uk = expenditure_by_region(params.export_eu.uk, params.export_eu.eu, params.export_eu.world,
                                    price_uk, price_eu, price_world, logEX1, elasticity.export_eu)
+
+    return logP.export_eu, logPBar.export_eu, logEX1, EX1_uk
     # Exports from rest of world
 
     world_spending = export_spending(elasticity.export_world.substitution_uk_other, params.export_world.tilde,
@@ -377,6 +359,54 @@ function export_spending(elasticity::T, tilde_param::Vector{T}, logPXBar::T, exc
     logPXTilde = log(exchange_rate) .+ logPXBar
     logEXTilde = first(tilde_param) .+ log(ETilde) .+ (1 - elasticity) .* (logPXTilde .- log(PTilde))
     return logEXTilde
+
+end
+
+"""
+    intermediate_goods_price_index(log_price_uk::Vector{T}, zOC::Vector{T}, tau::Vector{T}, mu::Vector{T}, gammaK::Vector{T}, K0::Vector{T}, xi::T) where {T <: Real}
+
+Computes the intermediate goods price index for multiple industries, Step 1 of ExcessDemand.m.
+
+# Arguments
+- `log_price_uk::Vector{T}`: Logarithm of UK prices
+- `zOC::Vector{T}`: Operating cost parameters
+- `tau::Vector{T}`: Ad Valorem tax rates
+- `mu::Vector{T}`: Productivity shock means
+- `gammaK::Vector{T}`: Capital input parameters
+- `K0::Vector{T}`: Current year capital values
+- `xi::T`: Production substitution elasticity
+"""
+function intermediate_goods_price_index(log_price_uk::Vector{T}, zOC::Vector{T}, tau::Vector{T}, mu::Vector{T},
+                                        gammaK::Vector{T}, K0::Vector{T}, xi::T) where {T <: Real}
+
+    pdYBar = Vector{T}(undef, length(log_price_uk))
+    for i in 1:length(log_price_uk)
+        pdYBar[i] = intermediate_goods_price_index(log_price_uk[i], zOC[i], tau[i], mu[i], gammaK[i], K0[i], xi)
+    end
+    return pdYBar
+
+    # return [intermediate_goods_price_index(log_price_uk[i], zOC[i], tau[i], mu[i], gammaK[i], K0[i], xi) for i in eachindex(log_price_uk, zOC, tau, mu, gammaK, K0)]
+
+end
+
+"""
+    intermediate_goods_price_index(log_price_uk::T, zOC::T, tau::T, mu::T, gammaK::T, K0::T, xi::T) where {T <: Real}
+
+Computes the intermediate goods price index for a single industry, Step 1 of ExcessDemand.m.
+
+# Arguments
+- `log_price_uk::T`: Logarithm of UK price
+- `zOC::T`: Operating cost parameter
+- `tau::T`: Ad Valorem tax rate
+- `mu::T`: Productivity shock mean
+- `gammaK::T`: Capital input parameter
+- `K0::T`: Current year capital value
+- `xi::T`: Production substitution elasticity
+"""
+function intermediate_goods_price_index(log_price_uk::T, zOC::T, tau::T, mu::T, gammaK::T, K0::T, xi::T) where {T <: Real}
+
+    return ( (1 - tau) * exp(log_price_uk) * mu * K0 * gammaK ^ (1 / (xi - 1) )
+             * (1 - (exp(zOC) ) / ( 1 + exp(zOC) ) ) ^ (xi / (1 - xi) ) / (1 - tau) )
 
 end
 

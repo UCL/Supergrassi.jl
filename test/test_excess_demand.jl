@@ -17,6 +17,7 @@ if (!@isdefined clean)
 end
 
 df = CSV.read(joinpath(@__DIR__,"..","data", "excess_demand_terms.csv"), DataFrame)
+log_prices = DataFrame([df.logP_uk, df.logP_eu, df.logP_w], ["uk", "eu", "world"])
 price_uk = exp.(df.logP_uk)
 price_eu = exp.(df.logP_eu)
 price_world = exp.(df.logP_w)
@@ -25,7 +26,8 @@ params, ∂params = Supergrassi.compute_all_parameters(clean, log_prices)
 #log_params, ∂log_params = Supergrassi.compute_all_parameters(clean, prices, Supergrassi.log_parameters_by_region)
 
 operating_cost = df.zOC
-household_expenditure = 7.2742 # Copied from matlab code to avoid numerical issues
+# Copied from matlab code to validate results
+household_expenditure = 7.27421398152353670952
 
 logPf = Supergrassi.log_price_index(params.consumption.uk, params.consumption.eu, params.consumption.world,
                                     price_uk, price_eu, price_world,
@@ -56,13 +58,12 @@ F = Supergrassi.market_clearing_price(price_uk, operating_cost, household_expend
     #                Const(clean.industry),
     #                Const(clean.constants))
 
-    tol = 1e-2
-    @test isapprox(F[1][1:15], terms.pdYBar[1:15], atol = tol)
-    @test isapprox(F[2][1:15], terms.EFd[1:15], atol = tol)
-    @test isapprox(F[3][1:15], terms.EX1d[1:15], atol = tol)
-    @test isapprox(F[4][1:15], terms.EX2d[1:15], atol = tol)
-    @test isapprox(F[5][1:15], terms.EId[1:15], atol = tol)
-    @test isapprox(F[6][1:15], terms.EMd[1:15], atol = tol)
+    @test isapprox(F[1][1:15], df.pdYBar[1:15], atol = tol)
+    @test isapprox(F[2][1:15], df.EFd[1:15], atol = tol)
+    @test isapprox(F[3][1:15], df.EX1d[1:15], atol = tol)
+    @test isapprox(F[4][1:15], df.EX2d[1:15], atol = tol)
+    @test isapprox(F[5][1:15], df.EId[1:15], atol = tol)
+    @test isapprox(F[6][1:15], df.EMd[1:15], atol = tol)
     
     # F = Jac.val
     # ∂F_∂Pd = Jac.derivs[1]
