@@ -18,7 +18,7 @@ function market_clearing_price(x::Vector{T}, price_eu::Vector{T}, price_world::V
 
     F_terms = market_clearing_price(x[1:n], x[n+1:2*n], x[2*n+1], price_eu, price_world, params, data, constants)
     return sum(F_terms)
-    
+
 end
 """
     function market_clearing_price(price_uk::Vector{T}, operating_cost::Vector{T}, household_expenditure::T,
@@ -122,29 +122,23 @@ function market_clearing_price(price_uk::Vector{T}, operating_cost::Vector{T}, h
 
     logEf = log_expenditure(params.consumption.agg, log(household_expenditure), elasticity.consumption.substitution,
                             logP.consumption, logPBar.consumption)
-    EF_uk = expenditure_by_region(params.consumption.uk, params.consumption.eu, params.consumption.world,
-                                  price_uk, price_eu, price_world, logEf, elasticity.consumption)
+    EF_uk = expenditure_by_region(params.consumption.uk, price_uk, logEf, logP.consumption, elasticity.consumption)
 
-    #return logP.consumption, logPBar.consumption, logEf, EF_uk
-    
     # Exports from eu
 
     eu_spending = export_spending(elasticity.export_eu.substitution_uk_other, params.export_eu.tilde, logPBar.export_eu,
                                   constants.exchange_rates.eur, E1tilde, Ptilde)
     logEX1 = log_expenditure(params.export_eu.agg, eu_spending, elasticity.export_eu.substitution,
                              logP.export_eu, logPBar.export_eu)
-    EX1_uk = expenditure_by_region(params.export_eu.uk, params.export_eu.eu, params.export_eu.world,
-                                   price_uk, price_eu, price_world, logEX1, elasticity.export_eu)
+    EX1_uk = expenditure_by_region(params.export_eu.uk, price_uk, logEX1, logP.export_eu, elasticity.export_eu)
 
-    return logP.export_eu, logPBar.export_eu, logEX1, EX1_uk
     # Exports from rest of world
 
     world_spending = export_spending(elasticity.export_world.substitution_uk_other, params.export_world.tilde,
                                      logPBar.export_world, constants.exchange_rates.usd, E2tilde, Ptilde)
     logEX2 = log_expenditure(params.export_world.agg, world_spending, elasticity.export_world.substitution,
                              logP.export_world, logPBar.export_world)
-    EX2_uk = expenditure_by_region(params.export_world.uk, params.export_world.eu, params.export_world.world,
-                                   price_uk, price_eu, price_world, logEX2, elasticity.export_world)
+    EX2_uk = expenditure_by_region(params.export_world.uk, price_uk, logEX2, logP.export_world, elasticity.export_world)
 
     # Investment
 
@@ -152,12 +146,11 @@ function market_clearing_price(price_uk::Vector{T}, operating_cost::Vector{T}, h
     muI = compute_muI(data, elasticity.investment)
     logEI = log_expenditure(params.investment.agg, logPBar.investment .+ log(new_capital_supply ./ muI),
                             elasticity.investment.substitution, logP.investment, logPBar.investment)
-    EI_uk = expenditure_by_region(params.investment.uk, params.investment.eu, params.investment.world,
-                                  price_uk, price_eu, price_world, logEI, elasticity.investment)
+    EI_uk = expenditure_by_region(params.investment.uk, price_uk, logEI, logP.investment, elasticity.investment)
 
-    E = (household_expenditure, eu_spending, world_spending, logPBar.investment .+ log(new_capital_supply ./ muI))
+    # E = (household_expenditure, eu_spending, world_spending, logPBar.investment .+ log(new_capital_supply ./ muI))
     # TODO: Call log_expenditure and expenditure_by_region in a loop over E and keys
-    
+
     # Production intermediates
 
     EM_uk = zeros(n)
@@ -175,16 +168,14 @@ function market_clearing_price(price_uk::Vector{T}, operating_cost::Vector{T}, h
                         + log(data.capital.current_year[i])
                         )
         pdYBar[i] = exp(logTauPdYBar - log(1 - tau[i]))
-        
+
         logPM = log_price_index(params.production.uk[i,:], params.production.eu[i,:],
                                 params.production.world[i,:],
                                 price_uk, price_eu, price_world, elasticity.production.armington)
 
         logEM = log_expenditure(params.production.agg[i,:], logTauPdYBar, elasticity.production.substitution,
                                 logPM, logTauPdMu)
-        EM_uk += expenditure_by_region(params.production.uk[i,:], params.production.eu[i,:],
-                                       params.production.world[i,:],
-                                       price_uk, price_eu, price_world, logEM, elasticity.production)
+        EM_uk += expenditure_by_region(params.production.uk[i,:], price_uk, logEM, logPM, elasticity.production)
     end
 
     return pdYBar, EF_uk, EX1_uk, EX2_uk, EI_uk, EM_uk
@@ -282,49 +273,29 @@ end
 
 # EF (logEF, E)
 """
-    function expenditure_by_region(param::ParamsStruct, elasticity::Elasticity, prices::DataFrame, expenditure::Vector{T}, region::Symbol=:uk) where {T<:Real}
+    function expenditure_by_region(param::Vector{T}, price::Vector{T}, log_expenditure::Vector{T}, log_price_index::Vector{T}, elasticity::Elasticity) where {T <: Real}
 
 Compute expenditure for region `region`. Called [EF, EX1, EX2, EI, EM] in Matlab code.
 
 # Arguments
-- `param::ParamsStruct` : parameter with components [uk, eu, world]. One of [α, β1, β2, ρ], see [`ParamsStruct`](@ref)
-- `elasticity::Elasticity` : elasticity struct corresponding to parameter. Must contain substitution and armington.
-- `prices::DataFrame` : prices for uk, eu, rest of world
-- `expenditure::Vector{T}` : expenditure by commodity, see [`log_expenditure`](@ref)
+- `param::Vector{T}` : parameter for region. One of [α, β1, β2, ρ, γ]
+- `price::Vector{T}` : prices for region.
+- `log_expenditure::Vector{T}` : expenditure by commodity, see [`log_expenditure`](@ref)
+- `log_price_index::Vector{T}` : aggregate price index. See [`log_price_index`](@ref)
+- `elasticity::Elasticity` : elasticity struct corresponding to parameter. Must contain armington. See [`Elasticity`](@ref)
 """
-#function expenditure_by_region(param::ParamsStruct, elasticity::Elasticity, prices::DataFrame, log_expenditure::Vector{T}, region::Symbol) where {T<:Real}
-function expenditure_by_region(param_uk::Vector{T}, param_eu::Vector{T}, param_world::Vector{T}, price_uk::Vector{T}, price_eu::Vector{T}, price_world::Vector{T}, log_expenditure::Vector{T}, elasticity::Elasticity) where {T<:Real}
+function expenditure_by_region(param::Vector{T}, price::Vector{T}, log_expenditure::Vector{T}, log_price_index::Vector{T}, elasticity::Elasticity) where {T <: Real}
 
-    n = length(price_uk)
+    n = length(price)
     EF = Vector{T}(undef, n)
 
-    logP = log_price_index(param_uk, param_eu, param_world, price_uk, price_eu, price_world, elasticity.armington)
-
     for i = 1:n
-        EF[i] = param_uk[i] * exp(log_expenditure[i] + (1.0 - elasticity.armington) * (log(price_uk[i]) - logP[i]))
+        EF[i] = param[i] * exp(log_expenditure[i] + (1.0 - elasticity.armington) * (log(price[i]) - log_price_index[i]))
     end
 
     return EF
 
 end
-
-# EF (logEF, E)
-function expenditure_by_region(param::ParamsProduction, row::Int, elasticity::Elasticity, prices::DataFrame, log_expenditure::Vector{T}, region::Symbol=:uk) where {T<:Real}
-
-    n = nrow(prices)
-    EF = Vector{T}(undef, n)
-
-    logP = log_price_index(param, row, prices, elasticity.substitution)
-
-    fieldname = Symbol("input_", region)
-    for i = 1:n
-        EF[i] = getfield(param, fieldname)[row,i] * exp(log_expenditure[i] .+ (1.0 .- elasticity.armington) .* (prices[i,region] - logP[i]))
-    end
-
-    return EF
-
-end
-
 
 # LogEF (logPf, logPBar)
 function log_expenditure(param_agg::Vector{T}, expenditure::T, elasticity::T, logPf::Vector{T}, logPBar::T) where {T <: Real}
