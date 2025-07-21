@@ -417,7 +417,7 @@ Dummy function for capital market. Returns a number.
 """
 function capital_market()
 
-    KS = 2.0712
+    KS = 2.07115231618926554091
     return KS
 
 end
