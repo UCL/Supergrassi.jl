@@ -29,41 +29,29 @@ operating_cost = df.zOC
 # Copied from matlab code to validate results
 household_expenditure = 7.27421398152353670952
 
-logPf = Supergrassi.log_price_index(params.consumption.uk, params.consumption.eu, params.consumption.world,
-                                    price_uk, price_eu, price_world,
-                                    clean.constants.elasticities.consumption.armington)
-logPBar = Supergrassi.log_agg_price_index(params.consumption.agg,
-                                          logPf,
-                                          clean.constants.elasticities.consumption.substitution)
-logEf = Supergrassi.log_expenditure(params.consumption.agg,
-                                    household_expenditure,
-                                    clean.constants.elasticities.consumption.substitution,
-                                    logPf, logPBar)
-EF = Supergrassi.expenditure_by_region(params.consumption.uk, params.consumption.eu, params.consumption.world,
-                                       price_uk, price_eu, price_world, logEf, clean.constants.elasticities.consumption)    
-
 F = Supergrassi.market_clearing_price(price_uk, operating_cost, household_expenditure,
                                       price_eu, price_world, params, clean.industry, clean.constants)
 
 @testset "Market Clearing" begin
-    
-    # Jac = jacobian(set_runtime_activity(ForwardWithPrimal),
-    #                Supergrassi.market_clearing_price,
-    #                price_uk,
-    #                operating_cost,
-    #                household_expenditure,
-    #                Const(price_eu),
-    #                Const(price_world),
-    #                Const(params),
-    #                Const(clean.industry),
-    #                Const(clean.constants))
 
+    tol = 1e-2
     @test isapprox(F[1][1:15], df.pdYBar[1:15], atol = tol)
     @test isapprox(F[2][1:15], df.EFd[1:15], atol = tol)
     @test isapprox(F[3][1:15], df.EX1d[1:15], atol = tol)
     @test isapprox(F[4][1:15], df.EX2d[1:15], atol = tol)
     @test isapprox(F[5][1:15], df.EId[1:15], atol = tol)
     @test isapprox(F[6][1:15], df.EMd[1:15], atol = tol)
+
+    Jac = jacobian(set_runtime_activity(ForwardWithPrimal),
+                   Supergrassi.market_clearing_price,
+                   price_uk,
+                   operating_cost,
+                   household_expenditure,
+                   Const(price_eu),
+                   Const(price_world),
+                   Const(params),
+                   Const(clean.industry),
+                   Const(clean.constants))
     
     # F = Jac.val
     # ∂F_∂Pd = Jac.derivs[1]
@@ -74,6 +62,7 @@ F = Supergrassi.market_clearing_price(price_uk, operating_cost, household_expend
     # @test ndims(∂F_∂Pd) == 2
     # @test ndims(∂F_∂zOC) == 2
     # @test ndims(∂F_∂E) == 1
+    
     @show F
 
 end
