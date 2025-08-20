@@ -13,8 +13,8 @@ include("parameters.jl")
 include("parameters_interface.jl")
 include("excess_demand.jl")
 
-function simulate()
-    @info "Simulation started."
+function estimate()
+    @info "Estimation started."
 
     path = joinpath(@__DIR__, "..", "config","settings.yml")
     settings_path = create_filepath(path)
@@ -29,11 +29,7 @@ function simulate()
 
     @info "Data cleaned and post-processed."
 
-    df = outerjoin(CSV.read(joinpath(@__DIR__,"..","data", "data_for_household_demand.csv"), DataFrame),
-    CSV.read(joinpath(@__DIR__, "..", "data", "data_for_eu_demand.csv"), DataFrame),
-    CSV.read(joinpath(@__DIR__, "..", "data", "data_for_row_demand.csv"), DataFrame),
-    CSV.read(joinpath(@__DIR__, "..", "data", "data_for_capital_production.csv"), DataFrame),
-    on = [:logP_uk, :logP_eu, :logP_w], makeunique = true)
+    df = CSV.read(joinpath(@__DIR__,"..","data", "data_for_household_demand.csv"), DataFrame)
 
     prices = DataFrame([df.logP_uk, df.logP_eu, df.logP_w], ["uk", "eu", "world"])
 
@@ -44,13 +40,13 @@ function simulate()
 
     @info "Parameters computed."
 
-    @info "Simulation completed."
+    @info "Estimation completed."
 
     return settings, data, clean, params, ∂params, log_params, ∂log_params
 end
 
 export create_filepath, read_data, read_settings, check_file_availability
 export clean_data
-export simulate
+export estimate
 
 end
