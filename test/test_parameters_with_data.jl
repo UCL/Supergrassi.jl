@@ -1,38 +1,14 @@
 using Supergrassi, DataFrames, CSV, Enzyme, Test
 
-tol = 1e-12
-
-path = joinpath(@__DIR__, "..", "config","settings.yml")
-settings_path = create_filepath(path)
-settings = read_settings(settings_path)
-filepaths = check_file_availability(settings)
-data = read_data(filepaths, settings)
-
-df = outerjoin(CSV.read(joinpath(@__DIR__,"..","data", "data_for_household_demand.csv"), DataFrame),
-               CSV.read(joinpath(@__DIR__, "..", "data", "data_for_eu_demand.csv"), DataFrame),
-               CSV.read(joinpath(@__DIR__, "..", "data", "data_for_row_demand.csv"), DataFrame),
-               CSV.read(joinpath(@__DIR__, "..", "data", "data_for_capital_production.csv"), DataFrame),
-               on = [:logP_uk, :logP_eu, :logP_w], makeunique = true)
-
-df1d = CSV.read(joinpath(@__DIR__, "..", "data", "parms_1d.csv"), DataFrame)
-df2d = CSV.read(joinpath(@__DIR__, "..", "data", "parms_2d.csv"), DataFrame)
-
-∂df1d = CSV.read(joinpath(@__DIR__, "..", "data", "dparms_1d.csv"), DataFrame)
-∂df2d = CSV.read(joinpath(@__DIR__, "..", "data", "dparms_2d.csv"), DataFrame)
-
 n = 16
-gammaM_ref = reshape(df2d.gammaM, (n,n))
-gammaMUK_ref = reshape(df2d.gammaMUK, (n,n))
-gammaMEU_ref = reshape(df2d.gammaMEU, (n,n))
-gammaMW_ref = reshape(df2d.gammaMW, (n,n))
 
-prices = DataFrame([df.logP_uk, df.logP_eu, df.logP_w], ["uk", "eu", "world"])
+df1d = CSV.read(joinpath(data_path, "parms_1d.csv"), DataFrame)
+df2d = CSV.read(joinpath(data_path, "parms_2d.csv"), DataFrame)
 
-clean = Supergrassi.clean_data(data,settings)
-Supergrassi.postprocess_clean_data!(clean)
+∂df1d = CSV.read(joinpath(data_path, "dparms_1d.csv"), DataFrame)
+∂df2d = CSV.read(joinpath(data_path, "dparms_2d.csv"), DataFrame)
 
-params, ∂params = Supergrassi.compute_all_parameters(clean, prices, false)
-log_params, ∂log_params = Supergrassi.compute_all_parameters(clean, prices, true)
+_, ∂log_params = Supergrassi.compute_all_parameters(clean, prices, true)
 
 @testset "Parameter values" begin
 
@@ -56,17 +32,17 @@ log_params, ∂log_params = Supergrassi.compute_all_parameters(clean, prices, tr
     @test isapprox(params.investment.world, df1d.rhoW, atol = tol)
     @test isapprox(params.investment.agg, df1d.rho, atol = tol)
 
-    @test isapprox(params.production.input_uk, reshape(df2d.gammaMUK, (n,n)), atol = tol)
-    @test isapprox(params.production.input_eu, reshape(df2d.gammaMEU, (n,n)), atol = tol)
-    @test isapprox(params.production.input_world, reshape(df2d.gammaMW, (n,n)), atol = tol)
-    @test isapprox(params.production.input_agg, reshape(df2d.gammaM, (n,n)), atol = tol)
-    @test isapprox(params.production.input_human, df1d.gammaH, atol = tol)
-    @test isapprox(params.production.input_capital, df1d.gammaK, atol = tol)
+    @test isapprox(params.production.uk, reshape(df2d.gammaMUK, (n,n)), atol = tol)
+    @test isapprox(params.production.eu, reshape(df2d.gammaMEU, (n,n)), atol = tol)
+    @test isapprox(params.production.world, reshape(df2d.gammaMW, (n,n)), atol = tol)
+    @test isapprox(params.production.agg, reshape(df2d.gammaM, (n,n)), atol = tol)
+    @test isapprox(params.production.human, df1d.gammaH, atol = tol)
+    @test isapprox(params.production.capital, df1d.gammaK, atol = tol)
 
     @test isapprox(params.production.shock_mean, df1d.mu, atol = tol)
 
-    @test isapprox(params.production.input_low_skill, df1d.gammaHL, atol = tol)
-    @test isapprox(params.production.input_high_skill, df1d.gammaHH, atol = tol)
+    @test isapprox(params.production.low_skill, df1d.gammaHL, atol = tol)
+    @test isapprox(params.production.high_skill, df1d.gammaHH, atol = tol)
     
 end
 
@@ -88,8 +64,8 @@ end
     @test isapprox(∂log_params.investment.eu, ∂df1d.logRhoEU, atol = tol)
     @test isapprox(∂log_params.investment.world, ∂df1d.logRhoW, atol = tol)
 
-    @test isapprox(∂log_params.production.input_human, reshape(∂df2d.logGammaH, (n,n)), atol = tol)
-    @test isapprox(∂log_params.production.input_capital, reshape(∂df2d.logGammaK, (n,n)), atol = tol)
+    @test isapprox(∂log_params.production.human, reshape(∂df2d.logGammaH, (n,n)), atol = tol)
+    @test isapprox(∂log_params.production.capital, reshape(∂df2d.logGammaK, (n,n)), atol = tol)
     @test isapprox(∂log_params.production.shock_mean, reshape(∂df2d.logMu, (n,n)), atol = tol)
     
 end

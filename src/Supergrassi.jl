@@ -12,6 +12,7 @@ include("cleanup.jl")
 include("parameters.jl")
 include("parameters_interface.jl")
 include("excess_demand.jl")
+include("objective_function.jl")
 
 function estimate()
     @info "Estimation started."
@@ -48,5 +49,7 @@ end
 export create_filepath, read_data, read_settings, check_file_availability
 export clean_data
 export estimate
+
+export compute_objective_function
 
 end
