@@ -266,17 +266,17 @@ Names reference
 """
 struct ParamsProduction
 
-    input_human::Array{Float64}
-    input_capital::Array{Float64}
-    input_low_skill::Vector{Float64}
-    input_high_skill::Vector{Float64}
+    human::Array{Float64}
+    capital::Array{Float64}
+    low_skill::Vector{Float64}
+    high_skill::Vector{Float64}
     shock_mean::Array{Float64}
     shock_stddev::Array{Float64}
 
-    input_uk::Matrix{Float64}
-    input_eu::Matrix{Float64}
-    input_world::Matrix{Float64}
-    input_agg::Array{Float64}
+    uk::Matrix{Float64}
+    eu::Matrix{Float64}
+    world::Matrix{Float64}
+    agg::Array{Float64}
 
 end
 
@@ -306,6 +306,9 @@ Contains
 - `export_world::ParamsStruct` : `β2`
 - `production::ParamsProduction` : `γ`
 - `investment::ParamsStruct` : `ρ`
+
+
+Note: The constructor checks that all reasonable parameters are non-negative unless `log` or `derivatives` is set to true.
 """
 struct Parameters
 
@@ -316,5 +319,63 @@ struct Parameters
     export_world::ParamsStruct
     production::ParamsProduction
     investment::ParamsStruct
+    log::Bool
+    derivatives::Bool
+
+    function Parameters(
+        constants::ParameterConstants,
+        consumption::ParamsStruct,
+        export_eu::ParamsStruct,
+        export_world::ParamsStruct,
+        production::ParamsProduction,
+        investment::ParamsStruct,
+        log::Bool,
+        derivatives::Bool
+    )
+
+
+    if !log && !derivatives
+
+        to_check = [
+            consumption,
+            export_eu,
+            export_world,
+            production,
+            investment
+        ]
+
+        for param in to_check
+
+            for field in [:uk, :eu, :world, :agg, :tilde, :shock_stdev]
+
+                if hasproperty(param, field)
+
+                    val = getfield(param, field)
+
+                    if isnothing(val)
+                        continue
+                    end
+
+                    if any(x -> x < 0, val)
+                        throw(ArgumentError("Parameter $field must be non-negative, but got: $val"))
+                    end
+                end
+            end
+        end
+
+    end
+
+
+    return new(
+        constants,
+        consumption,
+        export_eu,
+        export_world,
+        production,
+        investment,
+        log,
+        derivatives
+    )
+    end
 
 end
