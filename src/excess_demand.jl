@@ -260,17 +260,16 @@ function log_agg_price_index(param_agg::Vector{T}, log_price_index::Vector{T}, e
 
 end
 
-# EF (logEF, E)
 """
     function expenditure_by_region(param::Vector{T}, price::Vector{T}, log_expenditure::Vector{T}, log_price_index::Vector{T}, elasticity::Elasticity) where {T <: Real}
 
-Compute expenditure for region `region`. Called [EF, EX1, EX2, EI, EM] in Matlab code.
+Compute expenditure for region. Called [EF, EX1, EX2, EI, EM] in Matlab code.
 
 # Arguments
 - `param::Vector{T}` : parameter for region. One of [α, β1, β2, ρ, γ]
 - `price::Vector{T}` : prices for region.
 - `log_expenditure::Vector{T}` : expenditure by commodity, see [`log_expenditure`](@ref)
-- `log_price_index::Vector{T}` : aggregate price index. See [`log_price_index`](@ref)
+- `log_price_index::Vector{T}` : price index. See [`log_price_index`](@ref)
 - `elasticity::Elasticity` : elasticity struct corresponding to parameter. Must contain armington. See [`Elasticity`](@ref)
 """
 function expenditure_by_region(param::Vector{T}, price::Vector{T}, log_expenditure::Vector{T}, log_price_index::Vector{T}, elasticity::Elasticity) where {T <: Real}
@@ -286,14 +285,26 @@ function expenditure_by_region(param::Vector{T}, price::Vector{T}, log_expenditu
 
 end
 
-# LogEF (logPf, logPBar)
-function log_expenditure(param_agg::Vector{T}, expenditure::T, elasticity::T, logPf::Vector{T}, logPBar::T) where {T <: Real}
+"""
+    function log_expenditure(param_agg::Vector{T}, expenditure::T, elasticity::T, logPf::Vector{T}, logPBar::T) where {T <: Real}
+
+Compute aggregate expenditure by commodity. Called [LogEF, LogEX1, LogEX2, LogEI, LogEM] in Matlab code.
+
+# Arguments
+
+- `param_agg::Vector{T}` : aggregate parameter. One of [α, β1, β2, ρ, γ]
+- `elasticity::Elasticity` : elasticity struct corresponding to parameter. Must contain armington. See [`Elasticity`](@ref)
+- `expenditure::T` : expenditure
+- `log_price_index::Vector{T}` : price index. See [`log_price_index`](@ref)
+- `log_agg_price_index::Vector{T}` : aggregate price index. See [`log_agg_price_index`](@ref)
+"""
+function log_expenditure(param_agg::Vector{T}, expenditure::T, elasticity::T, log_price_index::Vector{T}, log_agg_price_index::T) where {T <: Real}
 
     n = length(param_agg)
     logE = Vector{T}(undef, n)
 
     for i in 1:n
-        logE[i] = log(param_agg[i]) + expenditure + (1.0 - elasticity) * (logPf[i] - logPBar)
+        logE[i] = log(param_agg[i]) + expenditure + (1.0 - elasticity) * (price[i] - logPBar)
     end
 
     return logE
