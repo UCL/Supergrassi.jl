@@ -304,7 +304,7 @@ function log_expenditure(param_agg::Vector{T}, expenditure::T, elasticity::T, lo
     logE = Vector{T}(undef, n)
 
     for i in 1:n
-        logE[i] = log(param_agg[i]) + expenditure + (1.0 - elasticity) * (price[i] - logPBar)
+        logE[i] = log(param_agg[i]) + expenditure + (1.0 - elasticity) * (log_price_index[i] - log_agg_price_index)
     end
 
     return logE
