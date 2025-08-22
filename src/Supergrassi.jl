@@ -12,7 +12,7 @@ include("cleanup.jl")
 include("parameters.jl")
 include("parameters_interface.jl")
 include("excess_demand.jl")
-include("capital_market.jl")
+#include("capital_market.jl")
 include("objective_function.jl")
 
 function estimate()
