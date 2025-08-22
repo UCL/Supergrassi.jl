@@ -29,8 +29,8 @@ operating_cost = df.zOC
 # Copied from matlab code to validate results
 household_expenditure = 7.27421398152353670952
 
-F = Supergrassi.market_clearing_price(price_uk, operating_cost, household_expenditure,
-                                      price_eu, price_world, params, clean.industry, clean.constants)
+F = Supergrassi.market_clearing_price_constraint(price_uk, operating_cost, household_expenditure,
+                                                 price_eu, price_world, params, clean.industry, clean.constants)
 
 @testset "Market Clearing" begin
 
@@ -45,7 +45,7 @@ end
 
 
 Jac = jacobian(set_runtime_activity(ForwardWithPrimal),
-               Supergrassi.market_clearing_price,
+               Supergrassi.market_clearing_price_constraint,
                price_uk, operating_cost, household_expenditure,
                Const(price_eu),
                Const(price_world),

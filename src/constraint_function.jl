@@ -6,25 +6,70 @@
 - `data::CleanData`: Cleaned data structure containing industry and regional information.
 - `params::Parameters`: Parameters structure containing production and constants.
 """
-function compute_constraint_function(x::Vector{<:Number}, data::CleanData, params::Parameters)
+function compute_constraint_function(x::Vector{<:Number}, data::CleanData, params::Parameters, prices::DataFrame)
 
-    return
-    
+    n = length(data.industry.regional.total_use.agg)
+
+    log_price_uk, zOC, expenditure, log_TFP, log_Delta = unpack_x(n, x)
+
+    price_eu = exp.(prices.eu)
+    price_world = exp.(prices.world)
+
+    params, ∂params = compute_all_parameters(data, prices)
+
+    Jac = jacobian(set_runtime_activity(ForwardWithPrimal),
+                   constraint_wrapper,
+                   x,
+                   Const(price_eu),
+                   Const(price_world),
+                   Const(params),
+                   Const(data.industry),
+                   Const(data.constants))
+
+    CEQ = Jac.val
+    DCEQ = first(Jac.derivs)
+
+    return CEQ, DCEQ
+
 end
 
-"""
-    function compute_constraint_function(log_price_uk::Vector{<:Number}, mu_I::Vector{<:Number}, log_Delta::Vector{<:Number}, data::CleanData, params::Parameters)
 
-# Arguments
-- `log_price_uk::Vector{<:Number}`: Logarithm of UK prices.
-- `log_mu_I::Vector{<:Number}`: logarithm of investment TFP.
-- `log_Delta::Vector{<:Number}`: logarithm of depreciation parameter
-- `data::CleanData`: Cleaned data structure containing industry and regional information.
-- `params::Parameters`: Parameters structure containing production and constants.
+function constraint_wrapper(x::Vector{T}, price_eu::Vector{T}, price_world::Vector{T},
+                            params::Parameters, data::IndustryData, constants::Constants) where {T <: Real}
 
-"""
-function compute_constraint_function(log_price_uk::Vector{<:Number}, mu_I::Vector{<:Number}, log_Delta::Vector{<:Number}, data::CleanData, params::Parameters)
+    F_terms = market_clearing_price_constraint(x, price_eu, price_world, params, data, constants)
+    CFC = compute_fixed_capital_consumption_constraint(x, data, params)
+    return [sum(F_terms); CFC]
 
-    return
-    
+end
+
+function compute_fixed_capital_consumption_constraint(x, data, params)
+
+    log_price_uk, zOC, expenditure, log_TFP, log_Delta = unpack_x(n, x)
+
+    fixed_capital_consumption = data.industry.depreciation.val .* data.industry.capital.current_year
+
+    # The two constants k0 and q0 are used in the Matlab code but as far as I can tell are never assigned
+    # a value other than 1.0. I've kept them here for consistency.
+    k0 = 1.0
+    q0 = 1.0
+    λ = params.constants.loss_given_default
+    KL = rand(n) # TODO: KL will be computed by capital_market()
+
+    return fixed_capital_consumption - k0*q0*exp.(log_Delta) - q0 * λ / (1 - λ) .* KL
+
+end
+
+function unpack_x(n::Int, x::Vector{<:Number})
+
+    length(x) == 3 * n + 2 || error("x must have $(3*n + 2) elements, found $(length(x))")
+
+    log_price_uk = x[1:n]
+    zOC = x[n+1:2*n]
+    expenditure = x[2*n+1]
+    log_TFP = x[2*n+2]
+    log_Delta = x[2*n+3:3*n+2]
+
+    return log_price_uk, zOC, expenditure, log_TFP, log_Delta
+
 end

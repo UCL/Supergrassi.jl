@@ -14,6 +14,7 @@ include("parameters_interface.jl")
 include("excess_demand.jl")
 #include("capital_market.jl")
 include("objective_function.jl")
+include("constraint_function.jl")
 
 function estimate()
     @info "Estimation started."

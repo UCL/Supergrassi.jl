@@ -7,7 +7,7 @@ using Supergrassi
     function market_clearing_price(x::Vector{T}, price_eu::Vector{T}, price_world::Vector{T},
                                    params::Parameters, data::IndustryData, constants::Constants) where {T <: Real}
 
-Calculate the market clearing price, equation 4.1.
+Calculate the market clearing price constraint, equation 4.1.
 
 Uses a single vector `x` of equilibrium variables as input. Returns a single vector `F` as output.
 Note that the prices are NOT on log scale.
@@ -15,14 +15,16 @@ Note that the prices are NOT on log scale.
 TODO: There is an error when this function is called through Enzyme
 
 """
-function market_clearing_price(x::Vector{T}, price_eu::Vector{T}, price_world::Vector{T},
-                               params::Parameters, data::IndustryData, constants::Constants) where {T <: Real}
+function market_clearing_price_constraint(x::Vector{T}, price_eu::Vector{T}, price_world::Vector{T},
+                                          params::Parameters, data::IndustryData, constants::Constants) where {T <: Real}
 
-    length(x) == 2 * length(price_eu) + 1 || error("x must have 2n + 1 elements")
-    F_terms = market_clearing_price(x[1:n], x[n+1:2*n], x[2*n+1], price_eu, price_world, params, data, constants)
+    n = length(price_eu)
+    log_price_uk, zOC, expenditure, log_TFP, log_Delta = unpack_x(n, x)
+    F_terms = market_clearing_price(log_price_uk, zOC, expenditure, price_eu, price_world, params, data, constants)
     return sum(F_terms)
 
 end
+
 """
     function market_clearing_price(price_uk::Vector{T}, operating_cost::Vector{T}, household_expenditure::T,
                                    price_eu::Vector{T}, price_world::Vector{T},
@@ -49,9 +51,9 @@ that the prices are NOT on log scale.
 
 - Terms of the price index F as a tuple of Vectors
 """
-function market_clearing_price(price_uk::Vector{T}, operating_cost::Vector{T}, household_expenditure::T,
-                               price_eu::Vector{T}, price_world::Vector{T},
-                               params::Parameters, data::IndustryData, constants::Constants) where {T <: Real}
+function market_clearing_price_constraint(price_uk::Vector{T}, operating_cost::Vector{T}, household_expenditure::T,
+                                          price_eu::Vector{T}, price_world::Vector{T},
+                                          params::Parameters, data::IndustryData, constants::Constants) where {T <: Real}
 
     # Needs:
 
