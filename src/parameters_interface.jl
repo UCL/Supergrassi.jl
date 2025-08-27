@@ -20,7 +20,7 @@ See the tests in [test_parameters_with_data.jl](https://github.com/UCL/Supergras
 
 See also [`compute_parameter`](@ref), [`compute_foreign_share`](@ref), [`compute_production_parameter`](@ref), [`Parameters`](@ref)
 """
-function compute_all_parameters(data::CleanData, prices::DataFrame, log_scale::Bool = false)
+function compute_all_parameters(data::CleanData, prices_uk::Vector{<:Number}, prices_eu::Vector{<:Number}, prices_world::Vector{<:Number}, log_scale::Bool = false)
 
     reg = data.industry.regional
     constants = data.constants
@@ -30,16 +30,16 @@ function compute_all_parameters(data::CleanData, prices::DataFrame, log_scale::B
     imports_uk_share_world = constants.total_imports_from_uk.world / (constants.total_imports_from_all_sources.world
                                                                       / constants.exchange_rates.usd )
 
-    α, ∂α = compute_parameter(reg.consumption, constants.elasticities.consumption, prices, log_scale)
-    β1, ∂β1 = compute_parameter(reg.export_eu, constants.elasticities.eu_export_demand, prices, log_scale)
-    β1, ∂β1 = compute_foreign_share(β1, ∂β1, reg.export_eu, constants.elasticities.eu_export_demand, prices,
+    α, ∂α = compute_parameter(reg.consumption, constants.elasticities.consumption, prices_uk, prices_eu, prices_world, log_scale)
+    β1, ∂β1 = compute_parameter(reg.export_eu, constants.elasticities.eu_export_demand, prices_uk, prices_eu, prices_world, log_scale)
+    β1, ∂β1 = compute_foreign_share(β1, ∂β1, reg.export_eu, constants.elasticities.eu_export_demand, prices_uk, prices_eu, prices_world,
                            imports_uk_share_eu, reg.totals.imports.eu, 1.0, constants.exchange_rates.eur)
-    β2, ∂β2 = compute_parameter(reg.export_world, constants.elasticities.world_export_demand, prices, log_scale)
-    β2, ∂β2 = compute_foreign_share(β2, ∂β2, reg.export_world, constants.elasticities.world_export_demand, prices,
+    β2, ∂β2 = compute_parameter(reg.export_world, constants.elasticities.world_export_demand, prices_uk, prices_eu, prices_world, log_scale)
+    β2, ∂β2 = compute_foreign_share(β2, ∂β2, reg.export_world, constants.elasticities.world_export_demand, prices_uk, prices_eu, prices_world,
                            imports_uk_share_world, reg.totals.imports.world, 1.0, constants.exchange_rates.usd)
-    ρ, ∂ρ = compute_parameter(reg.investment, constants.elasticities.investment, prices, log_scale)
+    ρ, ∂ρ = compute_parameter(reg.investment, constants.elasticities.investment, prices_uk, prices_eu, prices_world, log_scale)
 
-    γ, ∂γ = compute_production_parameter(data, prices, log_scale)
+    γ, ∂γ = compute_production_parameter(data, prices_uk, prices_eu, prices_world, log_scale)
 
     loss_given_default = 0.12 # TODO: This should be in constants
 
@@ -64,7 +64,7 @@ Compute 1d utility function parameters and their derivatives from a regional dem
 - `prices::DataFrame`: Logarithm of price index equilibrium variable. Disagregated by region.
 - `fun::Function = parameters_by_region`: Function that computes three parameters by region. Either [`parameters_by_region`](@ref) or [`log_parameters_by_region`](@ref)
 """
-function compute_parameter(demand::DataFrame, elasticity::Elasticity, prices::DataFrame, log_scale::Bool)
+function compute_parameter(demand::DataFrame, elasticity::Elasticity, prices_uk::Vector{<:Number}, prices_eu::Vector{<:Number}, prices_world::Vector{<:Number}, log_scale::Bool)
 
     n = nrow(demand)
     v0 = Vector{Float64}(undef, n)
@@ -80,9 +80,9 @@ function compute_parameter(demand::DataFrame, elasticity::Elasticity, prices::Da
         param_regional = gradient(ForwardWithPrimal,
                                   fun,
                                   Const(elasticity.armington),
-                                  prices.uk[row],
-                                  Const(prices.eu[row]),
-                                  Const(prices.world[row]),
+                                  prices_uk[row],
+                                  Const(prices_eu[row]),
+                                  Const(prices_world[row]),
                                   Const(demand.uk[row]),
                                   Const(demand.eu[row]),
                                   Const(demand.world[row]))
@@ -98,7 +98,7 @@ function compute_parameter(demand::DataFrame, elasticity::Elasticity, prices::Da
     end
 
     logPf = log_price_index.(elasticity.armington,
-                             prices.uk, prices.eu, prices.world,
+                             prices_uk, prices_eu, prices_world,
                              demand.uk, demand.eu, demand.world)
     param = jacobian(ForwardWithPrimal, total_parameters, logPf,
                      Const(demand.agg), Const(elasticity.substitution))
@@ -136,9 +136,9 @@ been split into a different function from [`compute_parameter`](@ref).
 - `PTilde::Real`: The foreign price index.
 - `exchange_rate::Real`: The exchange rate between domestic and foreign currency.
 """
-function compute_foreign_share(param::ParamsStruct, dparam::ParamsStruct, demand::DataFrame, elasticity::Elasticity, prices::DataFrame, E::T, Ex::T, PTilde::T, exchange_rate::T) where {T<:Real}
+function compute_foreign_share(param::ParamsStruct, dparam::ParamsStruct, demand::DataFrame, elasticity::Elasticity, prices_uk::Vector{<:Number}, prices_eu::Vector{<:Number}, prices_world::Vector{<:Number}, E::T, Ex::T, PTilde::T, exchange_rate::T) where {T<:Real}
 
-    logPf = Supergrassi.log_price_index.(elasticity.armington, prices.uk, prices.eu, prices.world,
+    logPf = Supergrassi.log_price_index.(elasticity.armington, prices_uk, prices_eu, prices_world,
                                          demand.uk, demand.eu, demand.world)
 
     tilde = gradient(ForwardWithPrimal,
@@ -170,7 +170,7 @@ Compute the 2d utility function parameters γM, γH, γK from regional InputMatr
 - `fun::Function=parameters_by_region`: Function that computes three parameters by region. Either [`parameters_by_region`](@ref) or [`log_parameters_by_region`](@ref)
 
 """
-function compute_production_parameter(data::CleanData, prices::DataFrame, log_scale::Bool)
+function compute_production_parameter(data::CleanData, prices_uk::Vector{<:Number}, prices_eu::Vector{<:Number}, prices_world::Vector{<:Number}, log_scale::Bool)
 
     n = size(data.industry.regional.input_matrices.agg, 1)
     v0 = Vector{Float64}(undef, n)
@@ -199,9 +199,9 @@ function compute_production_parameter(data::CleanData, prices::DataFrame, log_sc
             param_regional = gradient(ForwardWithPrimal,
                                       fun,
                                       Const(data.constants.elasticities.production.armington),
-                                      prices.uk[col],
-                                      Const(prices.eu[col]),
-                                      Const(prices.world[col]),
+                                      prices_uk[col],
+                                      Const(prices_eu[col]),
+                                      Const(prices_world[col]),
                                       Const(data.industry.regional.input_matrices.uk[row, col]),
                                       Const(data.industry.regional.input_matrices.eu[row, col]),
                                       Const(data.industry.regional.input_matrices.world[row, col]))
@@ -218,9 +218,9 @@ function compute_production_parameter(data::CleanData, prices::DataFrame, log_sc
 
         jacM = jacobian(ForwardWithPrimal,
                         total_input_parameters,
-                        prices.uk,
-                        Const(prices.eu),
-                        Const(prices.world),
+                        prices_uk,
+                        Const(prices_eu),
+                        Const(prices_world),
                         Const(data.industry.regional.input_matrices.uk[row,:]),
                         Const(data.industry.regional.input_matrices.eu[row,:]),
                         Const(data.industry.regional.input_matrices.world[row,:]),
@@ -239,9 +239,9 @@ function compute_production_parameter(data::CleanData, prices::DataFrame, log_sc
 
         jacH = jacobian(ForwardWithPrimal,
                         total_labor_parameters,
-                        prices.uk,
-                        Const(prices.eu),
-                        Const(prices.world),
+                        prices_uk,
+                        Const(prices_eu),
+                        Const(prices_world),
                         Const(data.industry.regional.input_matrices.uk[row,:]),
                         Const(data.industry.regional.input_matrices.eu[row,:]),
                         Const(data.industry.regional.input_matrices.world[row,:]),
@@ -260,9 +260,9 @@ function compute_production_parameter(data::CleanData, prices::DataFrame, log_sc
 
         jacK = jacobian(ForwardWithPrimal,
                         total_capital_parameters,
-                        prices.uk,
-                        Const(prices.eu),
-                        Const(prices.world),
+                        prices_uk,
+                        Const(prices_eu),
+                        Const(prices_world),
                         Const(data.industry.regional.input_matrices.uk[row,:]),
                         Const(data.industry.regional.input_matrices.eu[row,:]),
                         Const(data.industry.regional.input_matrices.world[row,:]),
@@ -282,9 +282,9 @@ function compute_production_parameter(data::CleanData, prices::DataFrame, log_sc
         mu = jacobian(ForwardWithPrimal,
                       productivity_shock_mean,
                       Const(data.constants.elasticities.production),
-                      prices.uk,
-                      Const(prices.eu),
-                      Const(prices.world),
+                      prices_uk,
+                      Const(prices_eu),
+                      Const(prices_world),
                       Const(data.industry.regional.input_matrices.uk[row,:]),
                       Const(data.industry.regional.input_matrices.eu[row,:]),
                       Const(data.industry.regional.input_matrices.world[row,:]),

@@ -3,9 +3,9 @@ using Ipopt
 using Enzyme
 
 
-function compute_gradient(x::Vector{<:Number}, clean_data::CleanData, prices_df::DataFrame)
+function compute_gradient(x::Vector{<:Number}, clean_data::CleanData)
 
-    grad = gradient(ForwardWithPrimal, compute_objective_function, x, Const(clean_data), Const(prices_df))
+    grad = gradient(ForwardWithPrimal, compute_objective_function, x, Const(clean_data))
 
     return grad
 

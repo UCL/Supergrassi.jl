@@ -32,29 +32,33 @@ function estimate()
 
     @info "Data cleaned and post-processed."
 
-    df = CSV.read(joinpath(@__DIR__,"..","data", "data_for_household_demand.csv"), DataFrame)
+    df = CSV.read(joinpath(@__DIR__, "..", "data", "data_for_household_demand.csv"), DataFrame)
 
-    log_prices = DataFrame([df.logP_uk, df.logP_eu, df.logP_w], ["uk", "eu", "world"])
+    # log_prices = DataFrame([df.logP_eu, df.logP_w], ["eu", "world"])
+
+    log_prices_uk = df.logP_uk
+    log_prices_eu = df.logP_eu
+    log_prices_world = df.logP_w
 
     @info "Prices extracted from data."
 
-    params, ∂params = Supergrassi.compute_all_parameters(clean, log_prices, false)
-    log_params, ∂log_params = Supergrassi.compute_all_parameters(clean, log_prices, true)
+    params, ∂params = Supergrassi.compute_all_parameters(clean, log_prices_uk, log_prices_eu, log_prices_world, false)
+    log_params, ∂log_params = Supergrassi.compute_all_parameters(clean, log_prices_uk, log_prices_eu, log_prices_world, true)
 
     @info "Parameters computed."
 
-    x = [log_prices.uk; clean.industry.surplus.val; clean.industry.regional.totals.savings]
+    x = deepcopy([log_prices_uk; clean.industry.surplus.val; clean.industry.regional.totals.savings])
     println("Starting minimisation with x: ", x)
 
 
-    gradient = compute_gradient(x, clean, log_prices)
+    gradient = compute_gradient(x, clean)
 
-    println(gradient)
+    # println(gradient)
 
 
-    @info "Estimation completed."
+    # @info "Estimation completed."
 
-    return
+    # return
     # return settings, data, clean, params, ∂params, log_params, ∂log_params
 end
 
