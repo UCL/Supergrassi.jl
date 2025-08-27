@@ -9,7 +9,7 @@ Compute all utility function parameters and their derivativesfrom regional data,
 
 For description of the parameters, see Table 2  of Nesheim et al (in prep). Return two [`Parameters`](@ref) structs,
 the first one contains values of parameters α, β1, β2, ρ and γ, the second one contains their derivatives with
-respect to `prices.uk`.
+respect to `price_uk`.
 
 See the tests in [test_parameters_with_data.jl](https://github.com/UCL/Supergrassi.jl/blob/main/test/test_parameters_with_data.jl) for an example of use.
 
@@ -20,7 +20,7 @@ See the tests in [test_parameters_with_data.jl](https://github.com/UCL/Supergras
 
 See also [`compute_parameter`](@ref), [`compute_foreign_share`](@ref), [`compute_production_parameter`](@ref), [`Parameters`](@ref)
 """
-function compute_all_parameters(data::CleanData, prices::DataFrame, log_scale::Bool = false)
+function compute_all_parameters(data::CleanData, price_uk::Vector{T}, price_eu::Vector{T}, price_world::Vector{T}, log_scale::Bool = false) where {T <: Real}
 
     reg = data.industry.regional
     constants = data.constants
@@ -30,83 +30,64 @@ function compute_all_parameters(data::CleanData, prices::DataFrame, log_scale::B
     imports_uk_share_world = constants.total_imports_from_uk.world / (constants.total_imports_from_all_sources.world
                                                                       / constants.exchange_rates.usd )
 
-    α, ∂α = compute_parameter(reg.consumption, constants.elasticities.consumption, prices, log_scale)
-    β1, ∂β1 = compute_parameter(reg.export_eu, constants.elasticities.eu_export_demand, prices, log_scale)
-    β1, ∂β1 = compute_foreign_share(β1, ∂β1, reg.export_eu, constants.elasticities.eu_export_demand, prices,
-                           imports_uk_share_eu, reg.totals.imports.eu, 1.0, constants.exchange_rates.eur)
-    β2, ∂β2 = compute_parameter(reg.export_world, constants.elasticities.world_export_demand, prices, log_scale)
-    β2, ∂β2 = compute_foreign_share(β2, ∂β2, reg.export_world, constants.elasticities.world_export_demand, prices,
+    α = compute_parameter(reg.consumption, constants.elasticities.consumption, price_uk, price_eu, price_world, log_scale)
+    β1 = compute_parameter(reg.export_eu, constants.elasticities.eu_export_demand, price_uk, price_eu, price_world, log_scale)
+    β1 = compute_foreign_share(β1, reg.export_eu, constants.elasticities.eu_export_demand, price_uk, price_eu, price_world,
+                      imports_uk_share_eu, reg.totals.imports.eu, 1.0, constants.exchange_rates.eur)
+    β2 = compute_parameter(reg.export_world, constants.elasticities.world_export_demand, price_uk, price_eu, price_world, log_scale)
+    β2 = compute_foreign_share(β2, reg.export_world, constants.elasticities.world_export_demand, price_uk, price_eu, price_world,
                            imports_uk_share_world, reg.totals.imports.world, 1.0, constants.exchange_rates.usd)
-    ρ, ∂ρ = compute_parameter(reg.investment, constants.elasticities.investment, prices, log_scale)
+    ρ = compute_parameter(reg.investment, constants.elasticities.investment, price_uk, price_eu, price_world, log_scale)
 
-    γ, ∂γ = compute_production_parameter(data, prices, log_scale)
+    γ = compute_production_parameter(data, price_uk, price_eu, price_world, log_scale)
 
     loss_given_default = 0.12 # TODO: This should be in constants
 
     consts = ParameterConstants(constants.elasticities, loss_given_default, constants.interest_rate)
 
     vals = Parameters(consts, α, β1, β2, γ, ρ, log_scale, false)
-    derivs = Parameters(consts, ∂α, ∂β1, ∂β2, ∂γ, ∂ρ, log_scale, true)
 
-
-    return vals, derivs
+    return vals
 
 end
 
 """
-    function compute_parameter(demand::DataFrame, elasticity::Elasticity, prices::DataFrame, fun::Function = parameters_by_region)
+    function compute_parameter(demand::DataFrame, elasticity::Elasticity, price_uk::Vector{T}, price_eu::Vector{T}, price_world::Vector{T}, fun::Function = parameters_by_region)
 
 Compute 1d utility function parameters and their derivatives from a regional demand DataFrame and the corresponding elasticity.
 
 # Arguments
 - `demand::DataFrame`: Demand data disaggregated by region
 - `elasticity::Elasticity`: Values for elasticity of substitution
-- `prices::DataFrame`: Logarithm of price index equilibrium variable. Disagregated by region.
+- `price_uk::Vector{T}, price_eu::Vector{T}, price_world::Vector{T}`: Logarithm of price index equilibrium variable. Disagregated by region.
 - `fun::Function = parameters_by_region`: Function that computes three parameters by region. Either [`parameters_by_region`](@ref) or [`log_parameters_by_region`](@ref)
 """
-function compute_parameter(demand::DataFrame, elasticity::Elasticity, prices::DataFrame, log_scale::Bool)
+function compute_parameter(demand::DataFrame, elasticity::Elasticity, price_uk::Vector{T}, price_eu::Vector{T}, price_world::Vector{T}, log_scale::Bool) where {T <: Real}
 
     n = nrow(demand)
     v0 = Vector{Float64}(undef, n)
     m0 = Matrix{Float64}(undef, n, n)
 
     val = ParamsStruct(similar(v0), similar(v0), similar(v0), similar(v0), nothing)
-    grad = ParamsStruct(similar(v0), similar(v0), similar(v0), similar(m0), nothing)
 
     fun = log_scale ? log_parameters_by_region : parameters_by_region
 
     for row in 1:n
 
-        param_regional = gradient(ForwardWithPrimal,
-                                  fun,
-                                  Const(elasticity.armington),
-                                  prices.uk[row],
-                                  Const(prices.eu[row]),
-                                  Const(prices.world[row]),
-                                  Const(demand.uk[row]),
-                                  Const(demand.eu[row]),
-                                  Const(demand.world[row]))
+        param_regional = fun(elasticity.armington, price_uk[row], price_eu[row], price_world[row], demand.uk[row], demand.eu[row], demand.world[row])
 
-        val.uk[row] = param_regional.val[1]
-        val.eu[row] = param_regional.val[2]
-        val.world[row] = param_regional.val[3]
-
-        grad.uk[row] = param_regional.derivs[2][1]
-        grad.eu[row] = param_regional.derivs[2][2]
-        grad.world[row] = param_regional.derivs[2][3]
+        val.uk[row] = param_regional[1]
+        val.eu[row] = param_regional[2]
+        val.world[row] = param_regional[3]
 
     end
 
     logPf = log_price_index.(elasticity.armington,
-                             prices.uk, prices.eu, prices.world,
+                             price_uk, price_eu, price_world,
                              demand.uk, demand.eu, demand.world)
-    param = jacobian(ForwardWithPrimal, total_parameters, logPf,
-                     Const(demand.agg), Const(elasticity.substitution))
+    val.agg .= total_parameters(logPf, demand.agg, elasticity.substitution)
 
-    val.agg .= param.val
-    grad.agg .= first(param.derivs)
-
-    return val, grad
+    return val
 
 end
 
@@ -116,7 +97,7 @@ using Accessors
 
 """
     compute_foreign_share(param::ParamsStruct, dparam::ParamsStruct, demand::DataFrame,
-                          elasticity::Elasticity, prices::DataFrame, E::T, Ex::T,
+                          elasticity::Elasticity, price_uk::Vector{T}, price_eu::Vector{T}, price_world::Vector{T}, E::T, Ex::T,
                           PTilde::T, exchange_rate::T) where {T<:Real}
 
 Compute the share of foreign expenditure on UK exports, β̃  in the paper by Nesheim et al.
@@ -130,60 +111,46 @@ been split into a different function from [`compute_parameter`](@ref).
 - `dparam::ParamsStruct`: Derivatives of parameters.
 - `demand::DataFrame`: Demand data disaggregated by region.
 - `elasticity::Elasticity`: Values for elasticity of substitution
-- `prices::DataFrame`: Logarithm of price index equilibrium variable. Disagregated by region.
+- `price_uk::Vector{T}, price_eu::Vector{T}, price_world::Vector{T}`: Logarithm of price index equilibrium variable. Disagregated by region.
 - `E::Real`: Household expenditure
 - `Ex::Real`: Foreign expenditure on UK exports
 - `PTilde::Real`: The foreign price index.
 - `exchange_rate::Real`: The exchange rate between domestic and foreign currency.
 """
-function compute_foreign_share(param::ParamsStruct, dparam::ParamsStruct, demand::DataFrame, elasticity::Elasticity, prices::DataFrame, E::T, Ex::T, PTilde::T, exchange_rate::T) where {T<:Real}
+function compute_foreign_share(param::ParamsStruct, demand::DataFrame, elasticity::Elasticity, price_uk::Vector{T}, price_eu::Vector{T}, price_world::Vector{T}, E::T, Ex::T, PTilde::T, exchange_rate::T) where {T<:Real}
 
-    logPf = Supergrassi.log_price_index.(elasticity.armington, prices.uk, prices.eu, prices.world,
+    logPf = Supergrassi.log_price_index.(elasticity.armington,
+                                         price_uk, price_eu, price_world,
                                          demand.uk, demand.eu, demand.world)
 
-    tilde = gradient(ForwardWithPrimal,
-                     log_eu_expenditure_on_uk_exports,
-                     logPf,
-                     Const(demand.agg),
-                     Const(Ex),
-                     Const(Ex / E),
-                     Const(exchange_rate),
-                     Const(PTilde),
-                     Const(elasticity.substitution),
-                     Const(elasticity.substitution_uk_other))
+    tilde = log_eu_expenditure_on_uk_exports(logPf, demand.agg, Ex, Ex / E, exchange_rate, PTilde, elasticity.substitution, elasticity.substitution_uk_other)
+    
+    @reset param.tilde = [tilde]
 
-    @reset param.tilde = [tilde.val]
-    @reset dparam.tilde = Vector(first(tilde.derivs))
-
-    return param, dparam
+    return param
 
 end
 
 """
-    function compute_production_parameter(data::CleanData, prices::DataFrame, fun::Function = parameters_by_region)
+    function compute_production_parameter(data::CleanData, price_uk::Vector{T}, price_eu::Vector{T}, price_world::Vector{T}, fun::Function = parameters_by_region)
 
 Compute the 2d utility function parameters γM, γH, γK from regional InputMatrices and the corresponding elasticity.
 
 # Arguments
 - `data::CleanData`: Data structure created by [`clean_data`](@ref)
-- `prices::DataFrame`: Logarithm of price index equilibrium variable. Has three components (uk, eu, world)
+- `price_uk::Vector{T}, price_eu::Vector{T}, price_world::Vector{T}`: Logarithm of price index equilibrium variable. Has three components (uk, eu, world)
 - `fun::Function=parameters_by_region`: Function that computes three parameters by region. Either [`parameters_by_region`](@ref) or [`log_parameters_by_region`](@ref)
 
 """
-function compute_production_parameter(data::CleanData, prices::DataFrame, log_scale::Bool)
+function compute_production_parameter(data::CleanData, price_uk::Vector{T}, price_eu::Vector{T}, price_world::Vector{T}, log_scale::Bool) where {T <: Real}
 
     n = size(data.industry.regional.input_matrices.agg, 1)
     v0 = Vector{Float64}(undef, n)
     m0 = Matrix{Float64}(undef, n, n)
-    t0 = Array{Float64}(undef, n, n, n)
 
     val = ParamsProduction(similar(v0), similar(v0), similar(v0), similar(v0),
                            similar(v0), data.industry.shock_stdev.val,
                            similar(m0), similar(m0), similar(m0), similar(m0))
-    grad = ParamsProduction(similar(m0), similar(m0), similar(v0), similar(v0),
-                            similar(m0), similar(v0),
-                            similar(m0), similar(m0), similar(m0), similar(t0))
-
 
     logW = compute_wage_index(data.household, data.constants.elasticities.production)
     tau = compute_advalorem_tax(data.industry)
@@ -196,114 +163,96 @@ function compute_production_parameter(data::CleanData, prices::DataFrame, log_sc
     for row in 1:n
         for col in 1:n
 
-            param_regional = gradient(ForwardWithPrimal,
-                                      fun,
-                                      Const(data.constants.elasticities.production.armington),
-                                      prices.uk[col],
-                                      Const(prices.eu[col]),
-                                      Const(prices.world[col]),
-                                      Const(data.industry.regional.input_matrices.uk[row, col]),
-                                      Const(data.industry.regional.input_matrices.eu[row, col]),
-                                      Const(data.industry.regional.input_matrices.world[row, col]))
-
-            val.uk[row, col] = param_regional.val[1]
-            val.eu[row, col] = param_regional.val[2]
-            val.world[row, col] = param_regional.val[3]
-
-            grad.uk[row, col] = param_regional.derivs[2][1]
-            grad.eu[row, col] = param_regional.derivs[2][2]
-            grad.world[row, col] = param_regional.derivs[2][3]
-
+            param_regional = fun(data.constants.elasticities.production.armington,
+                                 price_uk[col],
+                                 price_eu[col],
+                                 price_world[col],
+                                 data.industry.regional.input_matrices.uk[row, col],
+                                 data.industry.regional.input_matrices.eu[row, col],
+                                 data.industry.regional.input_matrices.world[row, col])
+            
+            val.uk[row, col] = param_regional[1]
+            val.eu[row, col] = param_regional[2]
+            val.world[row, col] = param_regional[3]
+            
         end
 
-        jacM = jacobian(ForwardWithPrimal,
-                        total_input_parameters,
-                        prices.uk,
-                        Const(prices.eu),
-                        Const(prices.world),
-                        Const(data.industry.regional.input_matrices.uk[row,:]),
-                        Const(data.industry.regional.input_matrices.eu[row,:]),
-                        Const(data.industry.regional.input_matrices.world[row,:]),
-                        Const(data.industry.regional.input_matrices.agg[row,:]),
-                        Const(data.industry.surplus.val[row]),
-                        Const(data.industry.capital.current_year[row]),
-                        Const(data.industry.regional.total_use.agg[row]),
-                        Const(data.household.payments.agg[row]),
-                        Const(logW[row]),
-                        Const(data.constants.elasticities.production),
-                        Const(tau[row]),
-                        Const(log_scale))
+        jacM = total_input_parameters(price_uk,
+                                      price_eu,
+                                      price_world,
+                                      data.industry.regional.input_matrices.uk[row,:],
+                                      data.industry.regional.input_matrices.eu[row,:],
+                                      data.industry.regional.input_matrices.world[row,:],
+                                      data.industry.regional.input_matrices.agg[row,:],
+                                      data.industry.surplus.val[row],
+                                      data.industry.capital.current_year[row],
+                                      data.industry.regional.total_use.agg[row],
+                                      data.household.payments.agg[row],
+                                      logW[row],
+                                      data.constants.elasticities.production,
+                                      tau[row],
+                                      log_scale)
 
-        val.agg[row, :] = jacM.val
-        grad.agg[row,:,:] .= first(jacM.derivs)
+        val.agg[row, :] .= jacM
 
-        jacH = jacobian(ForwardWithPrimal,
-                        total_labor_parameters,
-                        prices.uk,
-                        Const(prices.eu),
-                        Const(prices.world),
-                        Const(data.industry.regional.input_matrices.uk[row,:]),
-                        Const(data.industry.regional.input_matrices.eu[row,:]),
-                        Const(data.industry.regional.input_matrices.world[row,:]),
-                        Const(data.industry.regional.input_matrices.agg[row,:]),
-                        Const(data.industry.surplus.val[row]),
-                        Const(data.industry.capital.current_year[row]),
-                        Const(data.industry.regional.total_use.agg[row]),
-                        Const(data.household.payments.agg[row]),
-                        Const(logW[row]),
-                        Const(data.constants.elasticities.production),
-                        Const(tau[row]),
-                        Const(log_scale))
+        jacH = total_labor_parameters(price_uk,
+                                      price_eu,
+                                      price_world,
+                                      data.industry.regional.input_matrices.uk[row,:],
+                                      data.industry.regional.input_matrices.eu[row,:],
+                                      data.industry.regional.input_matrices.world[row,:],
+                                      data.industry.regional.input_matrices.agg[row,:],
+                                      data.industry.surplus.val[row],
+                                      data.industry.capital.current_year[row],
+                                      data.industry.regional.total_use.agg[row],
+                                      data.household.payments.agg[row],
+                                      logW[row],
+                                      data.constants.elasticities.production,
+                                      tau[row],
+                                      log_scale)
 
-        val.human[row] = jacH.val
-        grad.human[row,:] .= first(jacH.derivs)
+        val.human[row] = jacH
 
-        jacK = jacobian(ForwardWithPrimal,
-                        total_capital_parameters,
-                        prices.uk,
-                        Const(prices.eu),
-                        Const(prices.world),
-                        Const(data.industry.regional.input_matrices.uk[row,:]),
-                        Const(data.industry.regional.input_matrices.eu[row,:]),
-                        Const(data.industry.regional.input_matrices.world[row,:]),
-                        Const(data.industry.regional.input_matrices.agg[row,:]),
-                        Const(data.industry.surplus.val[row]),
-                        Const(data.industry.capital.current_year[row]),
-                        Const(data.industry.regional.total_use.agg[row]),
-                        Const(data.household.payments.agg[row]),
-                        Const(logW[row]),
-                        Const(data.constants.elasticities.production),
-                        Const(tau[row]),
-                        Const(log_scale))
+        jacK = total_capital_parameters(price_uk,
+                                        price_eu,
+                                        price_world,
+                                        data.industry.regional.input_matrices.uk[row,:],
+                                        data.industry.regional.input_matrices.eu[row,:],
+                                        data.industry.regional.input_matrices.world[row,:],
+                                        data.industry.regional.input_matrices.agg[row,:],
+                                        data.industry.surplus.val[row],
+                                        data.industry.capital.current_year[row],
+                                        data.industry.regional.total_use.agg[row],
+                                        data.household.payments.agg[row],
+                                        logW[row],
+                                        data.constants.elasticities.production,
+                                        tau[row],
+                                        log_scale)
 
-        val.capital[row] = jacK.val
-        grad.capital[row,:] .= first(jacK.derivs)
+        val.capital[row] = jacK
 
-        mu = jacobian(ForwardWithPrimal,
-                      productivity_shock_mean,
-                      Const(data.constants.elasticities.production),
-                      prices.uk,
-                      Const(prices.eu),
-                      Const(prices.world),
-                      Const(data.industry.regional.input_matrices.uk[row,:]),
-                      Const(data.industry.regional.input_matrices.eu[row,:]),
-                      Const(data.industry.regional.input_matrices.world[row,:]),
-                      Const(data.industry.regional.input_matrices.agg[row,:]),
-                      Const(data.industry.surplus.val[row]),
-                      Const(data.industry.capital.current_year[row]),
-                      Const(data.industry.regional.total_use.agg[row]),
-                      Const(data.household.payments.agg[row]),
-                      Const(logW[row]),
-                      Const(tau[row]),
-                      Const(row),
-                      Const(log_scale))
+        mu = productivity_shock_mean(data.constants.elasticities.production,
+                                     price_uk,
+                                     price_eu,
+                                     price_world,
+                                     data.industry.regional.input_matrices.uk[row,:],
+                                     data.industry.regional.input_matrices.eu[row,:],
+                                     data.industry.regional.input_matrices.world[row,:],
+                                     data.industry.regional.input_matrices.agg[row,:],
+                                     data.industry.surplus.val[row],
+                                     data.industry.capital.current_year[row],
+                                     data.industry.regional.total_use.agg[row],
+                                     data.household.payments.agg[row],
+                                     logW[row],
+                                     tau[row],
+                                     row,
+                                     log_scale)
 
-        val.shock_mean[row] = mu.val
-        grad.shock_mean[row,:] .= mu.derivs[2]
+        val.shock_mean[row] = mu
 
     end
 
-    return val, grad
+    return val
 
 end
 
