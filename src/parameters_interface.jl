@@ -45,9 +45,7 @@ function compute_all_parameters(data::CleanData, price_uk::Vector{T}, price_eu::
 
     consts = ParameterConstants(constants.elasticities, loss_given_default, constants.interest_rate)
 
-    vals = Parameters(consts, α, β1, β2, γ, ρ, log_scale)
-
-    return vals
+    return Parameters(consts, α, β1, β2, γ, ρ, log_scale)
 
 end
 
@@ -124,7 +122,7 @@ function compute_foreign_share(param::ParamsStruct, demand::DataFrame, elasticit
                                          demand.uk, demand.eu, demand.world)
 
     tilde = log_eu_expenditure_on_uk_exports(logPf, demand.agg, Ex, Ex / E, exchange_rate, PTilde, elasticity.substitution, elasticity.substitution_uk_other)
-    
+
     @reset param.tilde = [tilde]
 
     return param
@@ -170,11 +168,11 @@ function compute_production_parameter(data::CleanData, price_uk::Vector{T}, pric
                                  data.industry.regional.input_matrices.uk[row, col],
                                  data.industry.regional.input_matrices.eu[row, col],
                                  data.industry.regional.input_matrices.world[row, col])
-            
+
             val.uk[row, col] = param_regional[1]
             val.eu[row, col] = param_regional[2]
             val.world[row, col] = param_regional[3]
-            
+
         end
 
         jacM = total_input_parameters(price_uk,
