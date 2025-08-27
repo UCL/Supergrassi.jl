@@ -5,7 +5,7 @@ using Enzyme
 
 function compute_gradient(x::Vector{<:Number}, clean_data::CleanData)
 
-    grad = gradient(ForwardWithPrimal, compute_objective_function, x, Const(clean_data))
+    grad = gradient(set_runtime_activity(ForwardWithPrimal), compute_objective_function, x, Const(clean_data))
 
     return grad
 

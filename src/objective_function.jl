@@ -14,8 +14,8 @@ Computes the objective function value based on the log prices and zOC values.
 """
 function compute_objective_function(log_price_uk::Vector{<:Number}, zOC::Vector{<:Number}, data::CleanData)
 
-    # tau = compute_advalorem_tax(data.industry)
-    tau = rand(length(log_price_uk))
+    tau = compute_advalorem_tax(data.industry)
+    # tau = rand(length(log_price_uk))
 
     # mu = params.production.shock_mean
     mu = rand(length(log_price_uk))
@@ -23,22 +23,21 @@ function compute_objective_function(log_price_uk::Vector{<:Number}, zOC::Vector{
     # gammaK = params.production.capital
     gammaK = rand(length(log_price_uk))
 
-
-    # k0 = data.industry.capital.current_year
-    k0 = rand(length(log_price_uk))
+    k0 = data.industry.capital.current_year
+    # k0 = rand(length(log_price_uk))
 
     # xi = params.constants.elasticities.production.substitution
     xi = 0.1
 
     excess_demand = intermediate_goods_price_index(log_price_uk, zOC, tau, mu, gammaK, k0, xi)
 
-    # w = sqrt.(data.industry.regional.total_use.agg)
-    # e = w.*(excess_demand .- data.industry.regional.total_use.agg)
-    # objective_value = 0.5 * sum(e.^2)
+    w = sqrt.(data.industry.regional.total_use.agg)
+    e = w.*(excess_demand .- data.industry.regional.total_use.agg)
+    objective_value = 0.5 * sum(e.^2)
 
-    # return objective_value
+    return objective_value
 
-    return sum(abs.(excess_demand))
+    # return sum(abs.(excess_demand))
 
 end
 
