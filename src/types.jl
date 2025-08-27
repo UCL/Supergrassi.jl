@@ -239,7 +239,7 @@ struct ParamsStruct
     uk::Vector{Float64}
     eu::Vector{Float64}
     world::Vector{Float64}
-    agg::Array{Float64}
+    agg::Vector{Float64}
     tilde::Union{Vector{Float64}, Nothing} # Optional, used for some parameters that have a tilde version
 
 end
@@ -266,17 +266,17 @@ Names reference
 """
 struct ParamsProduction
 
-    human::Array{Float64}
-    capital::Array{Float64}
+    human::Vector{Float64}
+    capital::Vector{Float64}
     low_skill::Vector{Float64}
     high_skill::Vector{Float64}
-    shock_mean::Array{Float64}
-    shock_stddev::Array{Float64}
+    shock_mean::Vector{Float64}
+    shock_stddev::Vector{Float64}
 
     uk::Matrix{Float64}
     eu::Matrix{Float64}
     world::Matrix{Float64}
-    agg::Array{Float64}
+    agg::Matrix{Float64}
 
 end
 
@@ -320,7 +320,6 @@ struct Parameters
     production::ParamsProduction
     investment::ParamsStruct
     log::Bool
-    derivatives::Bool
 
     function Parameters(
         constants::ParameterConstants,
@@ -329,12 +328,11 @@ struct Parameters
         export_world::ParamsStruct,
         production::ParamsProduction,
         investment::ParamsStruct,
-        log::Bool,
-        derivatives::Bool
+        log::Bool
     )
 
 
-    if !log && !derivatives
+    if !log
 
         to_check = [
             consumption,
@@ -373,8 +371,7 @@ struct Parameters
         export_world,
         production,
         investment,
-        log,
-        derivatives
+        log
     )
     end
 
