@@ -51,9 +51,9 @@ function estimate()
     println("Starting minimisation with x: ", x)
 
 
-    gradient = compute_gradient(x, clean)
+    gradient = compute_gradient(x, clean, log_prices_eu, log_prices_world)
 
-    # println(gradient)
+    println(gradient)
 
 
     # @info "Estimation completed."

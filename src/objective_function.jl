@@ -12,22 +12,22 @@ Computes the objective function value based on the log prices and zOC values.
 # Returns
 - `objective_value::Float64`: The computed objective function value.
 """
-function compute_objective_function(log_price_uk::Vector{<:Number}, zOC::Vector{<:Number}, data::CleanData)
+function compute_objective_function(log_price_uk::Vector{<:Number}, zOC::Vector{<:Number}, data::CleanData, params::Parameters)
 
     tau = compute_advalorem_tax(data.industry)
     # tau = rand(length(log_price_uk))
 
-    # mu = params.production.shock_mean
-    mu = rand(length(log_price_uk))
+    mu = params.production.shock_mean
+    # mu = rand(length(log_price_uk))
 
-    # gammaK = params.production.capital
-    gammaK = rand(length(log_price_uk))
+    gammaK = params.production.capital
+    # gammaK = rand(length(log_price_uk))
 
     k0 = data.industry.capital.current_year
     # k0 = rand(length(log_price_uk))
 
-    # xi = params.constants.elasticities.production.substitution
-    xi = 0.1
+    xi = params.constants.elasticities.production.substitution
+    # xi = 0.1
 
     excess_demand = intermediate_goods_price_index(log_price_uk, zOC, tau, mu, gammaK, k0, xi)
 
@@ -54,7 +54,7 @@ Computes the objective function value based on a vector of parameters.
 # Returns
 - `objective_value::Float64`: The computed objective function value.
 """
-function compute_objective_function(x::Vector{<:Number}, data::CleanData)
+function compute_objective_function(x::Vector{<:Number}, data::CleanData, prices_eu::Vector{<:Number}, prices_world::Vector{<:Number})
 
     # n = length(data.industry.regional.total_use.agg)
     n = 16
@@ -62,9 +62,9 @@ function compute_objective_function(x::Vector{<:Number}, data::CleanData)
     log_price_uk = x[1:n]
     zOC = x[(n+1):end]
 
-    # params = compute_all_parameters(log_price_uk, prices_eu, prices_world, false)[1]
+    params = compute_all_parameters(data, log_price_uk, prices_eu, prices_world, false)[1]
 
-    return compute_objective_function(log_price_uk, zOC, data)
+    return compute_objective_function(log_price_uk, zOC, data, params)
 
 end
 
