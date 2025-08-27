@@ -30,11 +30,11 @@ function compute_all_parameters(data::CleanData, price_uk::Vector{T}, price_eu::
     imports_uk_share_eu, imports_uk_share_world = compute_imports_shares(constants)
 
     α = compute_parameter(reg.consumption, constants.elasticities.consumption, price_uk, price_eu, price_world, log_scale)
-    β1 = compute_parameter(reg.export_eu, constants.elasticities.eu_export_demand, price_uk, price_eu, price_world, log_scale)
-    β1 = compute_foreign_share(β1, reg.export_eu, constants.elasticities.eu_export_demand, price_uk, price_eu, price_world,
+    β1 = compute_parameter(reg.export_eu, constants.elasticities.export_eu, price_uk, price_eu, price_world, log_scale)
+    β1 = compute_foreign_share(β1, reg.export_eu, constants.elasticities.export_eu, price_uk, price_eu, price_world,
                       imports_uk_share_eu, reg.totals.imports.eu, 1.0, constants.exchange_rates.eur)
-    β2 = compute_parameter(reg.export_world, constants.elasticities.world_export_demand, price_uk, price_eu, price_world, log_scale)
-    β2 = compute_foreign_share(β2, reg.export_world, constants.elasticities.world_export_demand, price_uk, price_eu, price_world,
+    β2 = compute_parameter(reg.export_world, constants.elasticities.export_world, price_uk, price_eu, price_world, log_scale)
+    β2 = compute_foreign_share(β2, reg.export_world, constants.elasticities.export_world, price_uk, price_eu, price_world,
                            imports_uk_share_world, reg.totals.imports.world, 1.0, constants.exchange_rates.usd)
     ρ = compute_parameter(reg.investment, constants.elasticities.investment, price_uk, price_eu, price_world, log_scale)
 
