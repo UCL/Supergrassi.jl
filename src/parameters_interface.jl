@@ -45,7 +45,7 @@ function compute_all_parameters(data::CleanData, price_uk::Vector{T}, price_eu::
 
     consts = ParameterConstants(constants.elasticities, loss_given_default, constants.interest_rate)
 
-    vals = Parameters(consts, α, β1, β2, γ, ρ, log_scale, false)
+    vals = Parameters(consts, α, β1, β2, γ, ρ, log_scale)
 
     return vals
 
