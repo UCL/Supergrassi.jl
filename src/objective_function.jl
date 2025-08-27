@@ -54,3 +54,12 @@ function compute_objective_function(x::Vector{<:Number}, data::CleanData, params
     return compute_objective_function(log_price_uk, zOC, data, params)
 
 end
+
+
+function compute_objective_function(x::Vector{<:Number}, data::CleanData, prices_df::DataFrame)
+
+    params = compute_all_parameters(data, prices_df)
+
+    return compute_objective_function(x, data, params[1])
+
+end
