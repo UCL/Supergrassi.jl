@@ -39,7 +39,7 @@ function estimate()
     @info "Prices extracted from data."
 
     params = Supergrassi.compute_all_parameters(clean, price_uk, price_eu, price_world, false)
-    log_params = Supergrassi.compute_all_parameters(clean, price_uk, price_eu, price_world, prices, true)
+    log_params = Supergrassi.compute_all_parameters(clean, price_uk, price_eu, price_world, true)
 
     @info "Parameters computed."
 
