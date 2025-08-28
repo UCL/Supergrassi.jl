@@ -26,7 +26,7 @@ price_eu = exp.(df.logP_eu)
 price_world = exp.(df.logP_w)
 
 params = Supergrassi.compute_all_parameters(clean, log_price_uk, log_price_eu, log_price_world)
-#log_params, ∂log_params = Supergrassi.compute_all_parameters(clean, prices, Supergrassi.log_parameters_by_region)
+#log_params = Supergrassi.compute_all_parameters(clean, prices, Supergrassi.log_parameters_by_region)
 
 operating_cost = df.zOC
 # Copied from matlab code to validate results

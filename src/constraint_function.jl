@@ -6,28 +6,29 @@
 - `data::CleanData`: Cleaned data structure containing industry and regional information.
 - `params::Parameters`: Parameters structure containing production and constants.
 """
-function compute_constraint_function(x::Vector{<:Number}, data::CleanData, params::Parameters, prices::DataFrame)
+function compute_constraint_function(x::Vector{<:Number}, log_price_eu::Vector{T}, log_price_world::Vector{T},
+                                     data::CleanData, params::Parameters) where {T <: Real}
 
-    n = length(data.industry.regional.total_use.agg)
+    n = length(log_price_eu)
 
     log_price_uk, zOC, expenditure, log_TFP, log_Delta = unpack_x(n, x)
 
-    price_eu = exp.(prices.eu)
-    price_world = exp.(prices.world)
-
-    params, ∂params = compute_all_parameters(data, prices)
+    params = compute_all_parameters(data, log_price_uk, log_price_eu, log_price_world)
 
     Jac = jacobian(set_runtime_activity(ForwardWithPrimal),
                    constraint_wrapper,
                    x,
-                   Const(price_eu),
-                   Const(price_world),
+                   Const(log_price_eu),
+                   Const(log_price_world),
                    Const(params),
                    Const(data.industry),
                    Const(data.constants))
 
     CEQ = Jac.val
     DCEQ = first(Jac.derivs)
+
+    # CEQ = constraint_wrapper(x, log_price_eu, log_price_world, params, data.industry, data.constants)
+    # DCEQ = zeros(32,50)
 
     return CEQ, DCEQ
 
@@ -37,17 +38,18 @@ end
 function constraint_wrapper(x::Vector{T}, price_eu::Vector{T}, price_world::Vector{T},
                             params::Parameters, data::IndustryData, constants::Constants) where {T <: Real}
 
-    F_terms = market_clearing_price_constraint(x, price_eu, price_world, params, data, constants)
+    F = market_clearing_price_constraint(x, price_eu, price_world, params, data, constants)
     CFC = compute_fixed_capital_consumption_constraint(x, data, params)
-    return [sum(F_terms); CFC]
+    return [F; CFC]
 
 end
 
-function compute_fixed_capital_consumption_constraint(x, data, params)
+function compute_fixed_capital_consumption_constraint(x::Vector{T}, data::IndustryData, params::Parameters) where {T <: Real}
 
+    n = length(data.depreciation.val)
     log_price_uk, zOC, expenditure, log_TFP, log_Delta = unpack_x(n, x)
 
-    fixed_capital_consumption = data.industry.depreciation.val .* data.industry.capital.current_year
+    fixed_capital_consumption = data.depreciation.val .* data.capital.current_year
 
     # The two constants k0 and q0 are used in the Matlab code but as far as I can tell are never assigned
     # a value other than 1.0. I've kept them here for consistency.

@@ -15,12 +15,16 @@ Note that the prices are NOT on log scale.
 TODO: There is an error when this function is called through Enzyme
 
 """
-function market_clearing_price_constraint(x::Vector{T}, price_eu::Vector{T}, price_world::Vector{T},
+function market_clearing_price_constraint(x::Vector{T}, log_price_eu::Vector{T}, log_price_world::Vector{T},
                                           params::Parameters, data::IndustryData, constants::Constants) where {T <: Real}
 
-    n = length(price_eu)
+    n = length(log_price_eu)
     log_price_uk, zOC, expenditure, log_TFP, log_Delta = unpack_x(n, x)
-    F_terms = market_clearing_price(log_price_uk, zOC, expenditure, price_eu, price_world, params, data, constants)
+    price_uk = exp.(log_price_uk)
+    price_eu = exp.(log_price_eu)
+    price_world = exp.(log_price_world)
+    F_terms = market_clearing_price_constraint(price_uk, zOC, expenditure, price_eu, price_world,
+                                               params, data, constants)
     return sum(F_terms)
 
 end
