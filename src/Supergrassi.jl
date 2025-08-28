@@ -42,8 +42,8 @@ function estimate()
 
     @info "Prices extracted from data."
 
-    params, ∂params = Supergrassi.compute_all_parameters(clean, log_prices_uk, log_prices_eu, log_prices_world, false)
-    log_params, ∂log_params = Supergrassi.compute_all_parameters(clean, log_prices_uk, log_prices_eu, log_prices_world, true)
+    params = Supergrassi.compute_all_parameters(clean, log_prices_uk, log_prices_eu, log_prices_world, false)
+    log_params = Supergrassi.compute_all_parameters(clean, log_prices_uk, log_prices_eu, log_prices_world, true)
 
     @info "Parameters computed."
 
@@ -59,7 +59,7 @@ function estimate()
     # @info "Estimation completed."
 
     # return
-    # return settings, data, clean, params, ∂params, log_params, ∂log_params
+    return settings, data, clean, params, log_params
 end
 
 export create_filepath, read_data, read_settings, check_file_availability

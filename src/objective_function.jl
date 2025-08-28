@@ -62,7 +62,7 @@ function compute_objective_function(x::Vector{<:Number}, data::CleanData, prices
     log_price_uk = x[1:n]
     zOC = x[(n+1):end]
 
-    params = compute_all_parameters(data, log_price_uk, prices_eu, prices_world, false)[1]
+    params = compute_all_parameters(data, log_price_uk, prices_eu, prices_world, false)
 
     return compute_objective_function(log_price_uk, zOC, data, params)
 
