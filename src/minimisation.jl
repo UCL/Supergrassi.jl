@@ -1,5 +1,3 @@
-using JuMP
-using Ipopt
 using Enzyme
 
 
