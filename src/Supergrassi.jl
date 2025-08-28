@@ -59,7 +59,7 @@ function estimate()
     # @info "Estimation completed."
 
     # return
-    # return settings, data, clean, params, ∂params, log_params, ∂log_params
+    return settings, data, clean, params, log_params
 end
 
 export create_filepath, read_data, read_settings, check_file_availability
