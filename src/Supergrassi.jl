@@ -53,13 +53,10 @@ function estimate()
 
     gradient = compute_gradient(x, clean, log_prices_eu, log_prices_world)
 
-    println(gradient)
-
-
-    # @info "Estimation completed."
+    @info "Estimation completed."
 
     # return
-    return settings, data, clean, params, log_params
+    return params, gradient
 end
 
 export create_filepath, read_data, read_settings, check_file_availability
