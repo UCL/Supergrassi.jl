@@ -152,9 +152,8 @@ function market_clearing_price_constraint(price_uk::Vector{T}, operating_cost::V
     for i = 1:n
 
         TOCTheta = exp(operating_cost[i]) / (1 + exp(operating_cost[i]))
-        # TOCTheta = 1.0
+
         logTauPdMu = log(1 - tau[i]) + log(price_uk[i]) + log(params.production.shock_mean[i])
-        # logTauPdMu = 1.0
 
         # TODO: This is already computed as part of intermediate_goods_price_index. Refactor and reuse.
         logTauPdYBar = (logTauPdMu
@@ -162,20 +161,14 @@ function market_clearing_price_constraint(price_uk::Vector{T}, operating_cost::V
                         + elasticity.production.substitution / (1 - elasticity.production.substitution) * log(1 - TOCTheta)
                         + log(data.capital.current_year[i])
                         )
-        #        logTauPdYBar = 1.0
 
         logPM = log_price_index(params.production.uk[i,:],
                                 params.production.eu[i,:],
                                 params.production.world[i,:],
                                 price_uk, price_eu, price_world, elasticity.production.armington)
 
-        # logPM = rand(n)
-
-        @show i
         logEM = log_expenditure(params.production.agg[i,:], logTauPdYBar, elasticity.production.substitution,
                                 logPM, logTauPdMu)
-
-        # logEM = rand(n)
 
         EM_uk += expenditure_by_region(params.production.uk[i,:], price_uk, logEM, logPM, elasticity.production)
 
