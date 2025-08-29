@@ -3,7 +3,7 @@ using DataFrames
 using Enzyme
 
 """
-    function compute_all_parameters(data::CleanData, prices::DataFrame, fun::Function = parameters_by_region)
+    function compute_all_parameters(data::CleanData, price_uk::Vector{T}, price_eu::Vector{T}, price_world::Vector{T}, log_scale::Bool = false) where {T <: Real}
 
 Compute all utility function parameters and their derivativesfrom regional data, elasticities and prices.
 
@@ -15,7 +15,9 @@ See the tests in [test_parameters_with_data.jl](https://github.com/UCL/Supergras
 
 # Arguments
 - `data::CleanData`: Data structure created by [`clean_data`](@ref)
-- `prices::DataFrame`: Logarithm of price index equilibrium variable. Has three components (uk, eu, world)
+- `price_uk::Vector{Real}`: Logarithm of uk price index equilibrium variable
+- `price_eu::Vector{Real}`: Logarithm of eu price index
+- `price_world::Vector{Real}`: Logarithm of rest of world price index
 - `fun::Function=parameters_by_region`: Function that computes three parameters by region. Either [`parameters_by_region`](@ref) or [`log_parameters_by_region`](@ref)
 
 See also [`compute_parameter`](@ref), [`compute_foreign_share`](@ref), [`compute_production_parameter`](@ref), [`Parameters`](@ref)
@@ -45,9 +47,7 @@ function compute_all_parameters(data::CleanData, price_uk::Vector{T}, price_eu::
 
     consts = ParameterConstants(constants.elasticities, loss_given_default, constants.interest_rate)
 
-    vals = Parameters(consts, α, β1, β2, γ, ρ, log_scale, false)
-
-    return vals
+    return Parameters(consts, α, β1, β2, γ, ρ, log_scale)
 
 end
 
@@ -59,7 +59,9 @@ Compute 1d utility function parameters and their derivatives from a regional dem
 # Arguments
 - `demand::DataFrame`: Demand data disaggregated by region
 - `elasticity::Elasticity`: Values for elasticity of substitution
-- `price_uk::Vector{T}, price_eu::Vector{T}, price_world::Vector{T}`: Logarithm of price index equilibrium variable. Disagregated by region.
+- `price_uk::Vector{Real}` : Logarithm of uk price index equilibrium variable.
+- `price_eu::Vector{Real}` : Logarithm of eu price index.
+- `price_world::Vector{Real}`: Logarithm of rest of world price index.
 - `fun::Function = parameters_by_region`: Function that computes three parameters by region. Either [`parameters_by_region`](@ref) or [`log_parameters_by_region`](@ref)
 """
 function compute_parameter(demand::DataFrame, elasticity::Elasticity, price_uk::Vector{T}, price_eu::Vector{T}, price_world::Vector{T}, log_scale::Bool) where {T <: Real}
@@ -111,7 +113,9 @@ been split into a different function from [`compute_parameter`](@ref).
 - `dparam::ParamsStruct`: Derivatives of parameters.
 - `demand::DataFrame`: Demand data disaggregated by region.
 - `elasticity::Elasticity`: Values for elasticity of substitution
-- `price_uk::Vector{T}, price_eu::Vector{T}, price_world::Vector{T}`: Logarithm of price index equilibrium variable. Disagregated by region.
+- `price_uk::Vector{Real}` : Logarithm of uk price index equilibrium variable.
+- `price_eu::Vector{Real}` : Logarithm of eu price index.
+- `price_world::Vector{Real}` : Logarithm of rest of world price index.
 - `E::Real`: Household expenditure
 - `Ex::Real`: Foreign expenditure on UK exports
 - `PTilde::Real`: The foreign price index.
@@ -124,7 +128,7 @@ function compute_foreign_share(param::ParamsStruct, demand::DataFrame, elasticit
                                          demand.uk, demand.eu, demand.world)
 
     tilde = log_eu_expenditure_on_uk_exports(logPf, demand.agg, Ex, Ex / E, exchange_rate, PTilde, elasticity.substitution, elasticity.substitution_uk_other)
-    
+
     @reset param.tilde = [tilde]
 
     return param
@@ -138,7 +142,9 @@ Compute the 2d utility function parameters γM, γH, γK from regional InputMatr
 
 # Arguments
 - `data::CleanData`: Data structure created by [`clean_data`](@ref)
-- `price_uk::Vector{T}, price_eu::Vector{T}, price_world::Vector{T}`: Logarithm of price index equilibrium variable. Has three components (uk, eu, world)
+- `price_uk::Vector{Real}` : Logarithm of uk price index equilibrium variable.
+- `price_eu::Vector{Real}` : Logarithm of eu price index.
+- `price_world::Vector{Real}`: Logarithm of rest of world price index.
 - `fun::Function=parameters_by_region`: Function that computes three parameters by region. Either [`parameters_by_region`](@ref) or [`log_parameters_by_region`](@ref)
 
 """
@@ -170,11 +176,11 @@ function compute_production_parameter(data::CleanData, price_uk::Vector{T}, pric
                                  data.industry.regional.input_matrices.uk[row, col],
                                  data.industry.regional.input_matrices.eu[row, col],
                                  data.industry.regional.input_matrices.world[row, col])
-            
+
             val.uk[row, col] = param_regional[1]
             val.eu[row, col] = param_regional[2]
             val.world[row, col] = param_regional[3]
-            
+
         end
 
         jacM = total_input_parameters(price_uk,
