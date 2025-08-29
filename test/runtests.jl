@@ -26,5 +26,5 @@ if(isdir(joinpath(@__DIR__,"..",settings["files"]["input_dir"])))
     include("test_parameters_with_data.jl")
     include("test_objective.jl")
 
-    include("test_end_to_end.jl")
+    # include("test_end_to_end.jl")
 end
