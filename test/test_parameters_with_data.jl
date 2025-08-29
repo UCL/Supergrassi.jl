@@ -71,7 +71,7 @@ for row = 1:n
 
     ∂β1[row,:] .= gradient(Forward,
                           Supergrassi.log_parameters_by_region,
-                          Const(clean.constants.elasticities.eu_export_demand.armington),
+                          Const(clean.constants.elasticities.export_eu.armington),
                           price_uk[row],
                           Const(price_eu[row]),
                           Const(price_world[row]),
@@ -81,7 +81,7 @@ for row = 1:n
 
     ∂β2[row,:] .= gradient(Forward,
                           Supergrassi.log_parameters_by_region,
-                          Const(clean.constants.elasticities.world_export_demand.armington),
+                          Const(clean.constants.elasticities.export_world.armington),
                           price_uk[row],
                           Const(price_eu[row]),
                           Const(price_world[row]),
