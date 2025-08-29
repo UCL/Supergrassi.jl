@@ -32,18 +32,20 @@ function estimate()
 
     df = CSV.read(joinpath(@__DIR__,"..","data", "data_for_household_demand.csv"), DataFrame)
 
-    prices = DataFrame([df.logP_uk, df.logP_eu, df.logP_w], ["uk", "eu", "world"])
-
+    price_uk = df.logP_uk
+    price_eu = df.logP_eu
+    price_world = df.logP_w
+    
     @info "Prices extracted from data."
 
-    params, ∂params = Supergrassi.compute_all_parameters(clean, prices, false)
-    log_params, ∂log_params = Supergrassi.compute_all_parameters(clean, prices, true)
+    params = Supergrassi.compute_all_parameters(clean, price_uk, price_eu, price_world, false)
+    log_params = Supergrassi.compute_all_parameters(clean, price_uk, price_eu, price_world, true)
 
     @info "Parameters computed."
 
     @info "Estimation completed."
 
-    return settings, data, clean, params, ∂params, log_params, ∂log_params
+    return settings, data, clean, params, log_params
 end
 
 export create_filepath, read_data, read_settings, check_file_availability
