@@ -17,11 +17,11 @@ function compute_objective_function(log_price_uk::Vector{<:Number}, zOC::Vector{
     tau = compute_advalorem_tax(data.industry)
     # tau = rand(length(log_price_uk))
 
-    # mu = params.production.shock_mean
-    mu = rand(length(log_price_uk))
+    mu = params.production.shock_mean
+    # mu = rand(length(log_price_uk))
 
-    # gammaK = params.production.capital
-    gammaK = rand(length(log_price_uk))
+    gammaK = params.production.capital
+    # gammaK = rand(length(log_price_uk))
 
     k0 = data.industry.capital.current_year
 

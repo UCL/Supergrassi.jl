@@ -172,10 +172,12 @@ function log_price_index(elasticity::T,
 
     if(demand_uk == demand_eu == demand_world == 0.0) return 0.0 end
 
+    noise = 0.0
+
     return (elasticity / (elasticity - 1)) * log(
-        demand_uk ^ (1 / elasticity) * exp((elasticity - 1) * log_price_uk / elasticity) +
-        demand_eu ^ (1 /elasticity) * exp((elasticity - 1) * log_price_eu / elasticity) +
-        demand_world  ^ (1 / elasticity) * exp((elasticity - 1) * log_price_world  / elasticity)
+        max(noise, demand_uk) ^ (1 / elasticity) * exp((elasticity - 1) * log_price_uk / elasticity) +
+        max(noise, demand_eu) ^ (1 /elasticity) * exp((elasticity - 1) * log_price_eu / elasticity) +
+        max(noise, demand_world) ^ (1 / elasticity) * exp((elasticity - 1) * log_price_world  / elasticity)
     )
 
 end
