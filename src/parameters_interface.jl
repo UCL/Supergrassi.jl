@@ -340,3 +340,36 @@ function compute_imports_shares(constants::Constants)
     return imports_uk_share_eu, imports_uk_share_world
 
 end
+
+
+function compute_parameter_subset(data::CleanData, price_uk::Vector{T}, price_eu::Vector{T}, price_world::Vector{T}, log_scale::Bool = false) where {T <: Real}
+
+    # reg = data.industry.regional
+    constants = data.constants
+
+    # imports_uk_share_eu = constants.total_imports_from_uk.eu / (constants.total_imports_from_all_sources.eu
+    #                                                             / constants.exchange_rates.eur )
+    # imports_uk_share_world = constants.total_imports_from_uk.world / (constants.total_imports_from_all_sources.world
+                                                                    #   / constants.exchange_rates.usd )
+
+    # α = compute_parameter(reg.consumption, constants.elasticities.consumption, price_uk, price_eu, price_world, log_scale)
+    # β1 = compute_parameter(reg.export_eu, constants.elasticities.eu_export_demand, price_uk, price_eu, price_world, log_scale)
+    # β1 = compute_foreign_share(β1, reg.export_eu, constants.elasticities.eu_export_demand, price_uk, price_eu, price_world,
+                    #   imports_uk_share_eu, reg.totals.imports.eu, 1.0, constants.exchange_rates.eur)
+    # β2 = compute_parameter(reg.export_world, constants.elasticities.world_export_demand, price_uk, price_eu, price_world, log_scale)
+    # β2 = compute_foreign_share(β2, reg.export_world, constants.elasticities.world_export_demand, price_uk, price_eu, price_world,
+                        #    imports_uk_share_world, reg.totals.imports.world, 1.0, constants.exchange_rates.usd)
+    # ρ = compute_parameter(reg.investment, constants.elasticities.investment, price_uk, price_eu, price_world, log_scale)
+
+    γ = compute_production_parameter(data, price_uk, price_eu, price_world, log_scale)
+
+    loss_given_default = 0.12 # TODO: This should be in constants
+
+    consts = ParameterConstants(constants.elasticities, loss_given_default, constants.interest_rate)
+
+    # vals = Parameters(consts, α, β1, β2, γ, ρ, log_scale, false)
+    vals = ParameterSubset(consts, γ)
+
+    return vals
+
+end

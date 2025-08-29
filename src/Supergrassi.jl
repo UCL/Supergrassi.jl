@@ -56,7 +56,7 @@ function estimate()
     @info "Estimation completed."
 
     # return
-    return params, gradient
+    return gradient
 end
 
 export create_filepath, read_data, read_settings, check_file_availability

@@ -895,28 +895,28 @@ function generate_constants(data::Data, settings::Dict{String, Any})
 
     production_elasticity = Elasticity(elasticities["production"][1],
                                        elasticities["production"][3],
-                                       nothing,
+                                       0.0,
                                        elasticities["production"][2])
 
     world_export_demand_elasticity = Elasticity(elasticities["rest_of_world_export_demand"][1],
                                                 elasticities["rest_of_world_export_demand"][2],
                                                 elasticities["rest_of_world_export_demand"][3],
-                                                nothing)
+                                                0.0)
 
     eu_export_demand_elasticity = Elasticity(elasticities["eu_export_demand"][1],
                                              elasticities["eu_export_demand"][2],
                                              elasticities["eu_export_demand"][3],
-                                             nothing)
+                                             0.0)
 
     consumption_elasticity = Elasticity(elasticities["consumption"][1],
                                         elasticities["consumption"][2],
-                                        nothing,
-                                        nothing)
+                                        0.0,
+                                        0.0)
 
     investment_elasticity = Elasticity(elasticities["investment"][1],
                                        elasticities["investment"][2],
-                                       nothing,
-                                       nothing)
+                                       0.0,
+                                       0.0)
 
     elasticities_struct = Elasticities(production_elasticity,
                                        world_export_demand_elasticity,

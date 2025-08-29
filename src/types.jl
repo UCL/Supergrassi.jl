@@ -379,3 +379,11 @@ struct Parameters
     end
 
 end
+
+
+struct ParameterSubset
+
+    constants::ParameterConstants
+    production::ParamsProduction
+
+end
