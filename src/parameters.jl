@@ -176,7 +176,7 @@ function log_price_index(elasticity::T,
 
     return (elasticity / (elasticity - 1)) * log(
         max(eps(T), demand_uk) ^ (1 / elasticity) * exp((elasticity - 1) * log_price_uk / elasticity) +
-        max(eps(T), demand_eu) ^ (1 /elasticity) * exp((elasticity - 1) * log_price_eu / elasticity) +
+        max(eps(T), demand_eu) ^ (1 / elasticity) * exp((elasticity - 1) * log_price_eu / elasticity) +
         max(eps(T), demand_world)  ^ (1 / elasticity) * exp((elasticity - 1) * log_price_world  / elasticity)
     )
 
@@ -506,6 +506,6 @@ end
 """
 function labor_fun(labor::T, log_wages::T, elasticity::T) where {T <: Real}
 
-    return labor ^ ( 1 / elasticity ) * exp(( elasticity - 1 ) / elasticity * log_wages)
+    return max(eps(T), labor) ^ ( 1 / elasticity ) * exp(( elasticity - 1 ) / elasticity * log_wages)
 
 end

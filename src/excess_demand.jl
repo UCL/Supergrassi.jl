@@ -19,11 +19,11 @@ function market_clearing_price_constraint(x::Vector{T}, log_price_eu::Vector{T},
                                           params::Parameters, data::IndustryData, constants::Constants) where {T <: Real}
 
     n = length(log_price_eu)
-    log_price_uk, zOC, expenditure, log_TFP, log_Delta = unpack_x(n, x)
+    log_price_uk, zOC, expenditure, muI, log_Delta = unpack_x(n, x)
     price_uk = exp.(log_price_uk)
     price_eu = exp.(log_price_eu)
     price_world = exp.(log_price_world)
-    F_terms = market_clearing_price_constraint(price_uk, zOC, expenditure, price_eu, price_world,
+    F_terms = market_clearing_price_constraint(price_uk, zOC, expenditure, price_eu, price_world, muI,
                                                params, data, constants)
     return sum(F_terms)
 
@@ -56,7 +56,7 @@ that the prices are NOT on log scale.
 - Terms of the price index F as a tuple of Vectors
 """
 function market_clearing_price_constraint(price_uk::Vector{T}, operating_cost::Vector{T}, household_expenditure::T,
-                                          price_eu::Vector{T}, price_world::Vector{T},
+                                          price_eu::Vector{T}, price_world::Vector{T}, muI::T,
                                           params::Parameters, data::IndustryData, constants::Constants) where {T <: Real}
 
     # Needs:
@@ -136,7 +136,6 @@ function market_clearing_price_constraint(price_uk::Vector{T}, operating_cost::V
     logP = log_price_index(params.investment.uk, params.investment.eu, params.investment.world, price_uk, price_eu, price_world, elasticity.investment.armington)
     logPBar = log_agg_price_index(params.investment.agg, logP, elasticity.investment.substitution)
     new_capital_supply = capital_market()
-    muI = compute_muI(data, elasticity.investment)
     logEI = log_expenditure(params.investment.agg, logPBar .+ log(new_capital_supply ./ muI),
                             elasticity.investment.substitution, logP, logPBar)
     EI_uk = expenditure_by_region(params.investment.uk, price_uk, logEI, logP, elasticity.investment)
@@ -153,7 +152,9 @@ function market_clearing_price_constraint(price_uk::Vector{T}, operating_cost::V
     for i = 1:n
 
         TOCTheta = exp(operating_cost[i]) / (1 + exp(operating_cost[i]))
+        # TOCTheta = 1.0
         logTauPdMu = log(1 - tau[i]) + log(price_uk[i]) + log(params.production.shock_mean[i])
+        # logTauPdMu = 1.0
 
         # TODO: This is already computed as part of intermediate_goods_price_index. Refactor and reuse.
         logTauPdYBar = (logTauPdMu
@@ -161,15 +162,24 @@ function market_clearing_price_constraint(price_uk::Vector{T}, operating_cost::V
                         + elasticity.production.substitution / (1 - elasticity.production.substitution) * log(1 - TOCTheta)
                         + log(data.capital.current_year[i])
                         )
-        pdYBar[i] = exp(logTauPdYBar - log(1 - tau[i]))
+        #        logTauPdYBar = 1.0
 
-        logPM = log_price_index(params.production.uk[i,:], params.production.eu[i,:],
+        logPM = log_price_index(params.production.uk[i,:],
+                                params.production.eu[i,:],
                                 params.production.world[i,:],
                                 price_uk, price_eu, price_world, elasticity.production.armington)
 
+        # logPM = rand(n)
+
+        @show i
         logEM = log_expenditure(params.production.agg[i,:], logTauPdYBar, elasticity.production.substitution,
                                 logPM, logTauPdMu)
+
+        # logEM = rand(n)
+
         EM_uk += expenditure_by_region(params.production.uk[i,:], price_uk, logEM, logPM, elasticity.production)
+
+        pdYBar[i] = exp(logTauPdYBar - log(1 - tau[i]))
     end
 
     return pdYBar, EF_uk, EX1_uk, EX2_uk, EI_uk, EM_uk
@@ -223,9 +233,9 @@ function log_price_index(param_uk::Vector{T}, param_eu::Vector{T}, param_world::
 
     for i in 1:n
         logP[i] = 1 / (1 - elasticity) * log(
-            param_uk[i] * price_uk[i] ^ (1 - elasticity)
-            + param_eu[i] * price_eu[i] ^ (1 - elasticity)
-            + param_world[i] * price_world[i] ^ (1 - elasticity)
+            param_uk[i] * price_uk[i] ^ (1 - elasticity) +
+            param_eu[i] * price_eu[i] ^ (1 - elasticity) +
+            param_world[i] * price_world[i] ^ (1 - elasticity)
         )
     end
     replace!(logP, Inf => 0.0)
@@ -313,6 +323,7 @@ function log_expenditure(param_agg::Vector{T}, expenditure::T, elasticity::T, lo
         logE[i] = log(param_agg[i]) + expenditure + (1.0 - elasticity) * (log_price_index[i] - log_agg_price_index)
     end
 
+    replace!(logE, -Inf => 0.0)
     return logE
 
 end

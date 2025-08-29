@@ -69,9 +69,9 @@ function unpack_x(n::Int, x::Vector{<:Number})
     log_price_uk = x[1:n]
     zOC = x[n+1:2*n]
     expenditure = x[2*n+1]
-    log_TFP = x[2*n+2]
+    log_muI = x[2*n+2]
     log_Delta = x[2*n+3:3*n+2]
 
-    return log_price_uk, zOC, expenditure, log_TFP, log_Delta
+    return log_price_uk, zOC, expenditure, log_muI, log_Delta
 
 end
