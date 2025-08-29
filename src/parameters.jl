@@ -153,10 +153,12 @@ function price_index(elasticity::T,
                      log_price_uk::T, log_price_eu::T, log_price_world::T,
                      demand_uk::T, demand_eu::T, demand_world::T) where {T <: Real}
 
+    if(demand_uk == demand_eu == demand_world == 0.0) return 0.0 end
+
     return (
-        demand_uk ^ (1 / elasticity) * exp((elasticity - 1) * log_price_uk / elasticity) +
-        demand_eu ^ (1 / elasticity) * exp((elasticity - 1) * log_price_eu / elasticity) +
-        demand_world  ^ (1 / elasticity) * exp((elasticity - 1) * log_price_world  / elasticity)
+        max(eps(T), demand_uk) ^ (1 / elasticity) * exp((elasticity - 1) * log_price_uk / elasticity) +
+        max(eps(T), demand_eu) ^ (1 / elasticity) * exp((elasticity - 1) * log_price_eu / elasticity) +
+        max(eps(T), demand_world)  ^ (1 / elasticity) * exp((elasticity - 1) * log_price_world  / elasticity)
     ) ^ ( elasticity / (elasticity - 1) )
 
 end
@@ -173,9 +175,9 @@ function log_price_index(elasticity::T,
     if(demand_uk == demand_eu == demand_world == 0.0) return 0.0 end
 
     return (elasticity / (elasticity - 1)) * log(
-        demand_uk ^ (1 / elasticity) * exp((elasticity - 1) * log_price_uk / elasticity) +
-        demand_eu ^ (1 /elasticity) * exp((elasticity - 1) * log_price_eu / elasticity) +
-        demand_world  ^ (1 / elasticity) * exp((elasticity - 1) * log_price_world  / elasticity)
+        max(eps(T), demand_uk) ^ (1 / elasticity) * exp((elasticity - 1) * log_price_uk / elasticity) +
+        max(eps(T), demand_eu) ^ (1 /elasticity) * exp((elasticity - 1) * log_price_eu / elasticity) +
+        max(eps(T), demand_world)  ^ (1 / elasticity) * exp((elasticity - 1) * log_price_world  / elasticity)
     )
 
 end
