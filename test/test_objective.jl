@@ -2,7 +2,7 @@ using Supergrassi, Test
 
 zOC = clean.industry.surplus.val
 x = vcat(df.logP_uk, zOC)
-objective_function = Supergrassi.compute_objective_function(x, clean, params)
+objective_function = Supergrassi.compute_objective_function(x, clean, df.logP_eu, df.logP_w)
 
 @testset "Objective function" begin
 

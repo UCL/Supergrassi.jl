@@ -376,3 +376,16 @@ struct Parameters
     end
 
 end
+
+"""
+    struct ParameterSubset
+
+Stores a subset of parameters for gradient computation.
+
+"""
+struct ParameterSubset
+
+    constants::ParameterConstants
+    production::ParamsProduction
+
+end

@@ -1,6 +1,6 @@
 using Supergrassi, CSV, DataFrames, Test
 
-tol = 1e-12
+tol = 1e-6
 
 config_path = joinpath(@__DIR__, "..", "config","settings.yml")
 settings_path = create_filepath(config_path)

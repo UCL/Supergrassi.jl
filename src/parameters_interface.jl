@@ -346,3 +346,25 @@ function compute_imports_shares(constants::Constants)
     return imports_uk_share_eu, imports_uk_share_world
 
 end
+
+"""
+    compute_parameter_subset(data::CleanData, price_uk::Vector{T}, price_eu::Vector{T}, price_world::Vector{T}, log_scale::Bool = false) where {T <: Real}
+
+Compute the parts of Parameters used for gradients.
+
+"""
+function compute_parameter_subset(data::CleanData, price_uk::Vector{T}, price_eu::Vector{T}, price_world::Vector{T}, log_scale::Bool = false) where {T <: Real}
+
+    constants = data.constants
+
+    γ = compute_production_parameter(data, price_uk, price_eu, price_world, log_scale)
+
+    loss_given_default = 0.12 # TODO: This should be in constants
+
+    consts = ParameterConstants(constants.elasticities, loss_given_default, constants.interest_rate)
+
+    vals = ParameterSubset(consts, γ)
+
+    return vals
+
+end
