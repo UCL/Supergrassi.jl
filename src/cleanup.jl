@@ -876,10 +876,10 @@ Generate a Constants struct from the provided data and settings.
 """
 function generate_constants(data::Data, settings::Dict{String, Any})
 
-    year::Int64 = settings_constants["data_year"]
+    year::Int64 = settings["constants"]["data_year"]
 
-    exchange_rates = ExchangeRates(settings_constants["exchange_rates"]["usd"],
-                                   settings_constants["exchange_rates"]["eur"])
+    exchange_rates = ExchangeRates(settings["constants"]["exchange_rates"]["usd"],
+                                   settings["constants"]["exchange_rates"]["eur"])
 
     total_imports_from_uk = ForeignRegionalValues(settings["constants"]["total_imports"]["from_uk"]["eu"],
                                          settings["constants"]["total_imports"]["from_uk"]["world"])
@@ -1057,7 +1057,7 @@ function clean_data(data::Data, settings::Dict{String, Any})
 
     industry = IndustryData(depreciation, tax, mean_capital, surplus, sigma_bar, assets_liabilities, regional)
 
-    constants = generate_constants(data, settings["constants"])
+    constants = generate_constants(data, settings)
 
     return CleanData(
         household,
