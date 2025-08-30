@@ -19,8 +19,6 @@ on:
 
 permissions:
   contents: write
-  pages: write
-  id-token: write
 
 concurrency:
   # Same group concurrency as the `PreviewCleanup.yml` workflow, because they both
