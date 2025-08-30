@@ -3,6 +3,18 @@ using Printf
 using StatsBase
 using Dates
 
+"""
+    function create_map_105_to_64(merge_codes::DataFrame, verbose::Bool = false)
+
+Create a mapping from SIC 105 industry names to SIC 64 industry names.
+
+# Arguments
+- `merge_codes::DataFrame`: A DataFrame containing the mapping between SIC 105 and SIC 64 industry names. It should have two columns: `sic105` containing SIC 105 industry names and `sic64` containing SIC 64 industry names.
+- `verbose::Bool`: If true, prints the initial and final industry names.
+
+# Returns
+- `Dict{String, String}`: A dictionary mapping SIC 105 industry names to SIC 64 industry names.
+"""
 function create_map_105_to_64(merge_codes::DataFrame, verbose::Bool = false)
 
     initial_industry_names = merge_codes[!, :sic105]
@@ -25,6 +37,17 @@ function create_map_105_to_64(merge_codes::DataFrame, verbose::Bool = false)
 
 end
 
+"""
+    function create_map_105_to_64(merge_codes::DataFrame, verbose::Bool = false)
+
+Create a mapping from SIC 64 industry names to SIC 16 industry names.
+# Arguments
+- `merge_codes::DataFrame`: A DataFrame containing the mapping between SIC 64 and SIC 16 industry names. It should have two columns: `x1` containing SIC 64 industry names and `x7` containing SIC 16 industry names.
+- `verbose::Bool`: If true, prints the initial and final industry names.
+
+# Returns
+- `Dict{String, String}`: A dictionary mapping SIC 64 industry names to SIC 16 industry names.
+"""
 function create_map_64_to_16(merge_codes::DataFrame, verbose::Bool = false)
 
     initial_industry_names = merge_codes[2:end, :x1]
@@ -47,7 +70,19 @@ function create_map_64_to_16(merge_codes::DataFrame, verbose::Bool = false)
 
 end
 
-function reduce_columns_by_group_sum(df::DataFrame, mapping::Dict{String, String};)
+"""
+    function reduce_columns_by_group_sum(df::DataFrame, mapping::Dict{String, String})
+
+Reduce columns in a DataFrame by summing them based on a mapping.
+
+# Arguments
+- `df::DataFrame`: The DataFrame containing the columns to be reduced.
+- `mapping::Dict{String, String}`: A dictionary mapping old column names to new column names.
+
+# Returns
+- `DataFrame`: A new DataFrame with reduced columns, where each new column is the sum of the old columns that map to it.
+"""
+function reduce_columns_by_group_sum(df::DataFrame, mapping::Dict{String, String})
 
     grouped = group_columns_by_new_name(mapping)
 
@@ -60,6 +95,18 @@ function reduce_columns_by_group_sum(df::DataFrame, mapping::Dict{String, String
     return DataFrame(new_cols)
 end
 
+"""
+    fubction reduce_columns_by_group_weighted_mean(df::DataFrame, mapping::Dict{String, String}; weights::DataFrame = DataFrame(ones(1,ncol(df)), names(df)))
+
+Reduce columns in a DataFrame by calculating the weighted mean based on a mapping.
+# Arguments
+- `df::DataFrame`: The DataFrame containing the columns to be reduced.
+- `mapping::Dict{String, String}`: A dictionary mapping old column names to new column names.
+- `weights::DataFrame`: A DataFrame containing weights for each column. Defaults to a DataFrame of ones.
+
+# Returns
+- `DataFrame`: A new DataFrame with reduced columns, where each new column is the weighted mean of the old columns that map to it.
+"""
 function reduce_columns_by_group_weighted_mean(df::DataFrame, mapping::Dict{String, String}; weights::DataFrame = DataFrame(ones(1,ncol(df)), names(df)))
 
     grouped = group_columns_by_new_name(mapping)
@@ -77,6 +124,17 @@ function reduce_columns_by_group_weighted_mean(df::DataFrame, mapping::Dict{Stri
 
 end
 
+"""
+    function group_columns_by_new_name(mapping::Dict{String, String})
+
+Group columns by their new names based on a mapping.
+
+# Arguments
+- `mapping::Dict{String, String}`: A dictionary mapping old column names to new column names.
+
+# Returns
+- `Dict{String, Vector{Symbol}}`: A dictionary where keys are new column names and values are vectors of old column names (as Symbols) that map to them.
+"""
 function group_columns_by_new_name(mapping::Dict{String, String})
 
     grouped = Dict{String, Vector{Symbol}}()
@@ -88,6 +146,23 @@ function group_columns_by_new_name(mapping::Dict{String, String})
 
 end
 
+"""
+    function group_dataframes(dfs::AbstractArray, col_names::AbstractArray, industry_names::AbstractArray, industries_on_cols::Bool = true, reduction_fun::Function = nothing, mapping::Dict{String, String} = Dict(); kwargs...)
+
+Group multiple DataFrames by industry names and aggregate their values.
+
+# Arguments
+- `dfs::AbstractArray`: An array of DataFrames to be grouped.
+- `col_names::AbstractArray`: An array of column names for the resulting DataFrame.
+- `industry_names::AbstractArray`: An array of industry names to be used as row names.
+- `industries_on_cols::Bool`: If true, industries will be on columns; otherwise, they will be on rows.
+- `reduction_fun::Function`: A function to apply for data aggregation (default is `nothing`).
+- `mapping::Dict{String, String}`: A dictionary mapping old column names to new column names.
+- `kwargs...`: Additional keyword arguments to be passed to the `reduction_fun`.
+
+# Returns
+- `DataFrame`: A DataFrame with industries as rows or columns, depending on `industries_on_cols`, and aggregated values.
+"""
 function group_dataframes(dfs::AbstractArray, col_names::AbstractArray, industry_names::AbstractArray, industries_on_cols::Bool = true, reduction_fun::Function = nothing, mapping::Dict{String, String} = Dict(); kwargs...)
 
     dd = DataFrame([industry_names], ["industry"])
@@ -110,6 +185,18 @@ function group_dataframes(dfs::AbstractArray, col_names::AbstractArray, industry
 
 end
 
+"""
+    function select_year(data::DataFrame, year::Int64)
+
+Select rows from a DataFrame based on a specific year.
+
+# Arguments
+- `data::DataFrame`: The DataFrame containing the data.
+- `year::Int64`: The year to filter the DataFrame by.
+
+# Returns
+- `DataFrame`: A new DataFrame containing only the rows for the specified year, with columns converted to Float64 if they are strings.
+"""
 function select_year(data::DataFrame, year::Int64)
     rr = data[data.year .== year, 4:end]
 
@@ -122,10 +209,32 @@ function select_year(data::DataFrame, year::Int64)
     return rr
 end
 
+"""
+    function combine_dataframe_row_wise(data::DataFrame, func::Function)
+
+Combine rows of a DataFrame by applying a function to each row.
+
+# Arguments
+- `data::DataFrame`: The DataFrame containing the data to be combined.
+- `func::Function`: A function to apply to each row of the DataFrame.
+
+# Returns
+- `DataFrame`: A new DataFrame with the combined results, where each column is named after the original column names.
+"""
 function combine_dataframe_row_wise(data::DataFrame, func::Function)
     return combine(data, names(data, Real) .=> func, renamecols=false)
 end
 
+"""
+    function parse_string_dataframe!(df::DataFrame, T::Type, default_val=nothing)
+
+Parse string columns in a DataFrame to a specified type, replacing missing values with a default value.
+
+# Arguments
+- `df::DataFrame`: The DataFrame containing the string columns to be parsed.
+- `T::Type`: The type to which the string columns should be parsed (e.g., `Float64`).
+- `default_val`: The value to replace missing values with (default is `nothing`).
+"""
 function parse_string_dataframe!(df::DataFrame, T::Type, default_val=nothing)
 
     for v in names(df)
@@ -136,6 +245,20 @@ function parse_string_dataframe!(df::DataFrame, T::Type, default_val=nothing)
 
 end
 
+"""
+    function clean_rows(data::DataFrame, row_names::String, col_names::Array{String, 1}, mapping::Dict{String, String})
+
+Clean selected subset of rows in a DataFrame based on row names and rename columns.
+
+# Arguments
+- `data::DataFrame`: The DataFrame containing the data to be cleaned.
+- `row_names::String`: The name of the row to select.
+- `col_names::Array{String, 1}`: An array of new column names to rename the selected columns.
+- `mapping::Dict{String, String}`: A dictionary mapping old column names to new column names for reduction.
+
+# Returns
+- `DataFrame`: A new DataFrame with selected rows, renamed columns, and reduced columns based on the mapping.
+"""
 function clean_rows(data::DataFrame, row_names::String, col_names::Array{String, 1}, mapping::Dict{String, String})
     rr = data[data.x2 .== row_names, 3:end]
 
@@ -146,6 +269,19 @@ function clean_rows(data::DataFrame, row_names::String, col_names::Array{String,
     return rr
 end
 
+"""
+    function clean_vector(data::Vector{<:Number}, industry_names::Array{String, 1}, mapping::Dict{String, String})
+
+Clean a vector of numbers by creating a DataFrame, renaming columns, and reducing columns based on a mapping.
+
+# Arguments
+- `data::Vector{<:Number}`: A vector of numbers to be cleaned.
+- `industry_names::Array{String, 1}`: An array of industry names to be used as column names.
+- `mapping::Dict{String, String}`: A dictionary mapping old column names to new column names for reduction.
+
+# Returns
+- `DataFrame`: A new DataFrame with the vector data, renamed columns, and reduced columns based on the mapping.
+"""
 function clean_vector(data::Vector{<:Number}, industry_names::Array{String, 1}, mapping::Dict{String, String})
     # Create a DataFrame from the vector
     df = DataFrame([data], :auto)
@@ -155,11 +291,23 @@ function clean_vector(data::Vector{<:Number}, industry_names::Array{String, 1}, 
     return rr
 end
 
+"""
+    function clean_matrix(data::DataFrame, industry_names::Array{String, 1}, mapping::Dict{String, String})
+
+Clean a matrix of data by reducing based on a mapping and renaming them with industry names.
+
+# Arguments
+- `data::DataFrame`: A DataFrame containing the matrix data to be cleaned.
+- `industry_names::Array{String, 1}`: An array of industry names to be used as column names.
+- `mapping::Dict{String, String}`: A dictionary mapping old column names to new column names for reduction.
+
+# Returns
+- `DataFrame`: A new DataFrame with the matrix data, renamed columns, and reduced columns based on the mapping.
+"""
 function clean_matrix(data::DataFrame, industry_names::Array{String, 1}, mapping::Dict{String, String})
 
 
     rr = reduce_columns_by_group_sum(data, mapping)
-    final_names = names(rr)
 
     rr = DataFrame(permutedims(rr), industry_names)
 
@@ -168,6 +316,20 @@ function clean_matrix(data::DataFrame, industry_names::Array{String, 1}, mapping
     return rr
 end
 
+"""
+    funvtion clean_assets_liabilities(assets::DataFrame, year::Int64, map_to_16::Dict{String, String}, n_samples::Int64 = nrow(assets))
+
+Wrapper function to clean assets and liabilities data.
+
+# Arguments
+- `assets::DataFrame`: The DataFrame containing assets and liabilities data.
+- `year::Int64`: The year for which the data is to be cleaned.
+- `map_to_16::Dict{String, String}`: A dictionary mapping SIC 64 industry names to SIC 16 industry names.
+- `n_samples::Int64`: The number of samples to limit per SIC 64 industry (default is the number of rows in `assets`.).
+
+# Returns
+- `DataFrame`: A cleaned DataFrame containing assets, liabilities, and their ratio, limited to `n_samples` per SIC 64 industry.
+"""
 function clean_assets_liabilities(assets::DataFrame, year::Int64, map_to_16::Dict{String, String}, n_samples::Int64 = nrow(assets))
 
     # Step 1: Extract the relevant columns as strings
@@ -225,7 +387,16 @@ end
 
 
 """
-Function to process the mValues stored in input_output_matrix:es in the data struct
+    function clean_2d_values(data::Data, split_factor::Float64)
+
+Function to process the 2D values that are split between uk, eu, world and stored in matrices.
+
+# Arguments
+- `data::Data`: The Data struct containing input-output matrices and imports.
+- `split_factor::Float64`: The factor by which to split the imports between EU and World.
+
+# Returns
+- `InputMatrices`: A struct containing the cleaned input-output matrices for UK, EU, World, and aggregate values.
 """
 function clean_2d_values(data::Data, split_factor::Float64)
 
@@ -234,10 +405,10 @@ function clean_2d_values(data::Data, split_factor::Float64)
     mapping_64_to_16 = create_map_64_to_16(data.merge_codes_64)
 
     import_export = clean_matrix(data.input_output.input_output_matrix, industry_names, mapping_105_to_64)
-    import_export = clean_matrix(import_export, names(import_export), mapping_64_to_16)
+    import_export = Matrix(clean_matrix(import_export, names(import_export), mapping_64_to_16))
 
     imports_import_export = clean_matrix(data.imports.input_output_matrix, industry_names, mapping_105_to_64)
-    imports_import_export = clean_matrix(imports_import_export, names(imports_import_export), mapping_64_to_16)
+    imports_import_export = Matrix(clean_matrix(imports_import_export, names(imports_import_export), mapping_64_to_16))
 
     eu_import_export = imports_import_export .* split_factor
     world_import_export = imports_import_export .* (1 - split_factor)
@@ -248,7 +419,22 @@ function clean_2d_values(data::Data, split_factor::Float64)
 end
 
 """
+    function clean_1d_values(val::Vector{<:Number}, val_imp::Vector{<:Number}, map_64::Dict{String, String}, map_16::Dict{String, String}, names_105::Vector, names_16::Vector, split_factor::Float64, industries_in_cols::Bool)
+
 Function to process the values that are split between uk, eu, world and stored in vectors.
+
+# Arguments
+- `val::Vector{<:Number}`: The vector containing the values for UK.
+- `val_imp::Vector{<:Number}`: The vector containing the values for imports.
+- `map_64::Dict{String, String}`: A dictionary mapping SIC 64 industry names to SIC 16 industry names.
+- `map_16::Dict{String, String}`: A dictionary mapping SIC 16 industry names to their final names.
+- `names_105::Vector`: A vector of industry names for SIC 105.
+- `names_16::Vector`: A vector of industry names for SIC 16.
+- `split_factor::Float64`: The factor by which to split the imports between EU and World.
+- `industries_in_cols::Bool`: If true, industries will be on columns; otherwise, they will be on rows.
+
+# Returns
+- `DataFrame`: A DataFrame containing the cleaned values for UK, EU, World, and aggregate values.
 """
 function clean_1d_values(val::Vector{<:Number}, val_imp::Vector{<:Number}, map_64::Dict{String, String}, map_16::Dict{String, String}, names_105::Vector, names_16::Vector, split_factor::Float64, industries_in_cols::Bool)
 
@@ -267,7 +453,14 @@ function clean_1d_values(val::Vector{<:Number}, val_imp::Vector{<:Number}, map_6
 end
 
 """
-Helper function for exports
+    function correct_exports_with_services!(export_to_eu::DataFrame, export_to_world::DataFrame, services_export::DataFrame)
+
+Function to correct exports by accounting for NaN values and scaling appropriately.
+
+# Arguments
+- `export_to_eu::DataFrame`: DataFrame containing exports to the EU.
+- `export_to_world::DataFrame`: DataFrame containing exports to the World.
+- `services_export::DataFrame`: DataFrame containing service exports.
 """
 function correct_exports_with_services!(export_to_eu::DataFrame, export_to_world::DataFrame, services_export::DataFrame)
 
@@ -280,8 +473,24 @@ function correct_exports_with_services!(export_to_eu::DataFrame, export_to_world
 end
 
 """
+    function clean_exports(input_output::InputOutput, imports::InputOutput, split::Float64, names_16::Vector, industries_in_cols::Bool, map_64::Dict{String, String}, map_16::Dict{String, String})
+
+Wrapper function to clean exports data.
+
 Exports need a special treatment because they are a sum of export and services_export data frames.
 Service export is scaled by the sum of eu and world exports. Further refactoring definitely possible here.
+
+# Arguments
+- `input_output::InputOutput`: The InputOutput struct containing export data.
+- `imports::InputOutput`: The InputOutput struct containing import data.
+- `split::Float64`: The factor by which to split the imports between EU and World.
+- `names_16::Vector`: A vector of industry names for SIC 16.
+- `industries_in_cols::Bool`: If true, industries will be on columns; otherwise, they will be on rows.
+- `map_64::Dict{String, String}`: A dictionary mapping SIC 64 industry names to SIC 16 industry names.
+- `map_16::Dict{String, String}`: A dictionary mapping SIC 16 industry names to their final names.
+
+# Returns
+- `DataFrame, DataFrame`: Two DataFrames containing exports to the EU and World, respectively.
 """
 function clean_exports(input_output::InputOutput, imports::InputOutput, split::Float64, names_16::Vector, industries_in_cols::Bool, map_64::Dict{String, String}, map_16::Dict{String, String})
 
@@ -314,7 +523,22 @@ end
 
 
 """
+    function clean_household(data::Data, year::Int64, map_64::Dict{String, String}, map_16::Dict{String, String}, names_105::Vector, names_64::Vector, names_16::Vector, industries_in_cols::Bool)
+
 Function to process the household incomes and their derived data.
+
+# Arguments
+- `data::Data`: The Data struct containing household income and hours data.
+- `year::Int64`: The year for which the data is to be cleaned.
+- `map_64::Dict{String, String}`: A dictionary mapping SIC 105 industry names to SIC 64 industry names.
+- `map_16::Dict{String, String}`: A dictionary mapping SIC 64 industry names to SIC 16 industry names.
+- `names_105::Vector`: A vector of industry names for SIC 105.
+- `names_64::Vector`: A vector of industry names for SIC 64.
+- `names_16::Vector`: A vector of industry names for SIC 16.
+- `industries_in_cols::Bool`: If true, industries will be on columns; otherwise, they will be on rows.
+
+# Returns
+- `HouseholdData`: A struct containing cleaned household income, payments, hours, and wages data.
 """
 function clean_household(data::Data, year::Int64, map_64::Dict{String, String}, map_16::Dict{String, String}, names_105::Vector, names_64::Vector, names_16::Vector, industries_in_cols::Bool)
 
@@ -324,7 +548,6 @@ function clean_household(data::Data, year::Int64, map_64::Dict{String, String}, 
     high_income = merge_quarterly_data(data.household.income.high, year, names_64, sum)
 
     high_income_share = high_income ./ (high_income .+ low_income)
-    low_income_share = low_income ./ (high_income .+ low_income)
 
     payments_to_low_skilled = (1 .- high_income_share) .* compensation_employees
     payments_to_high_skilled = high_income_share .* compensation_employees
@@ -334,8 +557,6 @@ function clean_household(data::Data, year::Int64, map_64::Dict{String, String}, 
 
     income = group_dataframes([low_income, high_income], ["low", "high"], names_16,
                               industries_in_cols, reduce_columns_by_group_sum, map_16)
-    income_share = group_dataframes([low_income_share, high_income_share], ["low", "high"], names_16,
-                                    industries_in_cols, reduce_columns_by_group_sum, map_16)
     payments = group_dataframes([payments_to_low_skilled, payments_to_high_skilled, compensation_employees],
                                 ["low", "high", "agg"], names_16, industries_in_cols, reduce_columns_by_group_sum,
                                 map_16)
@@ -344,11 +565,26 @@ function clean_household(data::Data, year::Int64, map_64::Dict{String, String}, 
                              industries_in_cols, reduce_columns_by_group_sum, map_16)
 
     wages = DataFrame([names_16, payments.low ./ hours.low, payments.high ./ hours.high], ["industries", "low", "high"])
+    mapcols(col -> replace!(col, NaN=>0.0), wages)
 
-    return HouseholdData(income, income_share, payments, hours, wages)
+    return HouseholdData(income, payments, hours, wages)
 
 end
 
+"""
+    function merge_quarterly_data(df::DataFrame, year::Int64, industry_names::Vector, fun::Function)
+
+Merge quarterly data for a specific year by applying a function to each row.
+
+# Arguments
+- `df::DataFrame`: The DataFrame containing quarterly data.
+- `year::Int64`: The year for which the data is to be merged.
+- `industry_names::Vector`: A vector of industry names to be used as row names.
+- `fun::Function`: A function to combine the quarterly data (e.g., `sum`).
+
+# Returns
+- `DataFrame`: A new DataFrame with the merged data for the specified year, with industry names as row names.
+"""
 function merge_quarterly_data(df::DataFrame, year::Int64, industry_names::Vector, fun::Function)
 
     dd = select_year(df, year)
@@ -358,6 +594,14 @@ function merge_quarterly_data(df::DataFrame, year::Int64, industry_names::Vector
 
 end
 
+"""
+    function add_aggregate!(df::DataFrame)
+
+Add an aggregate column to a DataFrame that sums the UK, EU, and World columns.
+
+# Arguments
+- `df::DataFrame`: The DataFrame to which the aggregate column will be added.
+"""
 function add_aggregate!(df::DataFrame)
 
     df[!,:agg] = df.uk + df.eu + df.world
@@ -369,6 +613,9 @@ end
 
 Re-scale the data that does not get convereted into a ratio explicitly, following
 <https://github.com/UCL/Supergrassi/blob/main/code/matlab/macro_v2/DataCleaning/RescaleData.m>.
+
+# Arguments
+- `data::CleanData`: The CleanData struct containing household and industry data to be rescaled.
 """
 function rescale_data!(data::CleanData)
 
@@ -414,6 +661,9 @@ end
     convert_to_ratio!(data::RegionalData)
 
 Convert regional data into ratios of region / sum(regions)
+
+# Arguments
+- `data::RegionalData`: The RegionalData struct containing regional data to be converted into ratios.
 """
 function convert_to_ratio!(data::RegionalData)
 
@@ -431,6 +681,14 @@ function convert_to_ratio!(data::RegionalData)
 
 end
 
+"""
+    convert_to_ratio!(data::HouseholdData)
+
+Convert household data into ratios of low and high payments to the sum of low and high payments.
+
+# Arguments
+- `data::HouseholdData`: The HouseholdData struct containing household data to be converted into ratios.
+"""
 function convert_to_ratio!(data::HouseholdData)
 
     for field in [:payments]
@@ -455,6 +713,9 @@ end
 Convert regional vector data into fractions of the aggregate value.
 Then renormalise the aggregate value by its sum.
 Nans are replaced with 0's.
+
+# Arguments
+- `df::DataFrame`: The DataFrame containing regional vector data to be converted into ratios.
 """
 function convert_to_ratio!(df::DataFrame)
 
@@ -472,6 +733,9 @@ end
 
 Convert regional matrix data to fractions of the aggregate value
 Nans are replaced with 0's
+
+# Arguments
+- `data::InputMatrices`: The InputMatrices struct containing regional matrix data to be converted into ratios.
 """
 function convert_to_ratio!(data::InputMatrices)
 
@@ -492,6 +756,9 @@ end
     round_shares!(data::RegionalData, threshold::Float64 = 1e-4)
 
 Round values below threshold in regional data to 0, then rescale so that regions sum to 1.
+
+# Arguments
+- `data::RegionalData`: The RegionalData struct containing regional data to be rounded.
 """
 function round_shares!(data::RegionalData, threshold::Float64 = 1e-4)
 
@@ -515,6 +782,10 @@ end
     round_shares!(df::DataFrame, threshold = 1e-4)
 
 Round shares in regional vector data
+
+# Arguments
+- `df::DataFrame`: The DataFrame containing regional data to be rounded.
+- `threshold`: The threshold below which values are set to 0 (default is `1e-4`).
 """
 function round_shares!(df::DataFrame, threshold = 1e-4)
 
@@ -537,6 +808,9 @@ end
     round_shares!(data::InputMatrices, threshold = 1e-4)
 
 Round shares in regional matrix data
+
+# Arguments
+- `data::InputMatrices`: The InputMatrices struct containing regional matrix data to be rounded.
 """
 function round_shares!(data::InputMatrices, threshold = 1e-4)
 
@@ -544,28 +818,34 @@ function round_shares!(data::InputMatrices, threshold = 1e-4)
     for field in [:uk, :eu, :world]
 
         df = getfield(data, field)
-
-        for col in names(df)
-            df[!,col] = map(x -> x < threshold ? 0 : x, df[!, col])
-        end
+        df .= map(x -> x < threshold ? 0.0 : x, df)
 
     end
 
     scaling_factor = data.uk .+ data.eu .+ data.world
+    replace!(scaling_factor, 0.0 => 1.0)
 
-    # Rescale sum to 1
     for field in [:uk, :eu, :world]
+
         df = getfield(data, field)
-        for (c,s) in zip(eachcol(df), eachcol(scaling_factor))
-            # Avoid divide by zeros by dividing by 1.0
-            replace!(s, 0.0 => 1.0)
-            c ./= s
-        end
+        df ./= scaling_factor
 
     end
 
 end
 
+"""
+    clean_sigma_bar(sigma_data::Vector, zero_list::Vector{Int64}, sic64::Vector{String})
+Clean the sigma bar data by converting it to a DataFrame, parsing strings to Float64, and setting specified indices to zero.
+
+# Arguments
+- `sigma_data::Vector`: A vector containing sigma bar data.
+- `zero_list::Vector{Int64}`: A vector of indices where the sigma bar values should be set to zero.
+- `sic64::Vector{String}`: A vector of SIC 64 industry names to be used as column names.
+
+# Returns
+- `DataFrame`: A DataFrame containing the cleaned sigma bar data, with specified indices set to zero.
+"""
 function  clean_sigma_bar(sigma_data::Vector, zero_list::Vector{Int64}, sic64::Vector{String})
 
     sigma_bar = DataFrame(permutedims(sigma_data), sic64)
@@ -582,24 +862,41 @@ function  clean_sigma_bar(sigma_data::Vector, zero_list::Vector{Int64}, sic64::V
 
 end
 
-function generate_constants(data::Data, settings_constants::Dict{String, Any})
+"""
+    generate_constants(data::Data, settings::Dict{String, Any})
+
+Generate a Constants struct from the provided data and settings.
+
+# Arguments
+- `data::Data`: The Data struct containing various economic data.
+- `settings::Dict{String, Any}`: A dictionary containing constants and settings for the model.
+
+# Returns
+- `Constants`: A Constants struct containing the year, exchange rates, interest rate, total imports, import tariffs, export costs, and elasticities.
+"""
+function generate_constants(data::Data, settings::Dict{String, Any})
 
     year::Int64 = settings_constants["data_year"]
 
     exchange_rates = ExchangeRates(settings_constants["exchange_rates"]["usd"],
                                    settings_constants["exchange_rates"]["eur"])
 
-    total_imports_from_uk = TotalImports(settings_constants["total_imports"]["from_uk"]["eu"],
-                                         settings_constants["total_imports"]["from_uk"]["world"])
-    total_imports_from_all_sources = TotalImports(settings_constants["total_imports"]["from_all_sources"]["eu"],
-                                                  settings_constants["total_imports"]["from_all_sources"]["world"])
+    total_imports_from_uk = ForeignRegionalValues(settings["constants"]["total_imports"]["from_uk"]["eu"],
+                                         settings["constants"]["total_imports"]["from_uk"]["world"])
+    total_imports_from_all_sources = ForeignRegionalValues(settings["constants"]["total_imports"]["from_all_sources"]["eu"],
+                                                  settings["constants"]["total_imports"]["from_all_sources"]["world"])
 
-    elasticities = settings_constants["elasticities"]
+    import_tariffs = ForeignRegionalValues(settings["constants"]["import_tariff"]["eu"], 
+                                  settings["constants"]["import_tariff"]["world"])
+    export_costs = ForeignRegionalValues(settings["constants"]["export_costs"]["eu"],
+                                settings["constants"]["export_costs"]["world"])
+
+    elasticities = settings["constants"]["elasticities"]
 
     production_elasticity = Elasticity(elasticities["production"][1],
-                                        elasticities["production"][3],
-                                        nothing,
-                                        elasticities["production"][2])
+                                       elasticities["production"][3],
+                                       nothing,
+                                       elasticities["production"][2])
 
     world_export_demand_elasticity = Elasticity(elasticities["rest_of_world_export_demand"][1],
                                                 elasticities["rest_of_world_export_demand"][2],
@@ -607,9 +904,9 @@ function generate_constants(data::Data, settings_constants::Dict{String, Any})
                                                 nothing)
 
     eu_export_demand_elasticity = Elasticity(elasticities["eu_export_demand"][1],
-                                                elasticities["eu_export_demand"][2],
-                                                elasticities["eu_export_demand"][3],
-                                                nothing)
+                                             elasticities["eu_export_demand"][2],
+                                             elasticities["eu_export_demand"][3],
+                                             nothing)
 
     consumption_elasticity = Elasticity(elasticities["consumption"][1],
                                         elasticities["consumption"][2],
@@ -617,21 +914,22 @@ function generate_constants(data::Data, settings_constants::Dict{String, Any})
                                         nothing)
 
     investment_elasticity = Elasticity(elasticities["investment"][1],
-                                        elasticities["investment"][2],
-                                        nothing,
-                                        nothing)
+                                       elasticities["investment"][2],
+                                       nothing,
+                                       nothing)
 
-    elasticities_struct = Elasiticities(production_elasticity,
-                                 world_export_demand_elasticity,
-                                 eu_export_demand_elasticity,
-                                 consumption_elasticity,
-                                 investment_elasticity)
+    elasticities_struct = Elasticities(production_elasticity,
+                                       world_export_demand_elasticity,
+                                       eu_export_demand_elasticity,
+                                       consumption_elasticity,
+                                       investment_elasticity)
 
     interest_rates = data.risk_free_rate[Dates.year.(data.risk_free_rate.date) .== year, 2:end]
     parse_string_dataframe!(interest_rates, Float64)
     interest_rate = 1 + geomean(interest_rates[!, 1] / 100)
-                                              
-    return Constants(year, exchange_rates, interest_rate, total_imports_from_uk, total_imports_from_all_sources, elasticities_struct)
+
+    return Constants(year, exchange_rates, interest_rate, total_imports_from_uk, total_imports_from_all_sources, 
+                     import_tariffs, export_costs, elasticities_struct)
 
 end
 
@@ -656,6 +954,10 @@ end
     clean_data(data::Data, settings::Dict{String, Any})
 
 Main function for data cleaning. Should take in a Data struct and return a CleanData struct.
+
+# Arguments
+- `data::Data`: The Data struct containing various economic data.
+- `settings::Dict{String, Any}`: A dictionary containing constants and settings for the model.
 """
 function clean_data(data::Data, settings::Dict{String, Any})
 
@@ -694,7 +996,7 @@ function clean_data(data::Data, settings::Dict{String, Any})
     # These variables get re-scaled to sum to 1 in the postprocessing step and this information gets otherwise lost.
     total_vals = Totals(sum(consumption.agg) / mean(total_use.uk),
                         sum(investment.agg) / mean(total_use.uk),
-                        TotalImports(sum(export_to_eu.agg) / mean(total_use.uk),
+                        ForeignRegionalValues(sum(export_to_eu.agg) / mean(total_use.uk),
                                      sum(export_to_world.agg) / mean(total_use.uk)))
 
     household = clean_household(data, year, mapping_105_to_64, mapping_64_to_16, industry_names, sic64, aggregated_names, industries_in_cols)
@@ -765,6 +1067,13 @@ function clean_data(data::Data, settings::Dict{String, Any})
 
 end
 
+"""
+    postprocess_clean_data!(data::CleanData)
+Post-process the cleaned data to convert regional data into ratios, round shares, and rescale the data.
+
+# Arguments
+- `data::CleanData`: The CleanData struct containing household and industry data to be post-processed.
+"""
 function postprocess_clean_data!(data::CleanData)
 
     # Note: the order these are called in matters (Should be refactored)
