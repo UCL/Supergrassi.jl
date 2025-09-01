@@ -506,6 +506,6 @@ end
 """
 function labor_fun(labor::T, log_wages::T, elasticity::T) where {T <: Real}
 
-    return max(eps(T), labor) ^ ( 1 / elasticity ) * exp(( elasticity - 1 ) / elasticity * log_wages)
+    return labor ^ ( 1 / elasticity ) * exp(( elasticity - 1 ) / elasticity * log_wages)
 
 end
