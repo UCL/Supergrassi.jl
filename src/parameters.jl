@@ -174,6 +174,10 @@ function log_price_index(elasticity::T,
 
     logterm = 0.0
 
+    # When using `ForwardWithPrimal` we encounter NaN gradients thanks to sqrt(x) around zero. 
+    # Currently we are using `ReverseWithPrimal` to avoid this issue. Therefore, the if 
+    # statements here are there purely for robustness.
+
     if (demand_uk != 0)
         logterm += demand_uk ^ (1 / elasticity) * exp((elasticity - 1) * log_price_uk / elasticity)
     end
