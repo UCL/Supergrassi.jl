@@ -40,17 +40,3 @@ function constraint_wrapper(x::Vector{T}, price_eu::Vector{T}, price_world::Vect
     return [F; CFC]
 
 end
-
-function unpack_x(n::Int, x::Vector{<:Number})
-
-    length(x) == 3 * n + 2 || error("x must have $(3*n + 2) elements, found $(length(x))")
-
-    log_price_uk = x[1:n]
-    zOC = x[n+1:2*n]
-    expenditure = x[2*n+1]
-    log_muI = x[2*n+2]
-    log_Delta = x[2*n+3:3*n+2]
-
-    return log_price_uk, zOC, expenditure, log_muI, log_Delta
-
-end
