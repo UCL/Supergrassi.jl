@@ -3,8 +3,7 @@ using Test
 using Aqua
 using YAML
 
-Aqua.test_all(Supergrassi; stale_deps = false)  
-# stale_deps = false: JuMP is considered a stale dependency by Aqua causing the tests to fail.
+Aqua.test_all(Supergrassi)  
 
 @testset "Supergrassi.jl" begin
     # Write your tests here.
