@@ -154,3 +154,32 @@ function generate_constants(data::Data, settings::Dict{String, Any})
 
 end
 
+"""
+    function unpack_x(n::Int, x::Vector{<:Number})
+
+Unpack the vector of equilibrium variables (P_uk, z_UC, E, muI, Delta) x into five separate variables.
+
+# Arguments
+- `n::Int`: Length of vector variables
+- `x::Vector{Real}`: Vector of equilibrium variables. Should be of size 3n+2
+
+# Outputs
+- `log_price_uk::Vector[n]` : Domestic price
+- `zOC::Vector[n]` : Operating cost
+- `expenditure::Real` : expenditure
+- `log_muI::Real` : Investment TFP
+- `log_Delta::Vector[n]` : Depreciation parameter
+"""
+function unpack_x(n::Int, x::Vector{<:Real})
+
+    length(x) == 3 * n + 2 || error("x must have $(3*n + 2) elements, found $(length(x))")
+
+    log_price_uk = x[1:n]
+    zOC = x[n+1:2*n]
+    expenditure = x[2*n+1]
+    log_muI = x[2*n+2]
+    log_Delta = x[2*n+3:3*n+2]
+
+    return log_price_uk, zOC, expenditure, log_muI, log_Delta
+
+end

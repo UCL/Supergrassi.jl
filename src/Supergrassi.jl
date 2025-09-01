@@ -17,6 +17,7 @@ include("parameters.jl")
 include("parameters_interface.jl")
 include("excess_demand.jl")
 include("objective_function.jl")
+include("constraint_function.jl")
 
 include("minimisation.jl")
 

@@ -118,7 +118,7 @@ for the export parameters β, this is the share of foreign expenditure on UK exp
 - `Ex::Real` : sum of imports
 - `Etilde::Real`: EU expenditure on UK exports
 - `ePx::Real` : exchange rate to foreign currency
-- `Ptilde::Real` : UK exportprice index
+- `Ptilde::Real` : UK export price index
 - `elasticity::Real` : substitution elasticity
 - `elasticity_tilde::Real` : substitution from uk to other elasticity
 
@@ -152,6 +152,8 @@ Matlab code reference e.g. ComputeTheta.m line 49.
 function price_index(elasticity::T,
                      log_price_uk::T, log_price_eu::T, log_price_world::T,
                      demand_uk::T, demand_eu::T, demand_world::T) where {T <: Real}
+
+    if(demand_uk == demand_eu == demand_world == 0.0) return 0.0 end
 
     return (
         demand_uk ^ (1 / elasticity) * exp((elasticity - 1) * log_price_uk / elasticity) +

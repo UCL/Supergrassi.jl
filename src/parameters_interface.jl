@@ -27,17 +27,14 @@ function compute_all_parameters(data::CleanData, price_uk::Vector{T}, price_eu::
     reg = data.industry.regional
     constants = data.constants
 
-    imports_uk_share_eu = constants.total_imports_from_uk.eu / (constants.total_imports_from_all_sources.eu
-                                                                / constants.exchange_rates.eur )
-    imports_uk_share_world = constants.total_imports_from_uk.world / (constants.total_imports_from_all_sources.world
-                                                                      / constants.exchange_rates.usd )
+    imports_uk_share_eu, imports_uk_share_world = compute_imports_shares(constants)
 
     α = compute_parameter(reg.consumption, constants.elasticities.consumption, price_uk, price_eu, price_world, log_scale)
-    β1 = compute_parameter(reg.export_eu, constants.elasticities.eu_export_demand, price_uk, price_eu, price_world, log_scale)
-    β1 = compute_foreign_share(β1, reg.export_eu, constants.elasticities.eu_export_demand, price_uk, price_eu, price_world,
+    β1 = compute_parameter(reg.export_eu, constants.elasticities.export_eu, price_uk, price_eu, price_world, log_scale)
+    β1 = compute_foreign_share(β1, reg.export_eu, constants.elasticities.export_eu, price_uk, price_eu, price_world,
                       imports_uk_share_eu, reg.totals.imports.eu, 1.0, constants.exchange_rates.eur)
-    β2 = compute_parameter(reg.export_world, constants.elasticities.world_export_demand, price_uk, price_eu, price_world, log_scale)
-    β2 = compute_foreign_share(β2, reg.export_world, constants.elasticities.world_export_demand, price_uk, price_eu, price_world,
+    β2 = compute_parameter(reg.export_world, constants.elasticities.export_world, price_uk, price_eu, price_world, log_scale)
+    β2 = compute_foreign_share(β2, reg.export_world, constants.elasticities.export_world, price_uk, price_eu, price_world,
                            imports_uk_share_world, reg.totals.imports.world, 1.0, constants.exchange_rates.usd)
     ρ = compute_parameter(reg.investment, constants.elasticities.investment, price_uk, price_eu, price_world, log_scale)
 
@@ -294,7 +291,13 @@ Compute the ad valorem tax rate by combining product and production taxes, norma
 """
 function compute_advalorem_tax(data::IndustryData)
 
-    tau = (data.tax.products .+ data.tax.production) ./ data.regional.total_use.agg
+    n = nrow(data.tax)
+    tau = Vector{Float64}(undef, n)
+    
+    for i = 1:n
+        tau[i] = (data.tax.products[i] + data.tax.production[i]) / data.regional.total_use.agg[i]
+    end
+
     if any(x -> x < 0 && x >= 1, tau)
         throw(ArgumentError("Expected 0 <= τ < 1, got: $tau"))
     end
