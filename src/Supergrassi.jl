@@ -34,7 +34,6 @@ function estimate()
 
     df = CSV.read(joinpath(@__DIR__, "..", "data", "data_for_household_demand.csv"), DataFrame)
 
-    # log_prices = DataFrame([df.logP_eu, df.logP_w], ["eu", "world"])
 
     log_prices_uk = df.logP_uk
     log_prices_eu = df.logP_eu
