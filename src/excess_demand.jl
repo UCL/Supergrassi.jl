@@ -1,5 +1,3 @@
-using Supergrassi
-
 # Below three functions calculate equations 4.1, 4.3 and 4.4 of main paper that describe the equilibrium
 # Equation 4.2 is the log_total_price_index in utility_function_paramerers.jl
 
