@@ -41,24 +41,6 @@ function constraint_wrapper(x::Vector{T}, price_eu::Vector{T}, price_world::Vect
 
 end
 
-function compute_fixed_capital_consumption_constraint(x::Vector{T}, data::IndustryData, params::Parameters) where {T <: Real}
-
-    n = length(data.depreciation.val)
-    log_price_uk, zOC, expenditure, log_TFP, log_Delta = unpack_x(n, x)
-
-    fixed_capital_consumption = data.depreciation.val .* data.capital.current_year
-
-    # The two constants k0 and q0 are used in the Matlab code but as far as I can tell are never assigned
-    # a value other than 1.0. I've kept them here for consistency.
-    k0 = 1.0
-    q0 = 1.0
-    λ = params.constants.loss_given_default
-    KL = rand(n) # TODO: KL will be computed by capital_market()
-
-    return fixed_capital_consumption - k0*q0*exp.(log_Delta) - q0 * λ / (1 - λ) .* KL
-
-end
-
 function unpack_x(n::Int, x::Vector{<:Number})
 
     length(x) == 3 * n + 2 || error("x must have $(3*n + 2) elements, found $(length(x))")
