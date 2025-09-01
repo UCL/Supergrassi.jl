@@ -17,9 +17,6 @@ on:
       - 'src/**'
       - 'Project.toml'
 
-permissions:
-  pages: write
-
 concurrency:
   # Same group concurrency as the `PreviewCleanup.yml` workflow, because they both
   # git-push to the same branch, so we want to avoid clashes.  NOTE: this is
