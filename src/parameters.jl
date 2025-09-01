@@ -174,11 +174,26 @@ function log_price_index(elasticity::T,
 
     if(demand_uk == demand_eu == demand_world == 0.0) return 0.0 end
 
-    return (elasticity / (elasticity - 1)) * log(
-        demand_uk ^ (1 / elasticity) * exp((elasticity - 1) * log_price_uk / elasticity) +
-        demand_eu ^ (1 / elasticity) * exp((elasticity - 1) * log_price_eu / elasticity) +
-        demand_world  ^ (1 / elasticity) * exp((elasticity - 1) * log_price_world  / elasticity)
-    )
+    logterm = 0.0
+
+    # When using `ForwardWithPrimal` we encounter NaN gradients thanks to sqrt(x) around zero. 
+    # Currently we are using `ReverseWithPrimal` to avoid this issue. Therefore, the if 
+    # statements here are there purely for robustness.
+
+    if (demand_uk != 0)
+        logterm += demand_uk ^ (1 / elasticity) * exp((elasticity - 1) * log_price_uk / elasticity)
+    end
+
+    if (demand_eu != 0.0)
+        logterm += demand_eu ^ (1 / elasticity) * exp((elasticity - 1) * log_price_eu / elasticity)
+    end
+
+    if (demand_world != 0.0)
+        logterm += demand_world ^ (1 / elasticity) * exp((elasticity - 1) * log_price_world / elasticity)
+    end
+
+
+    return (elasticity / (elasticity - 1)) * log(logterm)
 
 end
 
