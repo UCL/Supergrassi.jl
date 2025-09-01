@@ -13,6 +13,8 @@ constants:
   # split between eu and rest of world imports
   imports_split: 0.5
 
+  loss_given_default: 0.12
+
   import_tariff:
     eu: 0.12
     world: 0.12

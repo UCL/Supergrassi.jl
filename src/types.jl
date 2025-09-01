@@ -77,6 +77,7 @@ struct Constants
     export_costs::ForeignRegionalValues
 
     elasticities::Elasticities
+    loss_given_default::Float64
 end
 
 """
