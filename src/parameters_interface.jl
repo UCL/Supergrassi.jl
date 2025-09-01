@@ -359,9 +359,7 @@ function compute_parameter_subset(data::CleanData, price_uk::Vector{T}, price_eu
 
     γ = compute_production_parameter(data, price_uk, price_eu, price_world, log_scale)
 
-    loss_given_default = constants.loss_given_default
-
-    consts = ParameterConstants(constants.elasticities, loss_given_default, constants.interest_rate)
+    consts = ParameterConstants(constants.elasticities, constants.loss_given_default, constants.interest_rate)
 
     vals = ParameterSubset(consts, γ)
 
