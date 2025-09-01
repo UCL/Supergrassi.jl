@@ -67,9 +67,4 @@ Jac = jacobian(set_runtime_activity(ForwardWithPrimal),
     @test length(Jac.derivs[2]) == 16
     @test length(Jac.derivs[3]) == 6
     
-#    @test length(Jac.val) == nrow(df)
-#    @test ndims(Jac.derivs[1]) == 2
-#    @test ndims(Jac.derivs[2]) == 2
-#    @test ndims(Jac.derivs[3]) == 1
-
 end
