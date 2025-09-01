@@ -27,9 +27,6 @@ function compute_constraint_function(x::Vector{<:Number}, log_price_eu::Vector{T
     CEQ = Jac.val
     DCEQ = first(Jac.derivs)
 
-    # CEQ = constraint_wrapper(x, log_price_eu, log_price_world, params, data.industry, data.constants)
-    # DCEQ = zeros(32,50)
-
     return CEQ, DCEQ
 
 end
