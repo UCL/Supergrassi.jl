@@ -2,7 +2,7 @@ using Test
 using Supergrassi
 using CSV, DataFrames, Enzyme
 
-tol = 1e-8
+tol = 1e-12
 
 if (!@isdefined data)
     settings_path = create_filepath("config/settings.yml")
@@ -49,7 +49,7 @@ F = Supergrassi.market_clearing_price_constraint(price_uk, operating_cost, house
 end
 
 
-Jac = jacobian(set_runtime_activity(ReverseWithPrimal),
+Jac = jacobian(set_runtime_activity(ForwardWithPrimal),
                Supergrassi.market_clearing_price_constraint,
                price_uk, operating_cost, household_expenditure,
                Const(price_eu),
