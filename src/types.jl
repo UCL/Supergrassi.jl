@@ -77,6 +77,7 @@ struct Constants
     export_costs::ForeignRegionalValues
 
     elasticities::Elasticities
+    loss_given_default::Float64
 end
 
 """
@@ -374,5 +375,18 @@ struct Parameters
         log
     )
     end
+
+end
+
+"""
+    struct ParameterSubset
+
+Stores a subset of parameters for gradient computation.
+
+"""
+struct ParameterSubset
+
+    constants::ParameterConstants
+    production::ParamsProduction
 
 end

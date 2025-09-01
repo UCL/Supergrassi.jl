@@ -112,6 +112,8 @@ function generate_constants(data::Data, settings::Dict{String, Any})
 
     elasticities = settings["constants"]["elasticities"]
 
+    loss_given_default = settings["constants"]["loss_given_default"]
+
     production_elasticity = Elasticity(elasticities["production"][1],
                                        elasticities["production"][3],
                                        nothing,
@@ -148,7 +150,7 @@ function generate_constants(data::Data, settings::Dict{String, Any})
     interest_rate = 1 + geomean(interest_rates[!, 1] / 100)
 
     return Constants(year, exchange_rates, interest_rate, total_imports_from_uk, total_imports_from_all_sources, 
-                     import_tariffs, export_costs, elasticities_struct)
+                     import_tariffs, export_costs, elasticities_struct, loss_given_default)
 
 end
 
