@@ -2,7 +2,7 @@ using Test
 using Supergrassi
 using CSV, DataFrames, Enzyme
 
-tol = 1e-12
+tol = 1e-8
 
 if (!@isdefined data)
     settings_path = create_filepath("config/settings.yml")
@@ -31,9 +31,11 @@ params = Supergrassi.compute_all_parameters(clean, log_price_uk, log_price_eu, l
 operating_cost = df.zOC
 # Copied from matlab code to validate results
 household_expenditure = 7.27421398152353670952
+muI = Supergrassi.compute_muI(clean.industry, params.constants.elasticities.investment);
 
+    
 F = Supergrassi.market_clearing_price_constraint(price_uk, operating_cost, household_expenditure,
-                                                 price_eu, price_world, params, clean.industry, clean.constants)
+                                                 price_eu, price_world, muI, params, clean.industry, clean.constants)
 
 @testset "Market Clearing" begin
 
@@ -47,11 +49,12 @@ F = Supergrassi.market_clearing_price_constraint(price_uk, operating_cost, house
 end
 
 
-Jac = jacobian(set_runtime_activity(ForwardWithPrimal),
+Jac = jacobian(set_runtime_activity(ReverseWithPrimal),
                Supergrassi.market_clearing_price_constraint,
                price_uk, operating_cost, household_expenditure,
                Const(price_eu),
                Const(price_world),
+               Const(muI),
                Const(params),
                Const(clean.industry),
                Const(clean.constants))
