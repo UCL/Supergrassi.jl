@@ -8,10 +8,15 @@ df2d = CSV.read(joinpath(data_path, "parms_2d.csv"), DataFrame)
 
 #_, ∂log_params = Supergrassi.compute_all_parameters(clean, prices, true)
 
-@testset "Parameter values" begin
+
+@testset "Number of industries" begin
 
     @test params.constants.number_of_industries == 16
-    n = params.constants.number_of_industries
+end
+
+n = params.constants.number_of_industries
+
+@testset "Parameter values" begin
 
     @test isapprox(params.consumption.uk, df1d.alphaUK, atol = tol)
     @test isapprox(params.consumption.eu, df1d.alphaEU, atol = tol)

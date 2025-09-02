@@ -179,7 +179,7 @@ end
 
 function compute_fixed_capital_consumption_constraint(x::Vector{T}, data::IndustryData, params::Parameters) where {T <: Real}
 
-    n = paramters.constants.number_of_industries
+    n = params.constants.number_of_industries
     log_price_uk, zOC, expenditure, log_TFP, log_Delta = unpack_x(n, x)
 
     fixed_capital_consumption = data.depreciation.val .* data.capital.current_year
