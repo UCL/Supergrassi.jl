@@ -1,7 +1,5 @@
 using Supergrassi, DataFrames, CSV, Enzyme, Test
 
-n = 16
-
 df1d = CSV.read(joinpath(data_path, "parms_1d.csv"), DataFrame)
 df2d = CSV.read(joinpath(data_path, "parms_2d.csv"), DataFrame)
 
@@ -11,6 +9,9 @@ df2d = CSV.read(joinpath(data_path, "parms_2d.csv"), DataFrame)
 #_, ∂log_params = Supergrassi.compute_all_parameters(clean, prices, true)
 
 @testset "Parameter values" begin
+
+    @test params.constants.number_of_industries == 16
+    n = params.constants.number_of_industries
 
     @test isapprox(params.consumption.uk, df1d.alphaUK, atol = tol)
     @test isapprox(params.consumption.eu, df1d.alphaEU, atol = tol)

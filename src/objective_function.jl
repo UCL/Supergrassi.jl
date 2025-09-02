@@ -49,7 +49,7 @@ Computes the objective function value based on a vector of parameters.
 """
 function compute_objective_function(x::Vector{<:Number}, data::CleanData, prices_eu::Vector{<:Number}, prices_world::Vector{<:Number})
 
-    n = 16
+    n = data.constants.number_of_industries
 
     log_price_uk = x[1:n]
     zOC = x[(n+1):end]

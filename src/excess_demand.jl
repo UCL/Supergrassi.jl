@@ -16,7 +16,7 @@ TODO: There is an error when this function is called through Enzyme
 function market_clearing_price_constraint(x::Vector{T}, log_price_eu::Vector{T}, log_price_world::Vector{T},
                                           params::Parameters, data::IndustryData, constants::Constants) where {T <: Real}
 
-    n = length(log_price_eu)
+    n = constants.number_of_industries
     log_price_uk, zOC, expenditure, muI, log_Delta = unpack_x(n, x)
     price_uk = exp.(log_price_uk)
     price_eu = exp.(log_price_eu)
@@ -93,7 +93,7 @@ function market_clearing_price_constraint(price_uk::Vector{T}, operating_cost::V
     # logTauPdYBar = logTauPdMu + (log(γK) + ξ * log(1 - TOCθ)) / (ξ - 1) + logK0
 
     length(price_uk) == length(price_eu) == length(price_world) || error()
-    n = length(price_uk)
+    n = constants.number_of_industries
 
     elasticity = constants.elasticities
 
@@ -179,7 +179,7 @@ end
 
 function compute_fixed_capital_consumption_constraint(x::Vector{T}, data::IndustryData, params::Parameters) where {T <: Real}
 
-    n = length(data.depreciation.val)
+    n = paramters.constants.number_of_industries
     log_price_uk, zOC, expenditure, log_TFP, log_Delta = unpack_x(n, x)
 
     fixed_capital_consumption = data.depreciation.val .* data.capital.current_year
