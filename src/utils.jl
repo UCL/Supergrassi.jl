@@ -95,6 +95,12 @@ Generate a Constants struct from the provided data and settings.
 """
 function generate_constants(data::Data, settings::Dict{String, Any})
 
+    number_of_industries::Int64 = settings["constants"]["number_of_industries"]
+
+    if number_of_industries != 16
+        warn("Number of industries is not 16! Some functions may not work as expected.")
+    end
+
     year::Int64 = settings["constants"]["data_year"]
 
     exchange_rates = ExchangeRates(settings["constants"]["exchange_rates"]["usd"],
@@ -150,7 +156,7 @@ function generate_constants(data::Data, settings::Dict{String, Any})
     interest_rate = 1 + geomean(interest_rates[!, 1] / 100)
 
     return Constants(year, exchange_rates, interest_rate, total_imports_from_uk, total_imports_from_all_sources, 
-                     import_tariffs, export_costs, elasticities_struct, loss_given_default)
+                     import_tariffs, export_costs, elasticities_struct, loss_given_default, number_of_industries)
 
 end
 
