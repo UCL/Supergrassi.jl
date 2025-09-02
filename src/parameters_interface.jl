@@ -40,7 +40,7 @@ function compute_all_parameters(data::CleanData, price_uk::Vector{T}, price_eu::
 
     γ = compute_production_parameter(data, price_uk, price_eu, price_world, log_scale)
 
-    consts = ParameterConstants(constants.elasticities, constants.loss_given_default, constants.interest_rate)
+    consts = data.constants
 
     return Parameters(consts, α, β1, β2, γ, ρ, log_scale)
 
@@ -360,7 +360,7 @@ function compute_parameter_subset(data::CleanData, price_uk::Vector{T}, price_eu
 
     γ = compute_production_parameter(data, price_uk, price_eu, price_world, log_scale)
 
-    consts = ParameterConstants(constants.elasticities, constants.loss_given_default, constants.interest_rate)
+    consts = data.constants
 
     vals = ParameterSubset(consts, γ)
 
