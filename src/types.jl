@@ -282,26 +282,13 @@ struct ParamsProduction
 end
 
 """
-    struct ParameterConstants
-
-Stores constant values that are stored in parameters but not updated
-"""
-struct ParameterConstants
-
-    elasticities::Elasticities
-    loss_given_default::Float64
-    risk_free_interest_rate::Float64
-
-end
-
-"""
     struct Parameters
 
 Main structure for parameters
 
 Contains
 
-- `constants::ParameterConstants` : constant values
+- `constants::Constants` : constant values
 - `consumption::ParamsStruct` : `α`
 - `export_eu::ParamsStruct` : `β1`
 - `export_world::ParamsStruct` : `β2`
@@ -313,7 +300,7 @@ Note: The constructor checks that all reasonable parameters are non-negative unl
 """
 struct Parameters
 
-    constants::ParameterConstants
+    constants::Constants
 
     consumption::ParamsStruct
     export_eu::ParamsStruct
@@ -323,7 +310,7 @@ struct Parameters
     log::Bool
 
     function Parameters(
-        constants::ParameterConstants,
+        constants::Constants,
         consumption::ParamsStruct,
         export_eu::ParamsStruct,
         export_world::ParamsStruct,
@@ -386,7 +373,7 @@ Stores a subset of parameters for gradient computation.
 """
 struct ParameterSubset
 
-    constants::ParameterConstants
+    constants::Constants
     production::ParamsProduction
 
 end
