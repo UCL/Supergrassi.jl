@@ -145,7 +145,7 @@ Compute the 2d utility function parameters γM, γH, γK from regional InputMatr
 """
 function compute_production_parameter(data::CleanData, price_uk::Vector{T}, price_eu::Vector{T}, price_world::Vector{T}, log_scale::Bool) where {T <: Real}
 
-    n = size(data.industry.regional.input_matrices.agg, 1)
+    n = data.constants.number_of_industries
     v0 = Vector{Float64}(undef, n)
     m0 = Matrix{Float64}(undef, n, n)
 

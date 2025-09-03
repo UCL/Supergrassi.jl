@@ -9,7 +9,7 @@
 function compute_constraint_function(x::Vector{<:Number}, log_price_eu::Vector{T}, log_price_world::Vector{T},
                                      data::CleanData, params::Parameters) where {T <: Real}
 
-    n = length(log_price_eu)
+    n = data.constants.number_of_industries
 
     log_price_uk, zOC, expenditure, log_TFP, log_Delta = unpack_x(n, x)
 
