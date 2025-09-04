@@ -1,4 +1,5 @@
 using Enzyme
+using Ipopt
 
 
 function compute_gradient(x::Vector{<:Number}, clean_data::CleanData, prices_eu::Vector{<:Number}, prices_world::Vector{<:Number})

@@ -51,15 +51,23 @@ function estimate()
 
     @info "Parameters computed."
 
-    x = deepcopy([log_prices_uk; clean.industry.surplus.val; clean.industry.regional.totals.savings])
-    println("Starting minimisation with x: ", x)
+    # TODO:replace with real household final consumption
+    household_final_consumption = [1.2]
+
+    x = deepcopy([log_prices_uk; clean.industry.surplus.val; clean.industry.regional.totals.savings; household_final_consumption; clean.industry.depreciation.val])
+    println("Starting minimisation with x of length ", length(x))
 
 
+    obj_val = compute_objective_function(x, clean, log_prices_eu, log_prices_world)
     gradient = compute_gradient(x, clean, log_prices_eu, log_prices_world)
+
+    constraint_value = constraint_wrapper(x, log_prices_eu, log_prices_world, params, clean.industry, clean.constants)
+    jacobian = compute_constraint_function(x, log_prices_eu, log_prices_world, clean, params)
 
     @info "Estimation completed."
 
-    return settings, data, clean, params, log_params, gradient
+    # return settings, data, clean, params, log_params, gradient
+    return settings, data, clean, params, log_params, obj_val, gradient, constraint_value, jacobian
 end
 
 export create_filepath, read_data, read_settings, check_file_availability
