@@ -64,6 +64,23 @@ function estimate()
     constraint_value = constraint_wrapper(x, log_prices_eu, log_prices_world, params, clean.industry, clean.constants)
     jacobian = compute_constraint_function(x, log_prices_eu, log_prices_world, clean, params)
 
+
+    prob = Ipopt.CreateIpoptProblem(
+        16,
+        [0.0 for i in 1:16],
+        [10.0 for i in 1:16],
+        49,
+        [0.0 for i in 1:49],
+        [10.0 for i in 1:49],
+        8,
+        10,
+        compute_objective_function,
+        constraint_wrapper,
+        compute_gradient,
+        compute_constraint_function,
+        [0 for i in 1:16],
+    )
+
     @info "Estimation completed."
 
     # return settings, data, clean, params, log_params, gradient
