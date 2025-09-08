@@ -52,7 +52,7 @@ function compute_objective_function(x::Vector{<:Number}, data::CleanData, prices
     n = data.constants.number_of_industries
 
     log_price_uk = x[1:n]
-    zOC = x[(n+1):end]
+    zOC = x[(n+1):2*n]
 
     param_subset = compute_parameter_subset(data, log_price_uk, prices_eu, prices_world, false)
 
