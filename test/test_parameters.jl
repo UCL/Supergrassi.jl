@@ -84,8 +84,8 @@ using Supergrassi, Test
         try
             Supergrassi.total_input_parameters(prices_uk, prices_eu, prices_world, input_uk[1:2], input_eu[1:2], input_world[1:2], input_agg[1:2], surplus, capital, output, labour, low_wages, elasticity, tau, true)
         catch e
-            @test isa(e, ErrorException)
-            @test occursin("logPm and input_agg must have the same length", e.msg)
+            @test isa(e, DimensionMismatch)
+            @test occursin("all inputs to eachindex must have the same indices", e.msg)
         end
     end
 
@@ -97,8 +97,8 @@ using Supergrassi, Test
         try
             Supergrassi.total_labor_parameters(prices_uk, prices_eu, prices_world, input_uk[1:2], input_eu[1:2], input_world[1:2], input_agg[1:2], surplus, capital, output, labour, low_wages, elasticity, tau, true)
         catch e
-            @test isa(e, ErrorException)
-            @test occursin("logPm and input_agg must have the same length", e.msg)
+            @test isa(e, DimensionMismatch)
+            @test occursin("all inputs to eachindex must have the same indices", e.msg)
         end
     end
 
@@ -110,8 +110,8 @@ using Supergrassi, Test
         try
             Supergrassi.total_capital_parameters(prices_uk, prices_eu, prices_world, input_uk[1:2], input_eu[1:2], input_world[1:2], input_agg[1:2], surplus, capital, output, labour, low_wages, elasticity, tau, true)
         catch e
-            @test isa(e, ErrorException)
-            @test occursin("logPm and input_agg must have the same length", e.msg)
+            @test isa(e, DimensionMismatch)
+            @test occursin("all inputs to eachindex must have the same indices", e.msg)
         end
     end
 
