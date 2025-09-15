@@ -21,6 +21,25 @@ include("constraint_function.jl")
 
 include("minimisation.jl")
 
+function compute_hessian(x::Vector{Float64},
+                  rows::Vector{Int32},
+                  cols::Vector{Int32},
+                  obj_factor::Float64,
+                  lambda::Vector{Float64},
+                  values::Union{Nothing,Vector{Float64}},
+                  )
+
+    return
+end
+
+
+using SparseArrays
+
+function sparser(matrix)
+    sp = sparse(matrix)
+    return findnz(sp)
+end
+
 function estimate()
     @info "Estimation started."
 
@@ -58,33 +77,57 @@ function estimate()
     println("Starting minimisation with x of length ", length(x))
 
 
-    obj_val = compute_objective_function(x, clean, log_prices_eu, log_prices_world)
-    gradient = compute_gradient(x, clean, log_prices_eu, log_prices_world)
+    simple_objective(x) = compute_objective_function(x, clean, log_prices_eu, log_prices_world)
+    simple_gradient(x, gradient_var) = compute_gradient(x, clean, log_prices_eu, log_prices_world, gradient_var)
 
-    constraint_value = constraint_wrapper(x, log_prices_eu, log_prices_world, params, clean.industry, clean.constants)
-    jacobian = compute_constraint_function(x, log_prices_eu, log_prices_world, clean, params)
+    simple_constraint(x, constraint) = constraint_wrapper(x, log_prices_eu, log_prices_world, params, clean.industry, clean.constants, constraint)
 
+    function simple_jacobian(x, rows, cols, vals)
+
+        if length(x) != 50
+            error("Length of x should be 50, but got $(length(x))")
+        end
+
+        sparse_jacobian = sparser(compute_constraint_function(x, log_prices_eu, log_prices_world, clean, params))
+        
+        rows[:] = sparse_jacobian[1]
+        cols[:] = sparse_jacobian[2]
+        vals[:] = sparse_jacobian[3]
+
+        return 
+    end
+
+
+    trial = sparser(compute_constraint_function(x, log_prices_eu, log_prices_world, clean, params))
+
+    println("Jacobian trial completed.")
+    println("Jacobian trial size: ", length(trial[1]))
 
     prob = Ipopt.CreateIpoptProblem(
-        16,
-        [0.0 for i in 1:16],
-        [10.0 for i in 1:16],
-        49,
-        [0.0 for i in 1:49],
-        [10.0 for i in 1:49],
-        8,
-        10,
-        compute_objective_function,
-        constraint_wrapper,
-        compute_gradient,
-        compute_constraint_function,
-        [0 for i in 1:16],
+        50,
+        [0.0 for i in 1:50],
+        [10.0 for i in 1:50],
+        32,
+        [0.0 for i in 1:32],
+        [10.0 for i in 1:32],
+        length(trial[1]),
+        0,
+        simple_objective,
+        simple_constraint,
+        simple_gradient,
+        simple_jacobian,
+        compute_hessian,
     )
+
+    prob.x = x
+
+    status = Ipopt.IpoptSolve(prob)
 
     @info "Estimation completed."
 
     # return settings, data, clean, params, log_params, gradient
-    return settings, data, clean, params, log_params, obj_val, gradient, constraint_value, jacobian
+    # return settings, data, clean, params, log_params, obj_val, gradient, constraint_value, jacobian, status
+    return status
 end
 
 export create_filepath, read_data, read_settings, check_file_availability
