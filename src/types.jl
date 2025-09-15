@@ -78,6 +78,8 @@ struct Constants
 
     elasticities::Elasticities
     loss_given_default::Float64
+
+    number_of_industries::Int64
 end
 
 """

@@ -16,7 +16,7 @@ TODO: There is an error when this function is called through Enzyme
 function market_clearing_price_constraint(x::Vector{T}, log_price_eu::Vector{T}, log_price_world::Vector{T},
                                           params::Parameters, data::IndustryData, constants::Constants) where {T <: Real}
 
-    n = length(log_price_eu)
+    n = constants.number_of_industries
     log_price_uk, zOC, expenditure, muI, log_Delta = unpack_x(n, x)
     price_uk = exp.(log_price_uk)
     price_eu = exp.(log_price_eu)
@@ -93,7 +93,7 @@ function market_clearing_price_constraint(price_uk::Vector{T}, operating_cost::V
     # logTauPdYBar = logTauPdMu + (log(γK) + ξ * log(1 - TOCθ)) / (ξ - 1) + logK0
 
     length(price_uk) == length(price_eu) == length(price_world) || error()
-    n = length(price_uk)
+    n = constants.number_of_industries
 
     elasticity = constants.elasticities
 
@@ -179,7 +179,7 @@ end
 
 function compute_fixed_capital_consumption_constraint(x::Vector{T}, data::IndustryData, params::Parameters) where {T <: Real}
 
-    n = length(data.depreciation.val)
+    n = params.constants.number_of_industries
     log_price_uk, zOC, expenditure, log_TFP, log_Delta = unpack_x(n, x)
 
     fixed_capital_consumption = data.depreciation.val .* data.capital.current_year
@@ -236,10 +236,9 @@ Compute the log of final price index (logP) for each commodity
 """
 function log_price_index(param_uk::Vector{T}, param_eu::Vector{T}, param_world::Vector{T}, price_uk::Vector{T}, price_eu::Vector{T}, price_world::Vector{T}, elasticity::T) where {T<:Real}
 
-    n = length(price_uk)
-    logP = Vector{T}(undef, n)
+    logP = similar(param_uk)
 
-    for i in 1:n
+    for i in eachindex(logP, param_uk, param_eu, param_world, price_uk, price_eu, price_world)
         logP[i] = 1 / (1 - elasticity) * log(
             param_uk[i] * price_uk[i] ^ (1 - elasticity) +
             param_eu[i] * price_eu[i] ^ (1 - elasticity) +
@@ -272,10 +271,9 @@ Compute the log of aggregate price index (logPBar)
 """
 function log_agg_price_index(param_agg::Vector{T}, log_price_index::Vector{T}, elasticity::T) where {T<:Real}
 
-    n = length(param_agg)
-    N = Vector{T}(undef, n)
+    N = similar(param_agg)
 
-    for i in 1:n
+    for i in eachindex(N, param_agg, log_price_index)
         N[i] = param_agg[i] * exp((1.0 - elasticity) * log_price_index[i])
     end
 
@@ -298,10 +296,9 @@ Compute expenditure for region. Called [EF, EX1, EX2, EI, EM] in Matlab code.
 """
 function expenditure_by_region(param::Vector{T}, price::Vector{T}, log_expenditure::Vector{T}, log_price_index::Vector{T}, elasticity::Elasticity) where {T <: Real}
 
-    n = length(price)
-    EF = Vector{T}(undef, n)
+    EF = similar(price)
 
-    for i = 1:n
+    for i in eachindex(EF, param, log_expenditure, price, log_price_index)
         EF[i] = param[i] * exp(log_expenditure[i] + (1.0 - elasticity.armington) * (log(price[i]) - log_price_index[i]))
     end
 
@@ -324,10 +321,9 @@ Compute aggregate expenditure by commodity. Called [LogEF, LogEX1, LogEX2, LogEI
 """
 function log_expenditure(param_agg::Vector{T}, expenditure::T, elasticity::T, log_price_index::Vector{T}, log_agg_price_index::T) where {T <: Real}
 
-    n = length(param_agg)
-    logE = Vector{T}(undef, n)
+    logE = similar(param_agg)
 
-    for i in 1:n
+    for i in eachindex(logE, param_agg, log_price_index)
         logE[i] = log(param_agg[i]) + expenditure + (1.0 - elasticity) * (log_price_index[i] - log_agg_price_index)
     end
 
@@ -375,8 +371,8 @@ Computes the intermediate goods price index for multiple industries, Step 1 of E
 function intermediate_goods_price_index(log_price_uk::Vector{T}, zOC::Vector{T}, tau::Vector{T}, mu::Vector{T},
                                         gammaK::Vector{T}, K0::Vector{T}, xi::T) where {T <: Real}
 
-    pdYBar = Vector{T}(undef, length(log_price_uk))
-    for i in 1:length(log_price_uk)
+    pdYBar = similar(log_price_uk)
+    for i in eachindex(log_price_uk, zOC, tau, mu, gammaK, K0)
         pdYBar[i] = intermediate_goods_price_index(log_price_uk[i], zOC[i], tau[i], mu[i], gammaK[i], K0[i], xi)
     end
     return pdYBar

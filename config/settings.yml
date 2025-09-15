@@ -15,6 +15,8 @@ constants:
 
   loss_given_default: 0.12
 
+  number_of_industries: 16
+
   import_tariff:
     eu: 0.12
     world: 0.12
