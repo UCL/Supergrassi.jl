@@ -90,9 +90,13 @@ function estimate()
 
         sparse_jacobian = sparser(compute_constraint_function(x, log_prices_eu, log_prices_world, clean, params))
         
-        rows[:] = sparse_jacobian[1]
-        cols[:] = sparse_jacobian[2]
-        vals[:] = sparse_jacobian[3]
+
+        if vals === nothing
+            rows[:] = sparse_jacobian[1]
+            cols[:] = sparse_jacobian[2]
+        else
+            vals[:] = sparse_jacobian[3]
+        end
 
         return 
     end
@@ -107,9 +111,9 @@ function estimate()
         50,
         [0.0 for i in 1:50],
         [10.0 for i in 1:50],
-        32,
-        [0.0 for i in 1:32],
-        [10.0 for i in 1:32],
+        50,
+        [-1000.0 for i in 1:50],
+        [1000.0 for i in 1:50],
         length(trial[1]),
         0,
         simple_objective,
