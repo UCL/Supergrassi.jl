@@ -32,7 +32,7 @@ function compute_constraint_function(x::Vector{<:Number}, log_price_eu::Vector{T
     # # return CEQ, DCEQ
     # return DCEQ
 
-    y = diagm(ones(length(x)))
+    y = diagm(ones(32))
     return y
 
 end
@@ -45,7 +45,7 @@ function constraint_wrapper(x::Vector{T}, price_eu::Vector{T}, price_world::Vect
     # CFC = compute_fixed_capital_consumption_constraint(x, data, params)
     # return [F; CFC]
 
-    y = x
+    y = x[1:32]
     return y
 
 end

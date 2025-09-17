@@ -111,9 +111,9 @@ function estimate()
         50,
         [0.0 for i in 1:50],
         [10.0 for i in 1:50],
-        50,
-        [-1000.0 for i in 1:50],
-        [1000.0 for i in 1:50],
+        32,
+        [0.0 for i in 1:32],
+        [0.0 for i in 1:32],
         length(trial[1]),
         0,
         simple_objective,
@@ -129,8 +129,6 @@ function estimate()
 
     @info "Estimation completed."
 
-    # return settings, data, clean, params, log_params, gradient
-    # return settings, data, clean, params, log_params, obj_val, gradient, constraint_value, jacobian, status
     return status
 end
 
