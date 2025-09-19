@@ -93,6 +93,28 @@ function residual(logOmega::T, L::T, fun::Function) where {T<:Real}
 
 end
 
+"""
+C. 44
+"""
+function G(price_uk::T, zOC::T, mu::T, gammaK::T, delta::T,
+           tau::T, logOmega::T, chi0::T, xi::T, q0::T, k0::T, muBar::T, sigmaBar::T) where {T <: Real}
+
+    Bval = B(price_uk, mu, zOC, delta, tau, gammaK, chi0, xi , q0)
+    bval = b(price_uk, mu, zOC, tau, gammaK, xi, q0)
+
+    dist = Normal()
+
+    ζ0 = logOmega - muBar / sigmaBar
+
+    G = q0 * k0 * (
+        B * cdf(dist, ζ0)
+        + b * mu * cdf(dist, ζ0 - sigmaBar)
+    )
+
+    return G
+
+end
+
 Random.seed!(1238)
 
 price_uk = rand()
@@ -104,6 +126,7 @@ gammaK = rand()
 chi0 = rand()
 xi = rand()
 q0 = rand()
+k0 = rand()
 
 L = 1.0
 σ = 1.4
