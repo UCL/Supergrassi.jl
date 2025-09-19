@@ -82,28 +82,27 @@ function estimate()
 
     simple_constraint(x, constraint) = constraint_wrapper(x, log_prices_eu, log_prices_world, params, clean.industry, clean.constants, constraint)
 
-    function simple_jacobian(x, rows, cols, vals)
-
-        if length(x) != 50
-            error("Length of x should be 50, but got $(length(x))")
-        end
+    function simple_jacobian(x::Vector{Float64}, rows::Vector{Int32}, cols::Vector{Int32}, vals::Vector{Float64})
 
         sparse_jacobian = sparser(compute_constraint_function(x, log_prices_eu, log_prices_world, clean, params))
-        
+        vals[:] = sparse_jacobian[3]
 
-        if vals === nothing
-            rows[:] = sparse_jacobian[1]
-            cols[:] = sparse_jacobian[2]
-        else
-            vals[:] = sparse_jacobian[3]
-        end
+        return 
+    end
+
+    function simple_jacobian(x::Vector{Float64}, rows::Vector{Int32}, cols::Vector{Int32}, vals::Nothing)
+
+        sparse_jacobian = findnz(sparse(global_jacobian))
+        rows[:] = sparse_jacobian[1]
+        cols[:] = sparse_jacobian[2]
 
         return 
     end
 
 
-    trial = sparser(compute_constraint_function(x, log_prices_eu, log_prices_world, clean, params))
+    global_jacobian = compute_constraint_function(x, log_prices_eu, log_prices_world, clean, params)
 
+    trial = sparser(global_jacobian)
     println("Jacobian trial completed.")
     println("Jacobian trial size: ", length(trial[1]))
 

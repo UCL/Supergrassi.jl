@@ -49,15 +49,15 @@ Computes the objective function value based on a vector of parameters.
 """
 function compute_objective_function(x::Vector{<:Number}, data::CleanData, prices_eu::Vector{<:Number}, prices_world::Vector{<:Number})
 
-    # n = 16
+    n = 16
 
-    # log_price_uk = x[1:n]
-    # zOC = x[(n+1):end]
+    log_price_uk = x[1:n]
+    zOC = x[(n+1):end]
 
-    # param_subset = compute_parameter_subset(data, log_price_uk, prices_eu, prices_world, false)
+    param_subset = compute_parameter_subset(data, log_price_uk, prices_eu, prices_world, false)
 
-    # return compute_objective_function(log_price_uk, zOC, data, param_subset)
+    return compute_objective_function(log_price_uk, zOC, data, param_subset)
 
-    return sum(x)
+    # return sum(x)
 
 end
