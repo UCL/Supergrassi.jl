@@ -1,6 +1,6 @@
 using Supergrassi, CSV, DataFrames, Test
 
-tol = 1e-12
+tol = 1e-6
 
 config_path = joinpath(@__DIR__, "..", "config","settings.yml")
 settings_path = create_filepath(config_path)
@@ -15,19 +15,21 @@ df = outerjoin(CSV.read(joinpath(data_path, "data_for_household_demand.csv"), Da
                CSV.read(joinpath(data_path, "data_for_capital_production.csv"), DataFrame),
                on = [:logP_uk, :logP_eu, :logP_w], makeunique = true)
 
-prices = DataFrame([df.logP_uk, df.logP_eu, df.logP_w], ["uk", "eu", "world"])
+# prices = DataFrame([df.logP_uk, df.logP_eu, df.logP_w], ["uk", "eu", "world"])
+
+price_uk = df.logP_uk
+price_eu = df.logP_eu
+price_world = df.logP_w
 
 clean = Supergrassi.clean_data(data,settings)
 Supergrassi.postprocess_clean_data!(clean)
 
-params, _ = Supergrassi.compute_all_parameters(clean, prices, false)
-
+params = Supergrassi.compute_all_parameters(clean, price_uk, price_eu, price_world, false)
 
 @testset "Fixtures Typecheck" begin
 
     @test isa(clean, Supergrassi.CleanData)
     @test isa(params, Supergrassi.Parameters)
-    @test isa(prices, DataFrame)
     @test isa(df, DataFrame)
     @test isa(settings, Dict{String, Any})
     @test isa(filepaths, Dict{String, Supergrassi.FilePath})

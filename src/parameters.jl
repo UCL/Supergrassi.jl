@@ -95,7 +95,7 @@ function total_parameters(log_price_index::Vector{T}, quantity::Vector{T}, elast
 
     logPBar = log_total_price_index(elasticity, log_price_index, quantity)
 
-    parameters = Vector{T}(undef, length(log_price_index))
+    parameters = similar(log_price_index)
     for i in axes(log_price_index,1)
         parameters[i] = weight_kernel(quantity[i], exp(log_price_index[i] - logPBar), elasticity)
     end
@@ -118,7 +118,7 @@ for the export parameters β, this is the share of foreign expenditure on UK exp
 - `Ex::Real` : sum of imports
 - `Etilde::Real`: EU expenditure on UK exports
 - `ePx::Real` : exchange rate to foreign currency
-- `Ptilde::Real` : UK exportprice index
+- `Ptilde::Real` : UK export price index
 - `elasticity::Real` : substitution elasticity
 - `elasticity_tilde::Real` : substitution from uk to other elasticity
 
@@ -153,6 +153,8 @@ function price_index(elasticity::T,
                      log_price_uk::T, log_price_eu::T, log_price_world::T,
                      demand_uk::T, demand_eu::T, demand_world::T) where {T <: Real}
 
+    if(demand_uk == demand_eu == demand_world == 0.0) return 0.0 end
+
     return (
         demand_uk ^ (1 / elasticity) * exp((elasticity - 1) * log_price_uk / elasticity) +
         demand_eu ^ (1 / elasticity) * exp((elasticity - 1) * log_price_eu / elasticity) +
@@ -172,11 +174,26 @@ function log_price_index(elasticity::T,
 
     if(demand_uk == demand_eu == demand_world == 0.0) return 0.0 end
 
-    return (elasticity / (elasticity - 1)) * log(
-        demand_uk ^ (1 / elasticity) * exp((elasticity - 1) * log_price_uk / elasticity) +
-        demand_eu ^ (1 /elasticity) * exp((elasticity - 1) * log_price_eu / elasticity) +
-        demand_world  ^ (1 / elasticity) * exp((elasticity - 1) * log_price_world  / elasticity)
-    )
+    logterm = 0.0
+
+    # When using `ForwardWithPrimal` we encounter NaN gradients thanks to sqrt(x) around zero. 
+    # Currently we are using `ReverseWithPrimal` to avoid this issue. Therefore, the if 
+    # statements here are there purely for robustness.
+
+    if (demand_uk != 0)
+        logterm += demand_uk ^ (1 / elasticity) * exp((elasticity - 1) * log_price_uk / elasticity)
+    end
+
+    if (demand_eu != 0.0)
+        logterm += demand_eu ^ (1 / elasticity) * exp((elasticity - 1) * log_price_eu / elasticity)
+    end
+
+    if (demand_world != 0.0)
+        logterm += demand_world ^ (1 / elasticity) * exp((elasticity - 1) * log_price_world / elasticity)
+    end
+
+
+    return (elasticity / (elasticity - 1)) * log(logterm)
 
 end
 
@@ -234,12 +251,9 @@ function total_input_parameters(prices_uk::Vector{T}, prices_eu::Vector{T}, pric
                                 surplus::T, capital::T, output::T, labor::T, log_wages::T, elasticity::Elasticity, tau::T, log_scale::Bool) where {T <: Real}
 
 
-    if length(prices_uk) != length(input_agg)
-        error("logPm and input_agg must have the same length")
-    end
-    logPm = Vector{T}(undef, length(prices_uk))
+    logPm = similar(prices_uk)
 
-    for i in 1:length(prices_uk)
+    for i in eachindex(logPm, prices_uk, prices_eu, prices_world, input_uk, input_eu, input_world)
         logPm[i] = log_price_index(elasticity.armington, prices_uk[i], prices_eu[i], prices_world[i], input_uk[i], input_eu[i], input_world[i])
     end
 
@@ -247,9 +261,9 @@ function total_input_parameters(prices_uk::Vector{T}, prices_eu::Vector{T}, pric
 
     tauP = tauPdMu(elasticity.substitution, logPm, input_agg, surplus, capital, output, labor, log_wages, tau)
 
-    parameters = Vector{T}(undef, length(logPm))
+    parameters = similar(logPm)
 
-    for i in axes(logPm,1)
+    for i in eachindex(parameters, input_agg, logPm)
         parameters[i] = weight_kernel(input_agg[i], exp(logPm[i])/tauP, elasticity.substitution)
     end
 
@@ -292,11 +306,8 @@ function total_labor_parameters(prices_uk::Vector{T}, prices_eu::Vector{T}, pric
                                 input_uk::Vector{T}, input_eu::Vector{T}, input_world::Vector{T}, input_agg::Vector{T},
                                 surplus::T, capital::T, output::T, labor::T, log_wages::T, elasticity::Elasticity, tau::T, log_scale::Bool) where T
 
-    logPm = Vector{T}(undef, length(prices_uk))
-    if length(prices_uk) != length(input_agg)
-        error("logPm and input_agg must have the same length")
-    end
-    for i in 1:length(prices_uk)
+    logPm = similar(prices_uk)
+    for i in eachindex(logPm, prices_uk, prices_eu, prices_world, input_uk, input_eu, input_world)
         logPm[i] = log_price_index(elasticity.armington, prices_uk[i], prices_eu[i], prices_world[i], input_uk[i], input_eu[i], input_world[i])
     end
     replace!(logPm, Inf => 0.0)
@@ -345,12 +356,9 @@ function total_capital_parameters(prices_uk::Vector{T}, prices_eu::Vector{T}, pr
                                   input_uk::Vector{T}, input_eu::Vector{T}, input_world::Vector{T}, input_agg::Vector{T},
                                   surplus::T, capital::T, output::T, labor::T, log_wages::T, elasticity::Elasticity, tau::T, log_scale::Bool) where T
 
-    logPm = Vector{T}(undef, length(prices_uk))
-    if length(prices_uk) != length(input_agg)
-        error("logPm and input_agg must have the same length")
-    end
+    logPm = similar(prices_uk)
 
-    for i in 1:length(prices_uk)
+    for i in eachindex(prices_uk, prices_eu, prices_world, input_uk, input_eu, input_world)
         logPm[i] = log_price_index(elasticity.armington, prices_uk[i], prices_eu[i], prices_world[i], input_uk[i], input_eu[i], input_world[i])
     end
     replace!(logPm, Inf => 0.0)
@@ -396,8 +404,8 @@ function productivity_shock_mean(elasticity::Elasticity, prices_uk::Vector{T}, p
                                  input_uk::Vector{T}, input_eu::Vector{T}, input_world::Vector{T}, input_agg::Vector{T},
                                  surplus::T, capital::T, output::T, labor::T, log_wages::T, tau::T, row::Int, log_scale::Bool) where {T <: Real}
 
-    logPm = Vector{T}(undef, length(prices_uk))
-    for i in 1:length(prices_uk)
+    logPm = similar(prices_uk)
+    for i in eachindex(logPm, prices_uk, prices_eu, prices_world, input_uk, input_eu, input_world)
         logPm[i] = log_price_index(elasticity.armington, prices_uk[i], prices_eu[i], prices_world[i], input_uk[i], input_eu[i], input_world[i])
     end
     replace!(logPm, Inf => 0.0)

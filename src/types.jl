@@ -47,15 +47,15 @@ Stores sets of elasticity constants.
 Names for reference in paper/matlab code:
 
 - `consumption`: α
-- `eu_export_demand`: β1
-- `world_export_demand`: β2
+- `export_eu`: β1
+- `export_world`: β2
 - `investment`: ρ
 - `production`: ξ
 """
 struct Elasticities
     production::Elasticity
-    world_export_demand::Elasticity
-    eu_export_demand::Elasticity
+    export_world::Elasticity
+    export_eu::Elasticity
     consumption::Elasticity
     investment::Elasticity
 end
@@ -77,6 +77,9 @@ struct Constants
     export_costs::ForeignRegionalValues
 
     elasticities::Elasticities
+    loss_given_default::Float64
+
+    number_of_industries::Int64
 end
 
 """
@@ -239,7 +242,7 @@ struct ParamsStruct
     uk::Vector{Float64}
     eu::Vector{Float64}
     world::Vector{Float64}
-    agg::Array{Float64}
+    agg::Vector{Float64}
     tilde::Union{Vector{Float64}, Nothing} # Optional, used for some parameters that have a tilde version
 
 end
@@ -266,30 +269,17 @@ Names reference
 """
 struct ParamsProduction
 
-    human::Array{Float64}
-    capital::Array{Float64}
+    human::Vector{Float64}
+    capital::Vector{Float64}
     low_skill::Vector{Float64}
     high_skill::Vector{Float64}
-    shock_mean::Array{Float64}
-    shock_stddev::Array{Float64}
+    shock_mean::Vector{Float64}
+    shock_stddev::Vector{Float64}
 
     uk::Matrix{Float64}
     eu::Matrix{Float64}
     world::Matrix{Float64}
-    agg::Array{Float64}
-
-end
-
-"""
-    struct ParameterConstants
-
-Stores constant values that are stored in parameters but not updated
-"""
-struct ParameterConstants
-
-    elasticities::Elasticities
-    loss_given_default::Float64
-    risk_free_interest_rate::Float64
+    agg::Matrix{Float64}
 
 end
 
@@ -300,7 +290,7 @@ Main structure for parameters
 
 Contains
 
-- `constants::ParameterConstants` : constant values
+- `constants::Constants` : constant values
 - `consumption::ParamsStruct` : `α`
 - `export_eu::ParamsStruct` : `β1`
 - `export_world::ParamsStruct` : `β2`
@@ -312,7 +302,7 @@ Note: The constructor checks that all reasonable parameters are non-negative unl
 """
 struct Parameters
 
-    constants::ParameterConstants
+    constants::Constants
 
     consumption::ParamsStruct
     export_eu::ParamsStruct
@@ -320,21 +310,19 @@ struct Parameters
     production::ParamsProduction
     investment::ParamsStruct
     log::Bool
-    derivatives::Bool
 
     function Parameters(
-        constants::ParameterConstants,
+        constants::Constants,
         consumption::ParamsStruct,
         export_eu::ParamsStruct,
         export_world::ParamsStruct,
         production::ParamsProduction,
         investment::ParamsStruct,
-        log::Bool,
-        derivatives::Bool
+        log::Bool
     )
 
 
-    if !log && !derivatives
+    if !log
 
         to_check = [
             consumption,
@@ -373,9 +361,21 @@ struct Parameters
         export_world,
         production,
         investment,
-        log,
-        derivatives
+        log
     )
     end
+
+end
+
+"""
+    struct ParameterSubset
+
+Stores a subset of parameters for gradient computation.
+
+"""
+struct ParameterSubset
+
+    constants::Constants
+    production::ParamsProduction
 
 end

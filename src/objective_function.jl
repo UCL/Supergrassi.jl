@@ -12,13 +12,16 @@ Computes the objective function value based on the log prices and zOC values.
 # Returns
 - `objective_value::Float64`: The computed objective function value.
 """
-function compute_objective_function(log_price_uk::Vector{<:Number}, zOC::Vector{<:Number}, data::CleanData, params::Parameters)
+function compute_objective_function(log_price_uk::Vector{<:Number}, zOC::Vector{<:Number}, data::CleanData, params::ParameterSubset)
 
     tau = compute_advalorem_tax(data.industry)
 
     mu = params.production.shock_mean
+
     gammaK = params.production.capital
+
     k0 = data.industry.capital.current_year
+
     xi = params.constants.elasticities.production.substitution
 
     excess_demand = intermediate_goods_price_index(log_price_uk, zOC, tau, mu, gammaK, k0, xi)
@@ -44,13 +47,15 @@ Computes the objective function value based on a vector of parameters.
 # Returns
 - `objective_value::Float64`: The computed objective function value.
 """
-function compute_objective_function(x::Vector{<:Number}, data::CleanData, params::Parameters)
+function compute_objective_function(x::Vector{<:Number}, data::CleanData, prices_eu::Vector{<:Number}, prices_world::Vector{<:Number})
 
-    n = length(data.industry.regional.total_use.agg)
+    n = data.constants.number_of_industries
 
     log_price_uk = x[1:n]
-    zOC = x[(n+1):end]
+    zOC = x[(n+1):2*n]
 
-    return compute_objective_function(log_price_uk, zOC, data, params)
+    param_subset = compute_parameter_subset(data, log_price_uk, prices_eu, prices_world, false)
+
+    return compute_objective_function(log_price_uk, zOC, data, param_subset)
 
 end

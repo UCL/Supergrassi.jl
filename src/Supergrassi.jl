@@ -7,12 +7,19 @@ include("pathvalidator.jl")
 include("reader.jl")
 include("settings.jl")
 include("data.jl")
+
+include("utils.jl")
+include("remap_industries.jl")
 include("cleanup.jl")
+include("post_processing.jl")
 
 include("parameters.jl")
 include("parameters_interface.jl")
 include("excess_demand.jl")
 include("objective_function.jl")
+include("constraint_function.jl")
+
+include("minimisation.jl")
 
 function estimate()
     @info "Estimation started."
@@ -30,20 +37,29 @@ function estimate()
 
     @info "Data cleaned and post-processed."
 
-    df = CSV.read(joinpath(@__DIR__,"..","data", "data_for_household_demand.csv"), DataFrame)
+    df = CSV.read(joinpath(@__DIR__, "..", "data", "data_for_household_demand.csv"), DataFrame)
 
-    prices = DataFrame([df.logP_uk, df.logP_eu, df.logP_w], ["uk", "eu", "world"])
+
+    log_prices_uk = df.logP_uk
+    log_prices_eu = df.logP_eu
+    log_prices_world = df.logP_w
 
     @info "Prices extracted from data."
 
-    params, ∂params = Supergrassi.compute_all_parameters(clean, prices, false)
-    log_params, ∂log_params = Supergrassi.compute_all_parameters(clean, prices, true)
+    params = Supergrassi.compute_all_parameters(clean, log_prices_uk, log_prices_eu, log_prices_world, false)
+    log_params = Supergrassi.compute_all_parameters(clean, log_prices_uk, log_prices_eu, log_prices_world, true)
 
     @info "Parameters computed."
 
+    x = deepcopy([log_prices_uk; clean.industry.surplus.val; clean.industry.regional.totals.savings])
+    println("Starting minimisation with x: ", x)
+
+
+    gradient = compute_gradient(x, clean, log_prices_eu, log_prices_world)
+
     @info "Estimation completed."
 
-    return settings, data, clean, params, ∂params, log_params, ∂log_params
+    return settings, data, clean, params, log_params, gradient
 end
 
 export create_filepath, read_data, read_settings, check_file_availability
