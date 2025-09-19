@@ -33,11 +33,11 @@ x = deepcopy([log_price_uk;
               Supergrassi.compute_muI(clean.industry, params.constants.elasticities.investment);
               clean.industry.depreciation.val])
 
-CEQ, DCEQ = Supergrassi.compute_constraint_function(x, log_price_eu, log_price_world, clean, params)
+DCEQ = Supergrassi.compute_constraint_function(x, log_price_eu, log_price_world, clean, params)
 
 @testset "Constraint Function" begin
 
-    @test length(CEQ) == 32
+    # @test length(CEQ) == 32
     @test length(DCEQ) == 32*50
     
 end
