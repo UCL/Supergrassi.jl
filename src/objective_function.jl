@@ -47,16 +47,7 @@ Computes the objective function value based on a vector of parameters.
 # Returns
 - `objective_value::Float64`: The computed objective function value.
 """
-function compute_objective_function(x::Vector{<:Number}, data::CleanData, prices_eu::Vector{<:Number}, prices_world::Vector{<:Number})
-
-    # n = 16
-
-    # log_price_uk = x[1:n]
-    # zOC = x[(n+1):end]
-
-    # param_subset = compute_parameter_subset(data, log_price_uk, prices_eu, prices_world, false)
-
-    # return compute_objective_function(log_price_uk, zOC, data, param_subset)
+function compute_objective_function(x::Vector{<:Number})
 
     return sum(x)
 
