@@ -1,6 +1,7 @@
 using Distributions
 using Enzyme
 using Roots
+using Peaks
 using Random
 
 """
@@ -112,6 +113,31 @@ function G(price_uk::T, zOC::T, mu::T, gammaK::T, delta::T,
     )
 
     return G
+
+end
+
+function compute_capital_market(price_uk, mu, muBar, sigma, fun::Function, params::Parameters)
+
+    grid = muBar + range(mu - 4 * sigma, mu + 4 * sigma, 100)
+
+    Bval = B(price_uk, mu, zOC, delta, tau, gammaK, chi0, xi , q0)
+    bval = b(price_uk, mu, zOC, tau, gammaK, xi, q0)
+
+    DeltaFun(logOmega) = fun(logOmega, Bval, bval, mu, muBar, sigmaBar, lambda, R)
+
+    iMin, DeltaMin = findminima(DeltaFun.(grid))
+    iMax, DeltaMax = findmaxima(DeltaFun.(grid))
+
+    nMin = length(iMin)
+    nMax = length(iMax)
+
+    return KL, KD, FCF
+
+end
+
+function compute_dividends(FCF::Vector{T}, params::Parameters) where {T <: Real}
+
+    return FCF + params.D1 - params.D0 - q1 * (params.k1 - params.k0);
 
 end
 
