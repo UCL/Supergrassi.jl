@@ -25,26 +25,6 @@ include("optimisation_helpers.jl")
 
 function estimate()
 
-    function simple_jacobian(x::Vector{Float64}, rows::Vector{Int32}, cols::Vector{Int32}, vals::Vector{Float64})
-
-        sparse_jacobian = sparser(compute_constraint_function(x, log_prices_eu, log_prices_world, clean, params))
-        vals[:] = sparse_jacobian[3]
-
-        return 
-    end
-
-    function simple_jacobian(x::Vector{Float64}, rows::Vector{Int32}, cols::Vector{Int32}, vals::Nothing)
-
-        sparse_jacobian = findnz(sparse(global_jacobian))
-        rows[:] = sparse_jacobian[1]
-        cols[:] = sparse_jacobian[2]
-
-        return 
-    end
-
-    simple_objective(x) = compute_objective_function(x, clean, log_prices_eu, log_prices_world)
-    simple_gradient(x, gradient_var) = compute_gradient(x, clean, log_prices_eu, log_prices_world, gradient_var)
-    simple_constraint(x, constraint) = constraint_wrapper(x, log_prices_eu, log_prices_world, params, clean.industry, clean.constants, constraint)
 
 
     @info "Estimation started."
@@ -80,13 +60,15 @@ function estimate()
     household_final_consumption = [1.2]
 
     x = deepcopy([log_prices_uk; clean.industry.surplus.val; clean.industry.regional.totals.savings; household_final_consumption; clean.industry.depreciation.val])
-    println("Starting minimisation with x of length ", length(x))
+    @info "Starting minimisation with x of length $(length(x))"
 
     global_jacobian = compute_constraint_function(x, log_prices_eu, log_prices_world, clean, params)
+    @info "Global Jacobian computed."
+    simple_objective, simple_gradient, simple_constraint, simple_jacobian = 
+        create_optimization_functions(log_prices_eu, log_prices_world, clean, params, global_jacobian)
+    @info "Optimization functions created."
 
     trial = sparser(global_jacobian)
-    println("Jacobian trial completed.")
-    println("Jacobian trial size: ", length(trial[1]))
 
     prob = Ipopt.CreateIpoptProblem(
         50,
