@@ -41,9 +41,7 @@ function constraint_wrapper(x::Vector{T}, price_eu::Vector{T}, price_world::Vect
 
     F = market_clearing_price_constraint(x, price_eu, price_world, params, data, constants)
     CFC = compute_fixed_capital_consumption_constraint(x, data, params)
-    return [F; CFC]
-
-    # y = x[1:32]
-    # return y
+    y = [F; CFC]
+    return y
 
 end
