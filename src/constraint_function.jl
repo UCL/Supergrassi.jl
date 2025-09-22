@@ -31,11 +31,7 @@ function compute_constraint_function(x::Vector{<:Number}, log_price_eu::Vector{T
     CEQ = Jac.val
     DCEQ = first(Jac.derivs)
 
-    # return CEQ, DCEQ
     return DCEQ
-
-    # y = diagm(ones(32))
-    # return y
 
 end
 
