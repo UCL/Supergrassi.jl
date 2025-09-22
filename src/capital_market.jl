@@ -162,7 +162,7 @@ function compute_capital_market(price_uk::T, mu::T, muBar::T, sigma::T, liabilit
     P = plot(grid, DeltaFun.(grid))
     plot!(P, grid[iMin], DeltaMin, seriestype=:scatter)
     plot!(P, grid[iMax], DeltaMax, seriestype=:scatter)
-    
+
     for i = 1:length(iMin)
 
         if (DeltaMin[i] > global_max)
@@ -176,16 +176,16 @@ function compute_capital_market(price_uk::T, mu::T, muBar::T, sigma::T, liabilit
         end
 
         @show i, interval
-        
-        L = liabilities[liabilities .>= DeltaFun(interval[1]) .&& liabilities .<= DeltaFun(interval[2])]
+
+        L = liabilities[liabilities .>= interval[1] .&& liabilities .<= interval[2]]
         logOmegaBar = zeros(length(L))
-        
+        @show length(L)
+
         if (length(L) > 0)
-            for il = i:length(L)
+            for il = 1:length(L)
                 Δres(Ω) = residual(Ω, L[il], DeltaFun)
-                #logOmegaBar[il] = find_zero(Δres, interval, Bisection(), verbose=false)
                 logOmegaBar[il] = find_zero(Δres, (grid[iMin[i]], grid[iMax[i]]), Bisection(), verbose=false)
-                #logOmegaBar[il] = find_zero(Δres, (muBar - 4 * sigma, muBar + 4 * sigma), Bisection(), verbose=false)
+
             end
             plot!(P, logOmegaBar, L, seriestype=:scatter)
             # @show logOmegaBar
@@ -196,7 +196,7 @@ function compute_capital_market(price_uk::T, mu::T, muBar::T, sigma::T, liabilit
     end
 
     display(P)
-    
+
     # return KL, KD, FCF
     # return logOmegaBar
 
