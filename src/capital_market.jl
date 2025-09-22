@@ -105,41 +105,108 @@ function G(price_uk::T, zOC::T, mu::T, gammaK::T, delta::T,
 
     dist = Normal()
 
-    ζ0 = logOmega - muBar / sigmaBar
+    if any(Bval .< 0)
 
-    G = q0 * k0 * (
-        B * cdf(dist, ζ0)
-        + b * mu * cdf(dist, ζ0 - sigmaBar)
-    )
+        ζ0 = logOmega - muBar / sigmaBar
+
+        G = q0 * k0 * (
+            B * cdf(dist, ζ0)
+            + b * mu * cdf(dist, ζ0 - sigmaBar)
+        )
+
+    else
+
+        G = zeros(length(price_uk))
+
+    end
 
     return G
 
 end
 
-function compute_capital_market(price_uk, mu, muBar, sigma, fun::Function, params::Parameters)
+using Plots
 
-    grid = muBar + range(mu - 4 * sigma, mu + 4 * sigma, 100)
+function compute_capital_market(price_uk::T, mu::T, muBar::T, sigma::T, liabilities::Vector{T},
+                                fun::Function) where {T <: Real}
+
+    grid_size = 100
+    grid = range(muBar - 4 * sigma, muBar + 4 * sigma, grid_size)
 
     Bval = B(price_uk, mu, zOC, delta, tau, gammaK, chi0, xi , q0)
     bval = b(price_uk, mu, zOC, tau, gammaK, xi, q0)
 
-    DeltaFun(logOmega) = fun(logOmega, Bval, bval, mu, muBar, sigmaBar, lambda, R)
+    #DeltaFun(logOmega) = fun(logOmega, Bval, bval, mu, muBar, sigmaBar, lambda, R)
+    DeltaFun(logOmega) = sin(2 * logOmega) + 0.1 * logOmega
 
     iMin, DeltaMin = findminima(DeltaFun.(grid))
     iMax, DeltaMax = findmaxima(DeltaFun.(grid))
 
-    nMin = length(iMin)
-    nMax = length(iMax)
+    # Add first grid point to minima (we don't care if it's a maxima)
+    if DeltaFun(grid[1]) < DeltaFun(grid[2])
+        pushfirst!(iMin, 1)
+        pushfirst!(DeltaMin, DeltaFun(grid[1]))
+    end
 
-    return KL, KD, FCF
+    # Add last grid point to maxima if it is a maxima (we don't care if it's a minima)
+    if DeltaFun(grid[end]) > DeltaFun(grid[end-1])
+        push!(iMax, grid_size)
+        push!(DeltaMax, DeltaFun(grid[end]))
+    end
+
+    @show iMin, DeltaMin
+    @show iMax, DeltaMax
+    #@show DeltaFun.(grid)
+
+    global_max = -Inf
+
+    P = plot(grid, DeltaFun.(grid))
+    plot!(P, grid[iMin], DeltaMin, seriestype=:scatter)
+    plot!(P, grid[iMax], DeltaMax, seriestype=:scatter)
+    
+    for i = 1:length(iMin)
+
+        if (DeltaMin[i] > global_max)
+            interval = (DeltaMin[i], DeltaMax[i])
+            global_max = DeltaMax[i]
+        elseif (DeltaMax[i] > global_max)
+            interval = (global_max, DeltaMax[i])
+            global_max = DeltaMax[i]
+        else
+            interval = (0.0,0.0)
+        end
+
+        @show i, interval
+        
+        L = liabilities[liabilities .>= DeltaFun(interval[1]) .&& liabilities .<= DeltaFun(interval[2])]
+        logOmegaBar = zeros(length(L))
+        
+        if (length(L) > 0)
+            for il = i:length(L)
+                Δres(Ω) = residual(Ω, L[il], DeltaFun)
+                #logOmegaBar[il] = find_zero(Δres, interval, Bisection(), verbose=false)
+                logOmegaBar[il] = find_zero(Δres, (grid[iMin[i]], grid[iMax[i]]), Bisection(), verbose=false)
+                #logOmegaBar[il] = find_zero(Δres, (muBar - 4 * sigma, muBar + 4 * sigma), Bisection(), verbose=false)
+            end
+            plot!(P, logOmegaBar, L, seriestype=:scatter)
+            # @show logOmegaBar
+        else
+            @info "no roots found in interval", i
+        end
+
+    end
+
+    display(P)
+    
+    # return KL, KD, FCF
+    # return logOmegaBar
 
 end
 
-function compute_dividends(FCF::Vector{T}, params::Parameters) where {T <: Real}
+# function compute_dividends(FCF::Vector{T}, params::Parameters) where {T <: Real}
 
-    return FCF + params.D1 - params.D0 - q1 * (params.k1 - params.k0);
+#     return FCF + params.D1 - params.D0 - q1 * (params.k1 - params.k0);
 
-end
+# end
 
 Random.seed!(1238)
 
@@ -154,16 +221,25 @@ xi = rand()
 q0 = rand()
 k0 = rand()
 
-L = 1.0
+# L = 1.0
 σ = 1.4
 
-Δ(Ω) = Delta_wrapper(Ω, price_uk, zOC, mu, delta, tau, gammaK, chi0, xi, q0)
-Δres(Ω) = residual(Ω, L, Δ)
-logOmega = find_zero(Δres, (mu - 4 * σ, mu + 4 * σ), Bisection(), verbose=true)
+muBar = 1.0
+sigmaBar = 1.0
+lambda = 1.0
+R = 1.0
 
-grad = gradient(ForwardWithPrimal, Delta_wrapper, logOmega, price_uk, zOC, Const(mu),
-                Const(delta), Const(tau), Const(gammaK), Const(chi0), Const(xi), Const(q0))
+liabilities = randn(10000) .* 10
 
-# eqns H.1 and H.2
-∂logω_∂pdj = - grad.derivs[1] / grad.derivs[2]
-∂logω_∂zOC = - grad.derivs[1] / grad.derivs[3]
+compute_capital_market(price_uk, mu, muBar, σ, liabilities, Delta)
+
+# Δ(Ω) = Delta_wrapper(Ω, price_uk, zOC, mu, delta, tau, gammaK, chi0, xi, q0)
+# Δres(Ω) = residual(Ω, L, Δ)
+# logOmega = find_zero(Δres, (mu - 4 * σ, mu + 4 * σ), Bisection(), verbose=true)
+
+# grad = gradient(ForwardWithPrimal, Delta_wrapper, logOmega, price_uk, zOC, Const(mu),
+#                 Const(delta), Const(tau), Const(gammaK), Const(chi0), Const(xi), Const(q0))
+
+# # eqns H.1 and H.2
+# ∂logω_∂pdj = - grad.derivs[1] / grad.derivs[2]
+# ∂logω_∂zOC = - grad.derivs[1] / grad.derivs[3]
