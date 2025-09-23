@@ -126,7 +126,7 @@ end
 
 using Plots
 
-function compute_capital_market(price_uk::T, mu::T, muBar::T, sigma::T, liabilities::Vector{T},
+function compute_capital_market(price_uk::T, mu::T, muBar::T, sigma::T, assets::Vector{T}, liabilities::Vector{T},
                                 fun::Function) where {T <: Real}
 
     grid_size = 100
@@ -165,6 +165,9 @@ function compute_capital_market(price_uk::T, mu::T, muBar::T, sigma::T, liabilit
     plot!(P, grid[iMin], DeltaMin, seriestype=:scatter)
     plot!(P, grid[iMax], DeltaMax, seriestype=:scatter)
 
+    logOmegaBar = Vector{T}(undef, 0)
+    nonzero_indices = Vector{Int}(undef, 0)
+
     # Loop through each interval from local minima to local maxima where we know
     # DeltaFun is increasing. Starting from the first local min, find the interval
     # above the global max to the next local max where DeltaFun is increasing.
@@ -182,9 +185,11 @@ function compute_capital_market(price_uk::T, mu::T, muBar::T, sigma::T, liabilit
 
         @show i, interval
 
-        # Find liabilities data points that are within values of DeltaFun in the found interval.
-        L = liabilities[liabilities .>= interval[1] .&& liabilities .<= interval[2]]
-        logOmegaBar = zeros(length(L))
+        # Find liabilities data points and indices that are within values of DeltaFun in the found interval.
+        iL = findall(x -> x >= interval[1] && x <= interval[2], liabilities)
+        L = liabilities[iL]
+
+        logOmegaBarLocal = zeros(length(L))
         @show length(L)
 
         if (length(L) > 0)
@@ -192,23 +197,31 @@ function compute_capital_market(price_uk::T, mu::T, muBar::T, sigma::T, liabilit
                 # Define residual function that returns the difference between DeltaFun(Ω) and L
                 Δres(Ω) = residual(Ω, L[il], DeltaFun)
                 # Find Ω such that the difference is 0
-                logOmegaBar[il] = find_zero(Δres, (grid[iMin[i]], grid[iMax[i]]), Bisection(), verbose=false)
+                logOmegaBarLocal[il] = find_zero(Δres, (grid[iMin[i]], grid[iMax[i]]), Bisection(), verbose=false)
             end
-            plot!(P, logOmegaBar, L, seriestype=:scatter)
+            plot!(P, logOmegaBarLocal, L, seriestype=:scatter)
             # @show logOmegaBar
+
+            append!(logOmegaBar, logOmegaBarLocal)
+            append!(nonzero_indices, iL)
+
         else
             @info "no roots found in interval", i
         end
 
-        # TODO: Accumulate logOmegaBar into one vector.
-        # Do we need to keep track of the mapping to liabilities?
-        
     end
 
     display(P)
 
-    # return KL, KD, FCF
-    # return logOmegaBar
+    zeta = logOmegaBar - muBar / sigma
+
+    F = cdf.(Normal(), zeta)
+
+    capital_liquidated = (1 - lambda) * (1 - delta) * dot(assets[nonzero_indices], F)
+    capital_demand = k1 - (1 - delta) * dot(assets[nonzero_indices], (1 .- F))
+    free_cash_flow = q0
+    
+    return capital_liqiudated, capital_demand, free_cash_flow
 
 end
 
@@ -239,9 +252,10 @@ sigmaBar = 1.0
 lambda = 1.0
 R = 1.0
 
+assets = randn(10000) .* 10
 liabilities = randn(10000) .* 10
 
-compute_capital_market(price_uk, mu, muBar, σ, liabilities, Delta)
+logOmegaBar = compute_capital_market(price_uk, mu, muBar, σ, assets, liabilities, Delta)
 
 # Δ(Ω) = Delta_wrapper(Ω, price_uk, zOC, mu, delta, tau, gammaK, chi0, xi, q0)
 # Δres(Ω) = residual(Ω, L, Δ)
