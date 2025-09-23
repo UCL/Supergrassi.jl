@@ -136,8 +136,9 @@ function compute_capital_market(price_uk::T, mu::T, muBar::T, sigma::T, liabilit
     bval = b(price_uk, mu, zOC, tau, gammaK, xi, q0)
 
     #DeltaFun(logOmega) = fun(logOmega, Bval, bval, mu, muBar, sigmaBar, lambda, R)
-    DeltaFun(logOmega) = sin(2 * logOmega) + 0.1 * logOmega
+    DeltaFun(logOmega) = cos(2 * logOmega) + sin(4 * logOmega) + 0.3 * abs(logOmega)
 
+    # Find local maxima and minima of DeltaFun on grid
     iMin, DeltaMin = findminima(DeltaFun.(grid))
     iMax, DeltaMax = findmaxima(DeltaFun.(grid))
 
@@ -157,12 +158,16 @@ function compute_capital_market(price_uk::T, mu::T, muBar::T, sigma::T, liabilit
     @show iMax, DeltaMax
     #@show DeltaFun.(grid)
 
+    # Keep track of the highest max found so far
     global_max = -Inf
 
     P = plot(grid, DeltaFun.(grid))
     plot!(P, grid[iMin], DeltaMin, seriestype=:scatter)
     plot!(P, grid[iMax], DeltaMax, seriestype=:scatter)
 
+    # Loop through each interval from local minima to local maxima where we know
+    # DeltaFun is increasing. Starting from the first local min, find the interval
+    # above the global max to the next local max where DeltaFun is increasing.
     for i = 1:length(iMin)
 
         if (DeltaMin[i] > global_max)
@@ -177,15 +182,17 @@ function compute_capital_market(price_uk::T, mu::T, muBar::T, sigma::T, liabilit
 
         @show i, interval
 
+        # Find liabilities data points that are within values of DeltaFun in the found interval.
         L = liabilities[liabilities .>= interval[1] .&& liabilities .<= interval[2]]
         logOmegaBar = zeros(length(L))
         @show length(L)
 
         if (length(L) > 0)
             for il = 1:length(L)
+                # Define residual function that returns the difference between DeltaFun(Ω) and L
                 Δres(Ω) = residual(Ω, L[il], DeltaFun)
+                # Find Ω such that the difference is 0
                 logOmegaBar[il] = find_zero(Δres, (grid[iMin[i]], grid[iMax[i]]), Bisection(), verbose=false)
-
             end
             plot!(P, logOmegaBar, L, seriestype=:scatter)
             # @show logOmegaBar
@@ -193,6 +200,9 @@ function compute_capital_market(price_uk::T, mu::T, muBar::T, sigma::T, liabilit
             @info "no roots found in interval", i
         end
 
+        # TODO: Accumulate logOmegaBar into one vector.
+        # Do we need to keep track of the mapping to liabilities?
+        
     end
 
     display(P)
