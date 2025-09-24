@@ -1,3 +1,4 @@
+using Supergrassi
 using Distributions
 using Enzyme
 using Roots
@@ -9,15 +10,15 @@ using LinearAlgebra
 Wrapper around Delta that exposes logOmega, price_uk and zOC as the arguments for computation
 of derivatives H.3 - H.5 (on the RHS of H.1 and H.2)
 """
-function Delta_wrapper(logOmega, price_uk, zOC, mu, delta, tau, gammaK, chi0, xi, q0)
+function Delta_wrapper(logOmega, price_uk, zOC, mu, delta, tau, gammaK, xi)
 
     muBar = 1.0
     sigmaBar = 1.0
     lambda = 1.0
     R = 1.0
 
-    Bval = B(price_uk, mu, zOC, delta, tau, gammaK, chi0, xi , q0)
-    bval = b(price_uk, mu, zOC, tau, gammaK, xi, q0)
+    Bval = B(price_uk, mu, zOC, delta, tau, gammaK, xi)
+    bval = b(price_uk, mu, zOC, tau, gammaK, xi)
 
     return Delta(logOmega, Bval, bval, mu, muBar, sigmaBar, lambda, R)
 
@@ -26,7 +27,7 @@ end
 """
 Function Delta as a function of logOmega, B and b as written in the paper (C. 47).
 """
-function Delta(logOmega::T, B::T = 0.0, b::T = 1.0, μ::T = 1.0, muBar::T = 1.0, sigmaBar::T = 1.0, λ::T = 1.0, R::T = 1.0) where {T <: Real}
+function Delta(logOmega::T, B::T, b::T, μ::T, muBar::T, sigmaBar::T, λ::T, R::T) where {T <: Real}
 
     ζ = (logOmega - muBar) / sigmaBar
     F = cdf(Normal(), ζ)
@@ -55,7 +56,7 @@ B(iNZ) = 1 - parms.delta(iNZ) + pd(iNZ).*(1-parms.tau(iNZ)).*parms.chi0(iNZ)/par
       - rk(iNZ).*ROCTheta(iNZ)./(1-ROCTheta(iNZ));
 """
 function B(price_uk, μ, zOC, δ, τ, γK, χ0, ξ, q0)
-
+    
     return 1.0 - δ + (1.0 - τ) * price_uk * χ0 / q0 - rk(price_uk, μ, zOC, τ, γK, ξ, q0) * TzOC(zOC) / (1.0 - TzOC(zOC))
 
 end
@@ -67,9 +68,29 @@ b(iNZ) = rk(iNZ)./(parms.mu(iNZ).*(1-ROCTheta(iNZ)));
 """
 function b(price_uk, μ, zOC, τ, γK, ξ, q0)
 
-    return rk(price_uk, μ, zOC, τ, γK, ξ, q0) / μ * (1 - TzOC(zOC))
+    return rk(price_uk, μ, zOC, τ, γK, ξ, q0) / (μ * (1 - TzOC(zOC)))
 
 end
+
+"""
+As far as I can tell, in the Matlab code chi0 is always 0, q0 is always 1.
+Therefore this method assumes chi0 = 0, q0 = 1 and simplifies the calculation.
+"""
+function B(price_uk, μ, zOC, δ, τ, γK, ξ)
+
+    return 1.0 - δ - rk(price_uk, μ, zOC, τ, γK, ξ, 1) * TzOC(zOC) / (1.0 - TzOC(zOC))
+
+end
+
+"""
+This method assumes q0 = 1 and simplifies the calculation
+"""
+function b(price_uk, μ, zOC, τ, γK, ξ)
+
+    return rk(price_uk, μ, zOC, τ, γK, ξ, 1) / (μ * (1 - TzOC(zOC)))
+
+end
+
 
 """
 Above C.1
@@ -84,7 +105,7 @@ end
 C. 48
 """
 function rk(price_uk, μ, zOC, τ, γK, ξ, q0)
-
+    
     return (1 - τ) * price_uk * μ * γK ^ (1 / (ξ - 1)) * (1 - TzOC(zOC)) ^ (1 / (1 - ξ)) / q0
 
 end
@@ -127,42 +148,101 @@ end
 
 using Plots
 
-function compute_capital_market(price_uk::T, mu::T, muBar::T, sigma::T, assets::Vector{T}, liabilities::Vector{T},
-                                fun::Function) where {T <: Real}
+function compute_capital_market(price_uk::Vector{T}, zOC::Vector{T}, data::IndustryData, params::Parameters) where {T <: Real}
+
+    tau = compute_advalorem_tax(data)
+    muBar = compute_muBar(params)
+    industry_names = data.tax.industry
+
+    capital_liquidated = Vector{T}(undef, params.constants.number_of_industries)
+    capital_demand = Vector{T}(undef, params.constants.number_of_industries)
+    free_cash_flow = Vector{T}(undef, params.constants.number_of_industries)
+    
+    #    for i in 1:params.constants.number_of_industries
+    for i in 3:3
+        @show price_uk[i]
+        @show zOC[i]
+        @show TzOC(zOC[i])
+        @show params.production.shock_mean[i] # mu
+        @show muBar[i] # muBar
+        @show params.production.shock_stdev[i] #sigma
+        @show data.shock_stdev.val[i] # sigmaBar
+        @show data.depreciation.val[i] # delta
+        @show tau[i] # tau
+        @show params.production.capital[i] # gammaK
+        @show params.constants.elasticities.production.substitution # xi
+        @show params.constants.loss_given_default # lambda
+        @show params.constants.interest_rate # R
+        @show data.capital.next_year[i] # k1
+
+        
+        df = filter(row -> row.SIC16 == industry_names[i], data.assets_liabilities.current_year)
+        out = compute_capital_market(price_uk[i],
+                                     zOC[i],
+                                     params.production.shock_mean[i], # mu
+                                     muBar[i], # muBar
+                                     params.production.shock_stdev[i], #sigma
+                                     data.shock_stdev.val[i], # sigmaBar
+                                     data.depreciation.val[i], # delta
+                                     tau[i], # tau
+                                     params.production.capital[i], # gammaK
+                                     params.constants.elasticities.production.substitution, # xi
+                                     params.constants.loss_given_default, # lambda
+                                     params.constants.interest_rate, # R
+                                     data.capital.next_year[i], # k1
+                                     df.Assets,
+                                     df.Assets .* df.Ratio,
+                                     Delta)
+
+        capital_liquidated[i] = out[1]
+        capital_demand[i] = out[2]
+        free_cash_flow[i] = out[3]
+    end
+
+    return capital_liquidated, capital_demand, free_cash_flow
+    
+end
+
+function compute_capital_market(price_uk::T, zOC::T, mu::T, muBar::T, sigma::T, sigmaBar::T,
+                                delta::T, tau::T, gammaK::T, xi::T, lambda::T, R::T, k1::T,
+                                assets::Vector{T}, liabilities::Vector{T}, DeltaFun::Function) where {T <: Real}
 
     grid_size = 100
     grid = range(muBar - 4 * sigma, muBar + 4 * sigma, grid_size)
 
-    Bval = B(price_uk, mu, zOC, delta, tau, gammaK, chi0, xi , q0)
-    bval = b(price_uk, mu, zOC, tau, gammaK, xi, q0)
+    Bval = B(price_uk, mu, zOC, delta, tau, gammaK, xi)
+    bval = b(price_uk, mu, zOC, tau, gammaK, xi)
 
-    #DeltaFun(logOmega) = fun(logOmega, Bval, bval, mu, muBar, sigmaBar, lambda, R)
-    DeltaFun(logOmega) = cos(2 * logOmega) + sin(4 * logOmega) + 0.3 * abs(logOmega)
+    @show Bval
+    @show bval
 
-    # Find local maxima and minima of DeltaFun on grid
-    iMin, DeltaMin = findminima(DeltaFun.(grid))
-    iMax, DeltaMax = findmaxima(DeltaFun.(grid))
+    fun(logOmega) = DeltaFun(logOmega, Bval, bval, mu, muBar, sigmaBar, lambda, R)
+    #fun(logOmega) = cos(2 * logOmega) + sin(4 * logOmega) + 0.3 * abs(logOmega)
+
+    # Find local maxima and minima of fun on grid
+    iMin, DeltaMin = findminima(fun.(grid))
+    iMax, DeltaMax = findmaxima(fun.(grid))
 
     # Add first grid point to minima (we don't care if it's a maxima)
-    if DeltaFun(grid[1]) < DeltaFun(grid[2])
+    if fun(grid[1]) < fun(grid[2])
         pushfirst!(iMin, 1)
-        pushfirst!(DeltaMin, DeltaFun(grid[1]))
+        pushfirst!(DeltaMin, fun(grid[1]))
     end
 
     # Add last grid point to maxima if it is a maxima (we don't care if it's a minima)
-    if DeltaFun(grid[end]) > DeltaFun(grid[end-1])
+    if fun(grid[end]) > fun(grid[end-1])
         push!(iMax, grid_size)
-        push!(DeltaMax, DeltaFun(grid[end]))
+        push!(DeltaMax, fun(grid[end]))
     end
 
     @show iMin, DeltaMin
     @show iMax, DeltaMax
-    #@show DeltaFun.(grid)
+    #@show fun.(grid)
 
     # Keep track of the highest max found so far
     global_max = -Inf
 
-    P = plot(grid, DeltaFun.(grid))
+    P = plot(grid, fun.(grid))
     plot!(P, grid[iMin], DeltaMin, seriestype=:scatter)
     plot!(P, grid[iMax], DeltaMax, seriestype=:scatter)
 
@@ -170,8 +250,8 @@ function compute_capital_market(price_uk::T, mu::T, muBar::T, sigma::T, assets::
     nonzero_indices = Vector{Int}(undef, 0)
 
     # Loop through each interval from local minima to local maxima where we know
-    # DeltaFun is increasing. Starting from the first local min, find the interval
-    # above the global max to the next local max where DeltaFun is increasing.
+    # fun is increasing. Starting from the first local min, find the interval
+    # above the global max to the next local max where fun is increasing.
     for i = 1:length(iMin)
 
         if (DeltaMin[i] > global_max)
@@ -186,17 +266,17 @@ function compute_capital_market(price_uk::T, mu::T, muBar::T, sigma::T, assets::
 
         @show i, interval
 
-        # Find liabilities data points and indices that are within values of DeltaFun in the found interval.
-        iL = findall(x -> x >= interval[1] && x <= interval[2], liabilities)
+        # Find liabilities data points and indices that are within values of fun in the found interval.
+        iL = findall(x -> x >= interval[1] && x < interval[2], liabilities)
         L = liabilities[iL]
 
         @show length(L)
 
         if (length(L) > 0)
             for il = 1:length(L)
-                # Define residual function that returns the difference between DeltaFun(Ω) and L
-                Δres(Ω) = residual(Ω, L[il], DeltaFun)
-                # Find Ω such that L - DeltaFun(Ω) == 0 and store the solution and the corresponding index of liabilities
+                # Define residual function that returns the difference between fun(Ω) and L
+                Δres(Ω) = residual(Ω, L[il], fun)
+                # Find Ω such that L - fun(Ω) == 0 and store the solution and the corresponding index of liabilities
                 push!(logOmegaBar, find_zero(Δres, (grid[iMin[i]], grid[iMax[i]]), Bisection(), verbose=false))
                 push!(nonzero_indices, iL[il])
             end
@@ -212,7 +292,7 @@ function compute_capital_market(price_uk::T, mu::T, muBar::T, sigma::T, assets::
     zeta = logOmegaBar .- muBar / sigmaBar
 
     F = cdf.(Normal(), zeta)
-
+    
     capital_liquidated = (1 - lambda) * (1 - delta) * dot(assets[nonzero_indices], F)
     capital_demand = k1 - (1 - delta) * dot(assets[nonzero_indices], (1 .- F))
 
@@ -221,8 +301,8 @@ function compute_capital_market(price_uk::T, mu::T, muBar::T, sigma::T, assets::
     FCFTerm2 = 0.0
     FCFTerm3 = 0.0
     FCFTerm4 = 0.0
-    free_cash_flow = -q0 * dot(assets[nonzero_indices] .* (1 .- liabilities[nonzero_indices]), 1 .- F) + bval * (FCFTerm2 - FCFTerm3) - FCFTerm4
-    
+    free_cash_flow = -dot(assets[nonzero_indices] .* (1 .- liabilities[nonzero_indices]), 1 .- F) + bval * (FCFTerm2 - FCFTerm3) - FCFTerm4
+
     return capital_liquidated, capital_demand, free_cash_flow
 
 end
@@ -233,32 +313,32 @@ end
 
 # end
 
-Random.seed!(1238)
+# Random.seed!(1238)
 
-price_uk = rand()
-mu = rand()
-zOC = rand()
-delta = rand()
-tau = rand()
-gammaK = rand()
-chi0 = rand()
-xi = rand()
-q0 = rand()
-k0 = rand()
-k1 = rand()
+# price_uk = rand()
+# mu = rand()
+# zOC = rand()
+# delta = rand()
+# tau = rand()
+# gammaK = rand()
+# chi0 = rand()
+# xi = rand()
+# q0 = rand()
+# k0 = rand()
+# k1 = rand()
 
-# L = 1.0
-σ = 1.4
+# # L = 1.0
+# σ = 1.4
 
-muBar = 1.0
-sigmaBar = 1.0
-lambda = 1.0
-R = 1.0
+# muBar = 1.0
+# sigmaBar = 1.0
+# lambda = 1.0
+# R = 1.0
 
-assets = randn(10000) .* 10
-liabilities = randn(10000) .* 10
+# assets = randn(10000) .* 10
+# liabilities = randn(10000) .* 10
 
-KL, KD, FCF = compute_capital_market(price_uk, mu, muBar, σ, assets, liabilities, Delta)
+# KL, KD, FCF = compute_capital_market(price_uk, mu, muBar, σ, assets, liabilities, Delta)
 
 # Δ(Ω) = Delta_wrapper(Ω, price_uk, zOC, mu, delta, tau, gammaK, chi0, xi, q0)
 # Δres(Ω) = residual(Ω, L, Δ)

@@ -189,3 +189,9 @@ function unpack_x(n::Int, x::Vector{<:Real})
     return log_price_uk, zOC, expenditure, log_muI, log_Delta
 
 end
+
+function compute_muBar(params::Parameters)
+
+    return log.(params.production.shock_mean) .- 0.5 .* params.production.shock_stdev.^2
+    
+end
