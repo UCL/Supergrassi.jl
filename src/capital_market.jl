@@ -56,7 +56,7 @@ B(iNZ) = 1 - parms.delta(iNZ) + pd(iNZ).*(1-parms.tau(iNZ)).*parms.chi0(iNZ)/par
       - rk(iNZ).*ROCTheta(iNZ)./(1-ROCTheta(iNZ));
 """
 function B(price_uk, μ, zOC, δ, τ, γK, χ0, ξ, q0)
-    
+
     return 1.0 - δ + (1.0 - τ) * price_uk * χ0 / q0 - rk(price_uk, μ, zOC, τ, γK, ξ, q0) * TzOC(zOC) / (1.0 - TzOC(zOC))
 
 end
@@ -105,7 +105,7 @@ end
 C. 48
 """
 function rk(price_uk, μ, zOC, τ, γK, ξ, q0)
-    
+
     return (1 - τ) * price_uk * μ * γK ^ (1 / (ξ - 1)) * (1 - TzOC(zOC)) ^ (1 / (1 - ξ)) / q0
 
 end
@@ -157,25 +157,25 @@ function compute_capital_market(price_uk::Vector{T}, zOC::Vector{T}, data::Indus
     capital_liquidated = Vector{T}(undef, params.constants.number_of_industries)
     capital_demand = Vector{T}(undef, params.constants.number_of_industries)
     free_cash_flow = Vector{T}(undef, params.constants.number_of_industries)
-    
-    #    for i in 1:params.constants.number_of_industries
-    for i in 3:3
-        @show price_uk[i]
-        @show zOC[i]
-        @show TzOC(zOC[i])
-        @show params.production.shock_mean[i] # mu
-        @show muBar[i] # muBar
-        @show params.production.shock_stdev[i] #sigma
-        @show data.shock_stdev.val[i] # sigmaBar
-        @show data.depreciation.val[i] # delta
-        @show tau[i] # tau
-        @show params.production.capital[i] # gammaK
-        @show params.constants.elasticities.production.substitution # xi
-        @show params.constants.loss_given_default # lambda
-        @show params.constants.interest_rate # R
-        @show data.capital.next_year[i] # k1
 
-        
+    #for i in 1:params.constants.number_of_industries
+    for i in 1:1
+        # @show price_uk[i]
+        # @show zOC[i]
+        # @show TzOC(zOC[i])
+        # @show params.production.shock_mean[i] # mu
+        # @show muBar[i] # muBar
+        # @show params.production.shock_stdev[i] #sigma
+        # @show data.shock_stdev.val[i] # sigmaBar
+        # @show data.depreciation.val[i] # delta
+        # @show tau[i] # tau
+        # @show params.production.capital[i] # gammaK
+        # @show params.constants.elasticities.production.substitution # xi
+        # @show params.constants.loss_given_default # lambda
+        # @show params.constants.interest_rate # R
+        # @show data.capital.next_year[i] # k1
+
+
         df = filter(row -> row.SIC16 == industry_names[i], data.assets_liabilities.current_year)
         out = compute_capital_market(price_uk[i],
                                      zOC[i],
@@ -200,7 +200,7 @@ function compute_capital_market(price_uk::Vector{T}, zOC::Vector{T}, data::Indus
     end
 
     return capital_liquidated, capital_demand, free_cash_flow
-    
+
 end
 
 function compute_capital_market(price_uk::T, zOC::T, mu::T, muBar::T, sigma::T, sigmaBar::T,
@@ -213,8 +213,8 @@ function compute_capital_market(price_uk::T, zOC::T, mu::T, muBar::T, sigma::T, 
     Bval = B(price_uk, mu, zOC, delta, tau, gammaK, xi)
     bval = b(price_uk, mu, zOC, tau, gammaK, xi)
 
-    @show Bval
-    @show bval
+    # @show Bval
+    # @show bval
 
     fun(logOmega) = DeltaFun(logOmega, Bval, bval, mu, muBar, sigmaBar, lambda, R)
     #fun(logOmega) = cos(2 * logOmega) + sin(4 * logOmega) + 0.3 * abs(logOmega)
@@ -248,6 +248,7 @@ function compute_capital_market(price_uk::T, zOC::T, mu::T, muBar::T, sigma::T, 
 
     logOmegaBar = Vector{T}(undef, 0)
     nonzero_indices = Vector{Int}(undef, 0)
+    iGlobalMax = Vector{Int}(undef, 0)
 
     # Loop through each interval from local minima to local maxima where we know
     # fun is increasing. Starting from the first local min, find the interval
@@ -270,6 +271,9 @@ function compute_capital_market(price_uk::T, zOC::T, mu::T, muBar::T, sigma::T, 
         iL = findall(x -> x >= interval[1] && x < interval[2], liabilities)
         L = liabilities[iL]
 
+        # Find all liabilities above global max of Delta
+        iGlobalMax = findall(x -> x > global_max, liabilities)
+
         @show length(L)
 
         if (length(L) > 0)
@@ -283,16 +287,21 @@ function compute_capital_market(price_uk::T, zOC::T, mu::T, muBar::T, sigma::T, 
         else
             @info "no roots found in interval", i
         end
-
     end
 
     plot!(P, logOmegaBar, liabilities[nonzero_indices], seriestype=:scatter)
     display(P)
 
-    zeta = logOmegaBar .- muBar / sigmaBar
+    zeta = (logOmegaBar .- muBar) ./ sigmaBar
 
     F = cdf.(Normal(), zeta)
-    
+
+    append!(nonzero_indices, iGlobalMax)
+    append!(F, ones(length(iGlobalMax)))
+
+    @show mean(assets[nonzero_indices]), mean(F)
+    @show dot(assets[nonzero_indices], F)
+
     capital_liquidated = (1 - lambda) * (1 - delta) * dot(assets[nonzero_indices], F)
     capital_demand = k1 - (1 - delta) * dot(assets[nonzero_indices], (1 .- F))
 
