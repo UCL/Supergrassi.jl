@@ -218,7 +218,7 @@ function rescale_data!(data::CleanData)
     for name in unique(data.industry.assets_liabilities.current_year.SIC16)
         for df in [data.industry.assets_liabilities.current_year, data.industry.assets_liabilities.next_year]
             mask = df.SIC16 .== name
-            df.Assets[mask] ./= sum(df.Assets[mask])
+            df.Assets[mask] ./= maximum(df.Assets[mask])
         end
     end
 
