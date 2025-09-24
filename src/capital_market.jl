@@ -3,6 +3,7 @@ using Enzyme
 using Roots
 using Peaks
 using Random
+using LinearAlgebra
 
 """
 Wrapper around Delta that exposes logOmega, price_uk and zOC as the arguments for computation
@@ -189,39 +190,40 @@ function compute_capital_market(price_uk::T, mu::T, muBar::T, sigma::T, assets::
         iL = findall(x -> x >= interval[1] && x <= interval[2], liabilities)
         L = liabilities[iL]
 
-        logOmegaBarLocal = zeros(length(L))
         @show length(L)
 
         if (length(L) > 0)
             for il = 1:length(L)
                 # Define residual function that returns the difference between DeltaFun(Ω) and L
                 Δres(Ω) = residual(Ω, L[il], DeltaFun)
-                # Find Ω such that the difference is 0
-                logOmegaBarLocal[il] = find_zero(Δres, (grid[iMin[i]], grid[iMax[i]]), Bisection(), verbose=false)
+                # Find Ω such that L - DeltaFun(Ω) == 0 and store the solution and the corresponding index of liabilities
+                push!(logOmegaBar, find_zero(Δres, (grid[iMin[i]], grid[iMax[i]]), Bisection(), verbose=false))
+                push!(nonzero_indices, iL[il])
             end
-            plot!(P, logOmegaBarLocal, L, seriestype=:scatter)
-            # @show logOmegaBar
-
-            append!(logOmegaBar, logOmegaBarLocal)
-            append!(nonzero_indices, iL)
-
         else
             @info "no roots found in interval", i
         end
 
     end
 
+    plot!(P, logOmegaBar, liabilities[nonzero_indices], seriestype=:scatter)
     display(P)
 
-    zeta = logOmegaBar - muBar / sigma
+    zeta = logOmegaBar .- muBar / sigmaBar
 
     F = cdf.(Normal(), zeta)
 
     capital_liquidated = (1 - lambda) * (1 - delta) * dot(assets[nonzero_indices], F)
     capital_demand = k1 - (1 - delta) * dot(assets[nonzero_indices], (1 .- F))
-    free_cash_flow = q0
+
+    # TODO: Implement FCFTerms from
+    # https://github.com/UCL/Supergrassi/blob/b807e57cd49da2c5f907accf3863dfa312bd39f5/code/matlab/macro_v2/finance/CapitalMarket.m#L322-L324
+    FCFTerm2 = 0.0
+    FCFTerm3 = 0.0
+    FCFTerm4 = 0.0
+    free_cash_flow = -q0 * dot(assets[nonzero_indices] .* (1 .- liabilities[nonzero_indices]), 1 .- F) + bval * (FCFTerm2 - FCFTerm3) - FCFTerm4
     
-    return capital_liqiudated, capital_demand, free_cash_flow
+    return capital_liquidated, capital_demand, free_cash_flow
 
 end
 
@@ -243,6 +245,7 @@ chi0 = rand()
 xi = rand()
 q0 = rand()
 k0 = rand()
+k1 = rand()
 
 # L = 1.0
 σ = 1.4
@@ -255,7 +258,7 @@ R = 1.0
 assets = randn(10000) .* 10
 liabilities = randn(10000) .* 10
 
-logOmegaBar = compute_capital_market(price_uk, mu, muBar, σ, assets, liabilities, Delta)
+KL, KD, FCF = compute_capital_market(price_uk, mu, muBar, σ, assets, liabilities, Delta)
 
 # Δ(Ω) = Delta_wrapper(Ω, price_uk, zOC, mu, delta, tau, gammaK, chi0, xi, q0)
 # Δres(Ω) = residual(Ω, L, Δ)
