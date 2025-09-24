@@ -191,7 +191,7 @@ function compute_capital_market(price_uk::Vector{T}, zOC::Vector{T}, data::Indus
                                      params.constants.interest_rate, # R
                                      data.capital.next_year[i], # k1
                                      df.Assets,
-                                     df.Assets .* df.Ratio,
+                                     df.Ratio,
                                      Delta)
 
         capital_liquidated[i] = out[1]
@@ -208,7 +208,7 @@ function compute_capital_market(price_uk::T, zOC::T, mu::T, muBar::T, sigma::T, 
                                 assets::Vector{T}, liabilities::Vector{T}, DeltaFun::Function) where {T <: Real}
 
     grid_size = 100
-    grid = range(muBar - 4 * sigma, muBar + 4 * sigma, grid_size)
+    grid = range(muBar - 4 * sigmaBar, muBar + 4 * sigmaBar, grid_size)
 
     Bval = B(price_uk, mu, zOC, delta, tau, gammaK, xi)
     bval = b(price_uk, mu, zOC, tau, gammaK, xi)
