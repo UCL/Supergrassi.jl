@@ -158,8 +158,8 @@ function compute_capital_market(price_uk::Vector{T}, zOC::Vector{T}, data::Indus
     capital_demand = Vector{T}(undef, params.constants.number_of_industries)
     free_cash_flow = Vector{T}(undef, params.constants.number_of_industries)
 
-    #for i in 1:params.constants.number_of_industries
-    for i in 1:1
+    for i in 1:params.constants.number_of_industries
+    #for i in 10:10
         # @show price_uk[i]
         # @show zOC[i]
         # @show TzOC(zOC[i])
@@ -175,6 +175,7 @@ function compute_capital_market(price_uk::Vector{T}, zOC::Vector{T}, data::Indus
         # @show params.constants.interest_rate # R
         # @show data.capital.next_year[i] # k1
 
+        @show "### industry ", industry_names[i]
 
         df = filter(row -> row.SIC16 == industry_names[i], data.assets_liabilities.current_year)
         out = compute_capital_market(price_uk[i],
@@ -223,7 +224,7 @@ function compute_capital_market(price_uk::T, zOC::T, mu::T, muBar::T, sigma::T, 
     iMin, DeltaMin = findminima(fun.(grid))
     iMax, DeltaMax = findmaxima(fun.(grid))
 
-    # Add first grid point to minima (we don't care if it's a maxima)
+    # Add first grid point to minima if it is a minima (we don't care if it's a maxima)
     if fun(grid[1]) < fun(grid[2])
         pushfirst!(iMin, 1)
         pushfirst!(DeltaMin, fun(grid[1]))
@@ -248,7 +249,6 @@ function compute_capital_market(price_uk::T, zOC::T, mu::T, muBar::T, sigma::T, 
 
     logOmegaBar = Vector{T}(undef, 0)
     nonzero_indices = Vector{Int}(undef, 0)
-    iGlobalMax = Vector{Int}(undef, 0)
 
     # Loop through each interval from local minima to local maxima where we know
     # fun is increasing. Starting from the first local min, find the interval
@@ -271,9 +271,6 @@ function compute_capital_market(price_uk::T, zOC::T, mu::T, muBar::T, sigma::T, 
         iL = findall(x -> x >= interval[1] && x < interval[2], liabilities)
         L = liabilities[iL]
 
-        # Find all liabilities above global max of Delta
-        iGlobalMax = findall(x -> x > global_max, liabilities)
-
         @show length(L)
 
         if (length(L) > 0)
@@ -289,15 +286,18 @@ function compute_capital_market(price_uk::T, zOC::T, mu::T, muBar::T, sigma::T, 
         end
     end
 
-    plot!(P, logOmegaBar, liabilities[nonzero_indices], seriestype=:scatter)
-    display(P)
-
     zeta = (logOmegaBar .- muBar) ./ sigmaBar
 
     F = cdf.(Normal(), zeta)
 
+    # Find all liabilities above the maximum of Delta
+    iGlobalMax = findall(x -> x > maximum(fun.(grid)), liabilities)
+
     append!(nonzero_indices, iGlobalMax)
     append!(F, ones(length(iGlobalMax)))
+
+    plot!(P, logOmegaBar, liabilities[nonzero_indices], seriestype=:scatter)
+    display(P)
 
     @show mean(assets[nonzero_indices]), mean(F)
     @show dot(assets[nonzero_indices], F)
