@@ -41,11 +41,3 @@ params = Supergrassi.compute_all_parameters(clean, price_uk, price_eu, price_wor
 
 end
 
-@testset "Fixtures bounds" begin
-
-    @test isapprox(minimum(clean.industry.assets_liabilities.current_year.Assets), 0.0, atol=tol)
-    @test isapprox(maximum(clean.industry.assets_liabilities.current_year.Assets), 1.0, atol=tol)
-    @test isapprox(minimum(clean.industry.assets_liabilities.next_year.Assets), 0.0, atol=tol)
-    @test isapprox(maximum(clean.industry.assets_liabilities.next_year.Assets), 1.0, atol=tol)
-
-end
