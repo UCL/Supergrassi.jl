@@ -164,7 +164,6 @@ function compute_capital_market(price_uk::Vector{T}, zOC::Vector{T}, data::Indus
     plots = []
 
     for i in 1:params.constants.number_of_industries
-    #for i in 10:10
 
         @debug "### industry ", industry_names[i]
 
@@ -206,12 +205,28 @@ function compute_capital_market(price_uk::Vector{T}, zOC::Vector{T}, data::Indus
         capital_liquidated[i] = KL
         capital_demand[i] = KD
         free_cash_flow[i] = FCF
+
+        # grad = capital_market_gradients(logOmegaBar
+
     end
 
     P = plot((plots[i] for i in 1:16)...; layout=16)
     display(P)
 
     return capital_liquidated, capital_demand, free_cash_flow
+
+end
+
+function capital_market_gradients(logOmegaBar, price_uk, zOC, mu, delta, tau, gammaK, xi)
+
+    grad = gradient(ForwardWithPrimal, Delta_wrapper, logOmegaBar, price_uk, zOC, Const(mu),
+                    Const(delta), Const(tau), Const(gammaK), Const(xi))
+
+    # eqns H.1 and H.2
+    ∂logω_∂pdj = - grad.derivs[1] / grad.derivs[2]
+    ∂logω_∂zOC = - grad.derivs[1] / grad.derivs[3]
+
+    return ∂logω_∂pdj, ∂logω_∂zOC
 
 end
 
