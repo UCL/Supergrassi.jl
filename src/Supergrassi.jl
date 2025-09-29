@@ -20,8 +20,13 @@ include("objective_function.jl")
 include("constraint_function.jl")
 
 include("minimisation.jl")
+include("optimisation_helpers.jl")
+
 
 function estimate()
+
+
+
     @info "Estimation started."
 
     path = joinpath(@__DIR__, "..", "config","settings.yml")
@@ -51,15 +56,43 @@ function estimate()
 
     @info "Parameters computed."
 
-    x = deepcopy([log_prices_uk; clean.industry.surplus.val; clean.industry.regional.totals.savings])
-    println("Starting minimisation with x: ", x)
+    # TODO:replace with real household final consumption
+    household_final_consumption = [1.2]
 
+    x = deepcopy([log_prices_uk; clean.industry.surplus.val; clean.industry.regional.totals.savings; household_final_consumption; clean.industry.depreciation.val])
+    @info "Starting minimisation with x of length $(length(x))"
 
-    gradient = compute_gradient(x, clean, log_prices_eu, log_prices_world)
+    global_jacobian = compute_constraint_function(x, log_prices_eu, log_prices_world, clean, params)
+    @info "Global Jacobian computed."
+    simple_objective, simple_gradient, simple_constraint, simple_jacobian = 
+        create_optimization_functions(log_prices_eu, log_prices_world, clean, params, global_jacobian)
+    @info "Optimization functions created."
+
+    trial = sparser(global_jacobian)
+
+    prob = Ipopt.CreateIpoptProblem(
+        50,
+        [0.0 for i in 1:50],
+        [10.0 for i in 1:50],
+        32,
+        [0.0 for i in 1:32],
+        [0.0 for i in 1:32],
+        length(trial[1]),
+        0,
+        simple_objective,
+        simple_constraint,
+        simple_gradient,
+        simple_jacobian,
+        compute_hessian,
+    )
+
+    prob.x = x
+
+    status = Ipopt.IpoptSolve(prob)
 
     @info "Estimation completed."
 
-    return settings, data, clean, params, log_params, gradient
+    return status
 end
 
 export create_filepath, read_data, read_settings, check_file_availability

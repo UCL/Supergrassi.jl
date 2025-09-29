@@ -1,3 +1,5 @@
+using LinearAlgebra
+
 """
     function compute_constraint_function(x::Vector{<:Number}, data::CleanData, params::Parameters)
 
@@ -22,21 +24,24 @@ function compute_constraint_function(x::Vector{<:Number}, log_price_eu::Vector{T
                    Const(log_price_world),
                    Const(params),
                    Const(data.industry),
-                   Const(data.constants))
+                   Const(data.constants),
+                   Const(zeros(2*n))
+                   )
 
     CEQ = Jac.val
     DCEQ = first(Jac.derivs)
 
-    return CEQ, DCEQ
+    return DCEQ
 
 end
 
 
 function constraint_wrapper(x::Vector{T}, price_eu::Vector{T}, price_world::Vector{T},
-                            params::Parameters, data::IndustryData, constants::Constants) where {T <: Real}
+                            params::Parameters, data::IndustryData, constants::Constants, y::Vector{T}) where {T <: Real}
 
     F = market_clearing_price_constraint(x, price_eu, price_world, params, data, constants)
     CFC = compute_fixed_capital_consumption_constraint(x, data, params)
-    return [F; CFC]
+    y = [F; CFC]
+    return y
 
 end
