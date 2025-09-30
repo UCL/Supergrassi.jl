@@ -64,7 +64,7 @@ classDiagram
     }
 
     class Totals {
-        **savings** : Float64
+        **expenditure** : Float64
         **investments** : Float64
         **imports** : TotalImports
     }

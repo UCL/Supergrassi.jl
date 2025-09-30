@@ -34,7 +34,7 @@ function estimate()
     # TODO:replace with real household final consumption
     household_final_consumption = [1.2]
 
-    x = deepcopy([log_prices_uk; clean.industry.surplus.val; clean.industry.regional.totals.savings; household_final_consumption; clean.industry.depreciation.val])
+    x = deepcopy([log_prices_uk; clean.industry.surplus.val; clean.industry.regional.totals.expenditure; household_final_consumption; clean.industry.depreciation.val])
     @info "Starting minimisation with x of length $(length(x))"
 
     global_jacobian = constraint_jacobian(x, log_prices_eu, log_prices_world, clean, params)
