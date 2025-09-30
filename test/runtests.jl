@@ -25,6 +25,7 @@ if(isdir(joinpath(@__DIR__,"..",settings["files"]["input_dir"])))
     include("test_parameters_with_data.jl")
     include("test_objective.jl")
     include("test_constraint.jl")
+    include("test_minimisation.jl")
 
     # TODO: End to end test fails when run through runtests.jl, but not when included by itself. Investigate
     # include("test_end_to_end.jl")
