@@ -62,7 +62,7 @@ function estimate()
     x = deepcopy([log_prices_uk; clean.industry.surplus.val; clean.industry.regional.totals.savings; household_final_consumption; clean.industry.depreciation.val])
     @info "Starting minimisation with x of length $(length(x))"
 
-    global_jacobian = compute_constraint_function(x, log_prices_eu, log_prices_world, clean, params)
+    global_jacobian = constraint_jacobian(x, log_prices_eu, log_prices_world, clean, params)
     @info "Global Jacobian computed."
     simple_objective, simple_gradient, simple_constraint, simple_jacobian = 
         create_optimization_functions(log_prices_eu, log_prices_world, clean, params, global_jacobian)
