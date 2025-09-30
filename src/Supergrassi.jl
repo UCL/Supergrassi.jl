@@ -22,7 +22,6 @@ include("constraint_function.jl")
 include("minimisation.jl")
 include("optimisation_helpers.jl")
 
-# include("trial.jl")
 include("estimation.jl")
 
 
