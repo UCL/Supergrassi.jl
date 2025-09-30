@@ -35,8 +35,8 @@ x = deepcopy([log_price_uk;
 
 y = zeros(32)
 
-CEQ = Supergrassi.constraint_wrapper(x, log_price_eu, log_price_world, params, clean.industry, clean.constants, y)
-DCEQ = Supergrassi.compute_constraint_function(x, log_price_eu, log_price_world, clean, params) 
+CEQ = Supergrassi.constraint_function(x, log_price_eu, log_price_world, params, clean.industry, clean.constants, y)
+DCEQ = Supergrassi.constraint_jacobian(x, log_price_eu, log_price_world, clean, params) 
 
 @testset "Constraint Function" begin
 
