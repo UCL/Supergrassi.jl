@@ -1,7 +1,5 @@
 function estimate()
 
-
-
     @info "Estimation started."
 
     path = joinpath(@__DIR__, "..", "config","settings.yml")
