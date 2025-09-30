@@ -20,7 +20,6 @@ data = read_data(filepaths, settings)
 
 ```mermaid
 classDiagram
-    %% ========= Core data =========
     class CleanData {
         household : HouseholdData
         industry : IndustryData
@@ -50,30 +49,29 @@ classDiagram
     }
 
     class RegionalData {
-        total_use : DataFrame        %% y
-        consumption : DataFrame      %% f
-        delta_v : DataFrame          %% Δv
-        export_eu : DataFrame        %% x1
-        export_world : DataFrame     %% x2
-        investment : DataFrame       %% I
+        total_use : DataFrame
+        consumption : DataFrame
+        delta_v : DataFrame
+        export_eu : DataFrame
+        export_world : DataFrame
+        investment : DataFrame
         input_matrices : InputMatrices
         totals : Totals
     }
 
     class InputMatrices {
-        uk : Matrix{Float64}
-        eu : Matrix{Float64}
-        world : Matrix{Float64}
-        agg : Matrix{Float64}
+        uk : Matrix(Float64)
+        eu : Matrix(Float64)
+        world : Matrix(Float64)
+        agg : Matrix(Float64)
     }
 
     class Totals {
-        expenditure : Float64        %% E
-        investments : Float64        %% ISum
-        imports : ForeignRegionalValues  %% (EX1, EX2)
+        expenditure : Float64
+        investments : Float64
+        imports : ForeignRegionalValues
     }
 
-    %% ========= Constants & helpers =========
     class Constants {
         data_year : Int64
         exchange_rates : ExchangeRates
@@ -98,49 +96,48 @@ classDiagram
     }
 
     class Elasticity {
-        substitution : Float64            %% ξ
-        armington : Float64               %% ξ_a
-        substitution_uk_other : Float64?  %% ~ξ
-        skill_substitution : Float64?     %% ξ_h
+        substitution : Float64
+        armington : Float64
+        substitution_uk_other : Float64?
+        skill_substitution : Float64?
     }
 
     class Elasticities {
-        production : Elasticity    %% ξ
-        export_world : Elasticity  %% β2
-        export_eu : Elasticity     %% β1
-        consumption : Elasticity   %% α
-        investment : Elasticity    %% ρ
+        production : Elasticity
+        export_world : Elasticity
+        export_eu : Elasticity
+        consumption : Elasticity
+        investment : Elasticity
     }
 
-    %% ========= Parameters =========
     class ParamsStruct {
-        uk : Vector{Float64}
-        eu : Vector{Float64}
-        world : Vector{Float64}
-        agg : Vector{Float64}
-        tilde : Vector{Float64}?    %% optional
+        uk : Vector(Float64)
+        eu : Vector(Float64)
+        world : Vector(Float64)
+        agg : Vector(Float64)
+        tilde : Vector(Float64)?
     }
 
     class ParamsProduction {
-        human : Vector{Float64}         %% γ_h
-        capital : Vector{Float64}       %% γ_k
-        low_skill : Vector{Float64}     %% γ_L
-        high_skill : Vector{Float64}    %% γ_H
-        shock_mean : Vector{Float64}    %% μ
-        shock_stddev : Vector{Float64}  %% σ̄
-        uk : Matrix{Float64}            %% γ_Md
-        eu : Matrix{Float64}            %% γ_Meu
-        world : Matrix{Float64}         %% γ_Mw
-        agg : Matrix{Float64}           %% γ_M
+        human : Vector(Float64)
+        capital : Vector(Float64)
+        low_skill : Vector(Float64)
+        high_skill : Vector(Float64)
+        shock_mean : Vector(Float64)
+        shock_stddev : Vector(Float64)
+        uk : Matrix(Float64)
+        eu : Matrix(Float64)
+        world : Matrix(Float64)
+        agg : Matrix(Float64)
     }
 
     class Parameters {
         constants : Constants
-        consumption : ParamsStruct      %% α
-        export_eu : ParamsStruct        %% β1
-        export_world : ParamsStruct     %% β2
-        production : ParamsProduction   %% γ
-        investment : ParamsStruct       %% ρ
+        consumption : ParamsStruct
+        export_eu : ParamsStruct
+        export_world : ParamsStruct
+        production : ParamsProduction
+        investment : ParamsStruct
         log : Bool
     }
 
@@ -149,33 +146,40 @@ classDiagram
         production : ParamsProduction
     }
 
-    %% ========= Relationships =========
-    CleanData --> HouseholdData
-    CleanData --> IndustryData
-    CleanData --> Constants
+    %% === Arrow labels ===
+    CleanData --> HouseholdData : household
+    CleanData --> IndustryData : industry
+    CleanData --> Constants : constants
 
-    IndustryData --> AssetsLiabilities
-    IndustryData --> RegionalData
+    IndustryData --> AssetsLiabilities : assets_liabilities
+    IndustryData --> RegionalData : regional
 
-    RegionalData --> InputMatrices
-    RegionalData --> Totals
+    RegionalData --> InputMatrices : input_matrices
+    RegionalData --> Totals : totals
 
-    Totals --> ForeignRegionalValues
+    Totals --> ForeignRegionalValues : imports
 
-    Constants --> ExchangeRates
-    Constants --> ForeignRegionalValues
-    Constants --> Elasticities
+    Constants --> ExchangeRates : exchange_rates
+    Constants --> ForeignRegionalValues : total_imports_from_uk
+    Constants --> ForeignRegionalValues : total_imports_from_all_sources
+    Constants --> ForeignRegionalValues : import_tariffs
+    Constants --> ForeignRegionalValues : export_costs
+    Constants --> Elasticities : elasticities
 
-    Elasticities --> Elasticity
+    Elasticities --> Elasticity : production
+    Elasticities --> Elasticity : export_world
+    Elasticities --> Elasticity : export_eu
+    Elasticities --> Elasticity : consumption
+    Elasticities --> Elasticity : investment
 
-    Parameters --> Constants
+    Parameters --> Constants : constants
     Parameters --> ParamsStruct : consumption
     Parameters --> ParamsStruct : export_eu
     Parameters --> ParamsStruct : export_world
     Parameters --> ParamsProduction : production
     Parameters --> ParamsStruct : investment
 
-    ParameterSubset --> Constants
-    ParameterSubset --> ParamsProduction
+    ParameterSubset --> Constants : constants
+    ParameterSubset --> ParamsProduction : production
 
 ```
