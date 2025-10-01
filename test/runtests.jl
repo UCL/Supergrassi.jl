@@ -28,5 +28,5 @@ if(isdir(joinpath(@__DIR__,"..",settings["files"]["input_dir"])))
     include("test_minimisation.jl")
     include("test_optimisation_helpers.jl")
 
-    include("test_end_to_end.jl")
+    include("test_estimation.jl")
 end
