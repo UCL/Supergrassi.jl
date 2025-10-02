@@ -89,13 +89,13 @@ Stores sums of quantities over industries before renormalisation.
 
 Names for reference with the paper/matlab code:
 
-- `savings::Float64`: E
+- `expenditure::Float64`: E
 - `investments::Float64`: ISum
 - `imports::ForeignRegionalValues`: EX1, EX2 [`ForeignRegionalValues`](@ref)
 """
 struct Totals
 
-    savings::Float64
+    expenditure::Float64
     investments::Float64
     imports::ForeignRegionalValues
 

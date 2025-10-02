@@ -29,7 +29,7 @@ params = Supergrassi.compute_all_parameters(clean, log_price_uk, log_price_eu, l
 
 x = deepcopy([log_price_uk;
               clean.industry.surplus.val;
-              clean.industry.regional.totals.savings;
+              clean.industry.regional.totals.expenditure;
               Supergrassi.compute_muI(clean.industry, params.constants.elasticities.investment);
               clean.industry.depreciation.val])
 
