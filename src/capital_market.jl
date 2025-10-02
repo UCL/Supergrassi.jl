@@ -184,6 +184,13 @@ function compute_capital_market(price_uk::Vector{T}, zOC::Vector{T}, data::Indus
 
         ind, logOmegaBar, P = compute_logOmegaBar(bval, Bval, grid, df.Ratio, fun)
 
+        grad = logOmegaBar_gradients(logOmegaBar, price_uk[i], zOC[i],
+                                     params.production.shock_mean[i], # mu
+                                     data.depreciation.val[i], # delta
+                                     tau[i],
+                                     params.production.capital[i], # gammaK
+                                     params.constants.elasticities.production.substitution)
+
         push!(plots, P)
 
         KL, KD, FCF = capital_market_terms(price_uk[i],
@@ -206,8 +213,6 @@ function compute_capital_market(price_uk::Vector{T}, zOC::Vector{T}, data::Indus
         capital_demand[i] = KD
         free_cash_flow[i] = FCF
 
-        # grad = capital_market_gradients(logOmegaBar
-
     end
 
     P = plot((plots[i] for i in 1:16)...; layout=16)
@@ -217,7 +222,7 @@ function compute_capital_market(price_uk::Vector{T}, zOC::Vector{T}, data::Indus
 
 end
 
-function capital_market_gradients(logOmegaBar, price_uk, zOC, mu, delta, tau, gammaK, xi)
+function logOmegaBar_gradients(logOmegaBar, price_uk, zOC, mu, delta, tau, gammaK, xi)
 
     grad = gradient(ForwardWithPrimal, Delta_wrapper, logOmegaBar, price_uk, zOC, Const(mu),
                     Const(delta), Const(tau), Const(gammaK), Const(xi))
