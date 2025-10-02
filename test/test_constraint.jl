@@ -29,11 +29,14 @@ params = Supergrassi.compute_all_parameters(clean, log_price_uk, log_price_eu, l
 
 x = deepcopy([log_price_uk;
               clean.industry.surplus.val;
-              clean.industry.regional.totals.savings;
+              clean.industry.regional.totals.expenditure;
               Supergrassi.compute_muI(clean.industry, params.constants.elasticities.investment);
               clean.industry.depreciation.val])
 
-CEQ, DCEQ = Supergrassi.compute_constraint_function(x, log_price_eu, log_price_world, clean, params)
+y = zeros(32)
+
+CEQ = Supergrassi.constraint_function(x, log_price_eu, log_price_world, params, clean.industry, clean.constants, y)
+DCEQ = Supergrassi.constraint_jacobian(x, log_price_eu, log_price_world, clean, params) 
 
 @testset "Constraint Function" begin
 

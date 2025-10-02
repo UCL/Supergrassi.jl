@@ -22,47 +22,10 @@ include("objective_function.jl")
 include("constraint_function.jl")
 
 include("minimisation.jl")
+include("optimisation_helpers.jl")
 
-function estimate()
-    @info "Estimation started."
+include("estimation.jl")
 
-    path = joinpath(@__DIR__, "..", "config","settings.yml")
-    settings_path = create_filepath(path)
-    settings = read_settings(settings_path)
-    filepaths = check_file_availability(settings)
-    data = read_data(filepaths, settings)
-
-    @info "Data read successfully."
-    
-    clean = Supergrassi.clean_data(data,settings)
-    Supergrassi.postprocess_clean_data!(clean)
-
-    @info "Data cleaned and post-processed."
-
-    df = CSV.read(joinpath(@__DIR__, "..", "data", "data_for_household_demand.csv"), DataFrame)
-
-
-    log_prices_uk = df.logP_uk
-    log_prices_eu = df.logP_eu
-    log_prices_world = df.logP_w
-
-    @info "Prices extracted from data."
-
-    params = Supergrassi.compute_all_parameters(clean, log_prices_uk, log_prices_eu, log_prices_world, false)
-    log_params = Supergrassi.compute_all_parameters(clean, log_prices_uk, log_prices_eu, log_prices_world, true)
-
-    @info "Parameters computed."
-
-    x = deepcopy([log_prices_uk; clean.industry.surplus.val; clean.industry.regional.totals.savings])
-    println("Starting minimisation with x: ", x)
-
-
-    gradient = compute_gradient(x, clean, log_prices_eu, log_prices_world)
-
-    @info "Estimation completed."
-
-    return settings, data, clean, params, log_params, gradient
-end
 
 export create_filepath, read_data, read_settings, check_file_availability
 export clean_data
