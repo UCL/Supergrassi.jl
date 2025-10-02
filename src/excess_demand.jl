@@ -10,8 +10,6 @@ Calculate the market clearing price constraint, equation 4.1.
 Uses a single vector `x` of equilibrium variables as input. Returns a single vector `F` as output.
 Note that the prices are NOT on log scale.
 
-TODO: There is an error when this function is called through Enzyme
-
 """
 function market_clearing_price_constraint(x::Vector{T}, log_price_eu::Vector{T}, log_price_world::Vector{T},
                                           params::Parameters, data::IndustryData, constants::Constants) where {T <: Real}
@@ -113,32 +111,32 @@ function market_clearing_price_constraint(price_uk::Vector{T}, operating_cost::V
 
     # Exports from eu
     logP = log_price_index(params.export_eu.uk, params.export_eu.eu, params.export_eu.world, price_uk, price_eu, price_world, elasticity.export_eu.armington, constants.export_costs.eu)
-    logPBar = log_agg_price_index(params.export_eu.agg, logP, elasticity.export_eu.substitution)
-    eu_spending = export_spending(elasticity.export_eu.substitution_uk_other, params.export_eu.tilde, logPBar,
+    logPX1Bar = log_agg_price_index(params.export_eu.agg, logP, elasticity.export_eu.substitution)
+    eu_spending = export_spending(elasticity.export_eu.substitution_uk_other, params.export_eu.tilde, logPX1Bar,
                                   constants.exchange_rates.eur, E1tilde, Ptilde)
-    logEX1 = log_expenditure(params.export_eu.agg, eu_spending, elasticity.export_eu.substitution, logP, logPBar)
+    logEX1 = log_expenditure(params.export_eu.agg, eu_spending, elasticity.export_eu.substitution, logP, logPX1Bar)
     EX1_uk = expenditure_by_region(params.export_eu.uk, price_uk, logEX1, logP, elasticity.export_eu)
 
     # Exports from rest of world
 
     logP = log_price_index(params.export_world.uk, params.export_world.eu, params.export_world.world, price_uk, price_eu, price_world, elasticity.export_world.armington, constants.export_costs.world)
-    logPBar = log_agg_price_index(params.export_world.agg, logP, elasticity.export_world.substitution)
+    logPX2Bar = log_agg_price_index(params.export_world.agg, logP, elasticity.export_world.substitution)
     world_spending = export_spending(elasticity.export_world.substitution_uk_other, params.export_world.tilde,
-                                     logPBar, constants.exchange_rates.usd, E2tilde, Ptilde)
+                                     logPX2Bar, constants.exchange_rates.usd, E2tilde, Ptilde)
     logEX2 = log_expenditure(params.export_world.agg, world_spending, elasticity.export_world.substitution,
-                             logP, logPBar)
+                             logP, logPX2Bar)
     EX2_uk = expenditure_by_region(params.export_world.uk, price_uk, logEX2, logP, elasticity.export_world)
 
     # Investment
 
     logP = log_price_index(params.investment.uk, params.investment.eu, params.investment.world, price_uk, price_eu, price_world, elasticity.investment.armington)
-    logPBar = log_agg_price_index(params.investment.agg, logP, elasticity.investment.substitution)
+    logPIBar = log_agg_price_index(params.investment.agg, logP, elasticity.investment.substitution)
     new_capital_supply = capital_market()
-    logEI = log_expenditure(params.investment.agg, logPBar .+ log(new_capital_supply ./ muI),
-                            elasticity.investment.substitution, logP, logPBar)
+    logEI = log_expenditure(params.investment.agg, logPIBar .+ log(new_capital_supply ./ muI),
+                            elasticity.investment.substitution, logP, logPIBar)
     EI_uk = expenditure_by_region(params.investment.uk, price_uk, logEI, logP, elasticity.investment)
 
-    E = (household_expenditure, eu_spending, world_spending, logPBar .+ log(new_capital_supply ./ muI))
+    E = (household_expenditure, eu_spending, world_spending, logPIBar .+ log(new_capital_supply ./ muI))
     τx = (0.0, constants.export_costs.eu, constants.export_costs.world, 0.0)
     # TODO: Call log_expenditure and expenditure_by_region in a loop over E and keys
 
@@ -149,35 +147,36 @@ function market_clearing_price_constraint(price_uk::Vector{T}, operating_cost::V
 
     for i = 1:n
 
-        TOCTheta = exp(operating_cost[i]) / (1 + exp(operating_cost[i]))
+        logTauPdMu_val = logTauPdMu(log(price_uk[i]), tau[i], params.production.shock_mean[i])
 
-        logTauPdMu = log(1 - tau[i]) + log(price_uk[i]) + log(params.production.shock_mean[i])
-
-        # TODO: This is already computed as part of intermediate_goods_price_index. Refactor and reuse.
-        logTauPdYBar = (logTauPdMu
-                        + log(params.production.capital[i]) / (elasticity.production.substitution - 1)
-                        + elasticity.production.substitution / (1 - elasticity.production.substitution) * log(1 - TOCTheta)
-                        + log(data.capital.current_year[i])
-                        )
+        logTauPdYBar_val = logTauPdYBar(log(price_uk[i]), operating_cost[i], tau[i], params.production.shock_mean[i],
+                                        params.production.capital[i], data.capital.current_year[i],
+                                        elasticity.production.substitution)
 
         logPM = log_price_index(params.production.uk[i,:],
                                 params.production.eu[i,:],
                                 params.production.world[i,:],
                                 price_uk, price_eu, price_world, elasticity.production.armington)
 
-        logEM = log_expenditure(params.production.agg[i,:], logTauPdYBar, elasticity.production.substitution,
-                                logPM, logTauPdMu)
+        logEM = log_expenditure(params.production.agg[i,:], logTauPdYBar_val, elasticity.production.substitution,
+                                logPM, logTauPdMu_val)
 
         EM_uk += expenditure_by_region(params.production.uk[i,:], price_uk, logEM, logPM, elasticity.production)
 
-        pdYBar[i] = exp(logTauPdYBar - log(1 - tau[i]))
     end
+
+    pdYBar = intermediate_goods_price_index(log.(price_uk), operating_cost, tau, params.production.shock_mean,
+                                            params.production.capital, data.capital.current_year,
+                                            elasticity.production.substitution)
 
     return pdYBar, EF_uk, EX1_uk, EX2_uk, EI_uk, EM_uk
 
 end
 
-function compute_fixed_capital_consumption_constraint(x::Vector{T}, data::IndustryData, params::Parameters) where {T <: Real}
+"""
+CEQ2 in Matlab code EstimationConstraint1.m L68
+"""
+function compute_fixed_capital_consumption_constraint(x::Vector{T}, KL::Vector{T}, data::IndustryData, params::Parameters) where {T <: Real}
 
     n = params.constants.number_of_industries
     log_price_uk, zOC, expenditure, log_TFP, log_Delta = unpack_x(n, x)
@@ -189,11 +188,39 @@ function compute_fixed_capital_consumption_constraint(x::Vector{T}, data::Indust
     k0 = 1.0
     q0 = 1.0
     λ = params.constants.loss_given_default
-    KL = rand(n) # TODO: KL will be computed by capital_market()
+    # KL = rand(n) # TODO: KL will be computed by capital_market()
 
     return fixed_capital_consumption - k0*q0*exp.(log_Delta) - q0 * λ / (1 - λ) .* KL
 
 end
+
+"""
+F(n) in Matlab code ExcessDemand.m L344
+"""
+function compute_normalisation_constraint(x::Vector{T}, price_eu::Vector{T}, price_world::Vector{T}, params::Parameters, elasticity::Elasticity) where {T <: Real}
+
+    log_price_uk, zOC, expenditure, log_TFP, log_Delta = unpack_x(n, x)
+    price_uk = exp.(log_price_uk)
+    logP = log_price_index(params.consumption.uk, params.consumption.eu, params.consumption.world,
+                           price_uk, price_eu, price_world, elasticity.consumption.armington)
+    logPBar = log_agg_price_index(params.consumption.agg, logP, elasticity.consumption.substitution)
+
+    return logPBar - log(1e4)
+
+end
+
+# function compute_operating_cost_constraint(x::Vector{T}, price_eu::Vector{T}, price_world::Vector{T}, params::Parameters, elasticity::Elasticity) where {T <: Real}
+
+#     log_price_uk, zOC, expenditure, log_TFP, log_Delta = unpack_x(n, x)
+#     price_uk = exp.(log_price_uk)
+#     logPM = log_price_index(params.production.uk[i,:],
+#                             params.production.eu[i,:],
+#                             params.production.world[i,:],
+#                             price_uk, price_eu, price_world, elasticity.production.armington)
+
+#     PmIndex = params.production.agg .* exp(1 - elasticity.consumption.substitution .* logPM)
+
+# end
 
 """
     function log_price_index(param::ParamsStruct, prices::DataFrame, elasticity::T, export_cost::T) where {T<:Real}
@@ -378,7 +405,7 @@ function intermediate_goods_price_index(log_price_uk::Vector{T}, zOC::Vector{T},
     return pdYBar
 
     # return [intermediate_goods_price_index(log_price_uk[i], zOC[i], tau[i], mu[i], gammaK[i], K0[i], xi) for i in eachindex(log_price_uk, zOC, tau, mu, gammaK, K0)]
-    
+
 end
 
 """
@@ -395,10 +422,30 @@ Computes the intermediate goods price index for a single industry, Step 1 of Exc
 - `K0::T`: Current year capital value
 - `xi::T`: Production substitution elasticity
 """
-function intermediate_goods_price_index(log_price_uk::T, zOC::T, tau::T, mu::T, gammaK::T, K0::T, xi::T) where {T <: Real}
+function intermediate_goods_price_index(log_price_uk::T, zOC::T, τ::T, μ::T, γK::T, k0::T, ξ::T) where {T <: Real}
 
-    return ( (1 - tau) * exp(log_price_uk) * mu * K0 * gammaK ^ (1 / (xi - 1) )
-             * (1 - (exp(zOC) ) / ( 1 + exp(zOC) ) ) ^ (xi / (1 - xi) ) / (1 - tau) )
+    logTauPdYBar_val = logTauPdYBar(log_price_uk, zOC, τ, μ, γK, k0, ξ)
+    return exp(logTauPdYBar_val - log(1 - τ))
+
+end
+
+"""
+Helper function to compute log of tau * mu * price_uk
+"""
+function logTauPdMu(log_price_uk::T, τ::T, μ::T) where {T <:Real}
+
+    return log(1 - τ) + log_price_uk + log(μ)
+
+end
+
+"""
+Helper function to compute log of tau * mu * ybar
+"""
+function logTauPdYBar(log_price_uk, operating_cost, τ, μ, γK, k0, ξ)
+
+    logTauPdMu_val = logTauPdMu(log_price_uk, τ, μ)
+    TOCTheta = exp(operating_cost) / (1 + exp(operating_cost))
+    return logTauPdMu_val + log(γK) / (ξ - 1) + ξ / (1 - ξ) * log(1 - TOCTheta) + log(k0)
 
 end
 
