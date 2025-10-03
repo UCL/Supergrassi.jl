@@ -49,7 +49,7 @@ function estimate()
     prob = Ipopt.CreateIpoptProblem(
         n_variables,
         [0.0 for i in 1:n_variables],
-        [10.0 for i in 1:n_variables],
+        [30.0 for i in 1:n_variables],
         n_constraints,
         [0.0 for i in 1:n_constraints],
         [0.0 for i in 1:n_constraints],
@@ -68,5 +68,5 @@ function estimate()
 
     @info "Estimation completed."
 
-    return status
+    return status#, prob
 end
