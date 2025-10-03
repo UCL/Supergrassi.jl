@@ -24,37 +24,40 @@ function constraint_jacobian(x::Vector{T}, log_price_eu::Vector{T}, log_price_wo
                    x,
                    Const(log_price_eu),
                    Const(log_price_world),
+                   Const(data),
                    Const(params),
-                   Const(data.industry),
-                   Const(data.constants),
-                   Const(zeros(2*n))
+                   Const(zeros(3*n))
                    )
 
     DCEQ = first(Jac)
 
-    return DCEQ
+    return dropdims(DCEQ, dims = 2)
 
 end
 
 
 """
     function constraint_function(x::Vector{T}, price_eu::Vector{T}, price_world::Vector{T},
-                             params::Parameters, data::IndustryData, constants::Constants, y::Vector{T}) where {T <: Real}
+                             data::CleanData, params::Parameters, y::Vector{T}) where {T <: Real}
 
 # Arguments
 - `x::Vector{<:Number}`: Vector containing equilibrium variables
-- `log_price_eu::Vector{<:Number}`: Vector containing the EU prices
-- `log_price_world::Vector{<:Number}`: Vector containing the rest of the world prices
+- `price_eu::Vector{<:Number}`: Vector containing the EU prices
+- `price_world::Vector{<:Number}`: Vector containing the rest of the world prices
 - `data::CleanData`: Cleaned data structure containing industry and regional information.
 - `params::Parameters`: Parameters structure containing production and constants.
 - `y::Vector{<:Number}` : Vector constraints will be written to. Required due to Ipopt interface
 """
-function constraint_function(x::Vector{T}, price_eu::Vector{T}, price_world::Vector{T},
-                             params::Parameters, data::IndustryData, constants::Constants, y::Vector{T}) where {T <: Number}
+function constraint_function(x::Vector{T}, log_price_eu::Vector{T}, log_price_world::Vector{T},
+                             data::CleanData, params::Parameters, y::Vector{T}) where {T <: Number}
 
-    F = market_clearing_price_constraint(x, price_eu, price_world, params, data, constants)
-    CFC = compute_fixed_capital_consumption_constraint(x, data, params)
-    y = [F; CFC]
+    KL = rand(data.constants.number_of_industries) # TODO: compute with capital_market
+    F = market_clearing_price_constraint(x, log_price_eu, log_price_world, params, data.industry, data.constants)
+    F[data.constants.number_of_industries] = compute_normalisation_constraint(x, log_price_eu, log_price_world, params,
+                                                                              data.constants.elasticities.consumption)
+    OC = compute_operating_cost_constraint(x, log_price_eu, log_price_world, data, params)
+    CFC = compute_fixed_capital_consumption_constraint(x, KL, data.industry, params)
+    y = [F; OC; CFC]
     return y
 
 end

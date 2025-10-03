@@ -17,14 +17,18 @@ df = outerjoin(CSV.read(joinpath(data_path, "data_for_household_demand.csv"), Da
 
 # prices = DataFrame([df.logP_uk, df.logP_eu, df.logP_w], ["uk", "eu", "world"])
 
-price_uk = df.logP_uk
-price_eu = df.logP_eu
-price_world = df.logP_w
+log_price_uk = df.logP_uk
+log_price_eu = df.logP_eu
+log_price_world = df.logP_w
+price_uk = exp.(df.logP_uk)
+price_eu = exp.(df.logP_eu)
+price_world = exp.(df.logP_w)
+
 
 clean = Supergrassi.clean_data(data,settings)
 Supergrassi.postprocess_clean_data!(clean)
 
-params = Supergrassi.compute_all_parameters(clean, price_uk, price_eu, price_world, false)
+params = Supergrassi.compute_all_parameters(clean, log_price_uk, log_price_eu, log_price_world, false)
 
 @testset "Fixtures Typecheck" begin
 

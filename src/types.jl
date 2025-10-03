@@ -256,16 +256,16 @@ These require a different structure from [ParamsStruct](@ref) because firms trad
 and the parameter is a matrix that contains a value for each combination of firms.
 
 Names reference
-- `input_human::Vector{Float64}` : `γ_h`
-- `input_capital::Vector{Float64}` :  `γ_k`
-- `input_low_skill::Vector{Float64}` : `γ_L`
-- `input_high_skill::Vector{Float64}` : `γ_H`
+- `human::Vector{Float64}` : `γ_h`
+- `capital::Vector{Float64}` :  `γ_k`
+- `low_skill::Vector{Float64}` : `γ_L`
+- `high_skill::Vector{Float64}` : `γ_H`
 - `shock_mean::Vector{Float64}` : `μ`
 - `shock_stdev::Vector{Float64}` : ̄`σ`
-- `input_uk::Matrix{Float64}` : `γ_Md`
-- `input_eu::Matrix{Float64}` : `γ_Meu`
-- `input_world::Matrix{Float64}` : `γ_Mw`
-- `input_agg::Matrix{Float64}` : `γ_M`
+- `uk::Matrix{Float64}` : `γ_Md`
+- `eu::Matrix{Float64}` : `γ_Meu`
+- `world::Matrix{Float64}` : `γ_Mw`
+- `agg::Matrix{Float64}` : `γ_M`
 """
 struct ParamsProduction
 
