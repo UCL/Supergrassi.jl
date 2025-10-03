@@ -148,7 +148,7 @@ function omegaV(zOC::T, μ::T, χ1::T, γK::T, ξ::T) where {T <: Real}
 
 end
 
-using Plots
+# using Plots
 
 function compute_capital_market(price_uk::Vector{T}, zOC::Vector{T}, data::IndustryData, params::Parameters) where {T <: Real}
 
@@ -161,7 +161,7 @@ function compute_capital_market(price_uk::Vector{T}, zOC::Vector{T}, data::Indus
     free_cash_flow = Vector{T}(undef, params.constants.number_of_industries)
     logOmegaBar = Vector{T}(undef, params.constants.number_of_industries)
 
-    plots = []
+    # plots = []
 
     for i in 1:params.constants.number_of_industries
 
@@ -191,7 +191,7 @@ function compute_capital_market(price_uk::Vector{T}, zOC::Vector{T}, data::Indus
                                      params.production.capital[i], # gammaK
                                      params.constants.elasticities.production.substitution)
 
-        push!(plots, P)
+        # push!(plots, P)
 
         KL, KD, FCF = capital_market_terms(price_uk[i],
                                            zOC[i],
@@ -215,8 +215,8 @@ function compute_capital_market(price_uk::Vector{T}, zOC::Vector{T}, data::Indus
 
     end
 
-    P = plot((plots[i] for i in 1:16)...; layout=16)
-    display(P)
+    # P = plot((plots[i] for i in 1:16)...; layout=16)
+    # display(P)
 
     return capital_liquidated, capital_demand, free_cash_flow
 
@@ -228,8 +228,8 @@ function logOmegaBar_gradients(logOmegaBar, price_uk, zOC, mu, delta, tau, gamma
                     Const(delta), Const(tau), Const(gammaK), Const(xi))
 
     # eqns H.1 and H.2
-    ∂logω_∂pdj = - grad.derivs[1] / grad.derivs[2]
-    ∂logω_∂zOC = - grad.derivs[1] / grad.derivs[3]
+    ∂logω_∂pdj = - grad.derivs[2] / grad.derivs[1]
+    ∂logω_∂zOC = - grad.derivs[3] / grad.derivs[1]
 
     return ∂logω_∂pdj, ∂logω_∂zOC
 
@@ -267,9 +267,9 @@ function compute_logOmegaBar(bval::T, Bval::T, grid, liabilities::Vector{T}, fun
     # Keep track of the highest max found so far
     global_max = -Inf
 
-    P = plot(grid, fun.(grid))
-    plot!(P, grid[iMin], DeltaMin, seriestype=:scatter)
-    plot!(P, grid[iMax], DeltaMax, seriestype=:scatter)
+    # P = plot(grid, fun.(grid))
+    # plot!(P, grid[iMin], DeltaMin, seriestype=:scatter)
+    # plot!(P, grid[iMax], DeltaMax, seriestype=:scatter)
 
     logOmegaBar = Vector{T}(undef, 0)
     nonzero_indices = Vector{Int}(undef, 0)
@@ -310,9 +310,9 @@ function compute_logOmegaBar(bval::T, Bval::T, grid, liabilities::Vector{T}, fun
         end
     end
 
-    plot!(P, logOmegaBar, liabilities[nonzero_indices], seriestype=:scatter)
+    # plot!(P, logOmegaBar, liabilities[nonzero_indices], seriestype=:scatter)
 
-    return nonzero_indices, logOmegaBar, P
+    return nonzero_indices, logOmegaBar #, P
 
 end
 
@@ -361,47 +361,9 @@ function capital_market_terms(price_uk::T, zOC::T, mu::T, muBar::T, sigmaBar::T,
 
 end
 
-
+# TODO: Fix this function with correct parameters
 # function compute_dividends(FCF::Vector{T}, params::Parameters) where {T <: Real}
 
 #     return FCF + params.D1 - params.D0 - q1 * (params.k1 - params.k0);
 
 # end
-
-# Random.seed!(1238)
-
-# price_uk = rand()
-# mu = rand()
-# zOC = rand()
-# delta = rand()
-# tau = rand()
-# gammaK = rand()
-# chi0 = rand()
-# xi = rand()
-# q0 = rand()
-# k0 = rand()
-# k1 = rand()
-
-# # L = 1.0
-# σ = 1.4
-
-# muBar = 1.0
-# sigmaBar = 1.0
-# lambda = 1.0
-# R = 1.0
-
-# assets = randn(10000) .* 10
-# liabilities = randn(10000) .* 10
-
-#KL, KD, FCF = compute_capital_market(price_uk, mu, muBar, σ, assets, liabilities, Delta)
-
-# Δ(Ω) = Delta_wrapper(Ω, price_uk, zOC, mu, delta, tau, gammaK, chi0, xi, q0)
-# Δres(Ω) = residual(Ω, L, Δ)
-# logOmega = find_zero(Δres, (mu - 4 * σ, mu + 4 * σ), Bisection(), verbose=true)
-
-# grad = gradient(ForwardWithPrimal, Delta_wrapper, logOmega, price_uk, zOC, Const(mu),
-#                 Const(delta), Const(tau), Const(gammaK), Const(chi0), Const(xi), Const(q0))
-
-# eqns H.1 and H.2
-# ∂logω_∂pdj = - grad.derivs[1] / grad.derivs[2]
-# ∂logω_∂zOC = - grad.derivs[1] / grad.derivs[3]
