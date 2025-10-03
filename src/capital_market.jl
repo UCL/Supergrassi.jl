@@ -180,16 +180,8 @@ function compute_capital_market(price_uk::Vector{T}, zOC::Vector{T}, data::Indus
                               data.shock_stdev.val[i], params.constants.loss_given_default,
                               params.constants.interest_rate)
 
-        #fun(logOmega) = cos(2 * logOmega) + sin(4 * logOmega) + 0.3 * abs(logOmega)
-
-        ind, logOmegaBar, P = compute_logOmegaBar(bval, Bval, grid, df.Ratio, fun)
-
-        grad = logOmegaBar_gradients(logOmegaBar, price_uk[i], zOC[i],
-                                     params.production.shock_mean[i], # mu
-                                     data.depreciation.val[i], # delta
-                                     tau[i],
-                                     params.production.capital[i], # gammaK
-                                     params.constants.elasticities.production.substitution)
+        # ind, logOmegaBar, P = compute_logOmegaBar(bval, Bval, grid, df.Ratio, fun)
+        ind, logOmegaBar = compute_logOmegaBar(bval, Bval, grid, df.Ratio, fun)
 
         # push!(plots, P)
 
@@ -222,18 +214,20 @@ function compute_capital_market(price_uk::Vector{T}, zOC::Vector{T}, data::Indus
 
 end
 
-function logOmegaBar_gradients(logOmegaBar, price_uk, zOC, mu, delta, tau, gammaK, xi)
+# TODO: OmegaBar should be passed into Delta as a scalar, possibly loop over values?
+# function logOmegaBar_gradients(logOmegaBar, price_uk, zOC, mu, muBar, sigmaBar, delta, tau, gammaK, xi, lambda, R)
 
-    grad = gradient(ForwardWithPrimal, Delta_wrapper, logOmegaBar, price_uk, zOC, Const(mu),
-                    Const(delta), Const(tau), Const(gammaK), Const(xi))
+#     grad = gradient(ForwardWithPrimal, Delta_wrapper, logOmegaBar, price_uk, zOC, Const(mu),
+#                     Const(muBar), Const(sigmaBar),
+#                     Const(delta), Const(tau), Const(gammaK), Const(xi), Const(lambda), Const(R))
 
-    # eqns H.1 and H.2
-    ∂logω_∂pdj = - grad.derivs[2] / grad.derivs[1]
-    ∂logω_∂zOC = - grad.derivs[3] / grad.derivs[1]
+#     # eqns H.1 and H.2
+#     ∂logω_∂pdj = - grad.derivs[2] / grad.derivs[1]
+#     ∂logω_∂zOC = - grad.derivs[3] / grad.derivs[1]
 
-    return ∂logω_∂pdj, ∂logω_∂zOC
+#     return ∂logω_∂pdj, ∂logω_∂zOC
 
-end
+# end
 
 function compute_grid(grid_size::Int, muBar::T, sigmaBar::T) where {T <: Real}
 
@@ -289,13 +283,13 @@ function compute_logOmegaBar(bval::T, Bval::T, grid, liabilities::Vector{T}, fun
             interval = (0.0,0.0)
         end
 
-        @info "Interval", i, ": ", interval
+        @debug "Interval", i, ": ", interval
 
         # Find liabilities data points and indices that are within values of fun in the found interval.
         iL = findall(x -> x >= interval[1] && x < interval[2], liabilities)
         L = liabilities[iL]
 
-        @info "Length(L): ",length(L)
+        @debug "Length(L): ",length(L)
 
         if (length(L) > 0)
             for il = 1:length(L)
@@ -306,7 +300,7 @@ function compute_logOmegaBar(bval::T, Bval::T, grid, liabilities::Vector{T}, fun
                 push!(nonzero_indices, iL[il])
             end
         else
-            @info "no roots found in interval", i
+            @debug "no roots found in interval", i
         end
     end
 
