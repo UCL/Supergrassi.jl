@@ -1,4 +1,6 @@
-function estimate()
+using Base.Threads
+
+function estimate(log_results::Bool = false, log_results_filepath::String="log_results.csv")
 
     @info "Estimation started."
 
@@ -65,5 +67,48 @@ function estimate()
 
     @info "Estimation completed."
 
+    @info "Final status: $status"
+    @info "Final variables: $(prob.x)"
+    @info "Final objective value: $(prob.obj_val)"
+
+    if log_results
+
+        if !isfile(log_results_filepath)
+            open(log_results_filepath, "w") do io
+                println(io, "timestamp,status,objective_value,variables")
+            end
+        end
+
+        open(log_results_filepath, "a") do io
+            println(io, "$(Dates.now()),$status,$(prob.obj_val),$(join(prob.x, ' '))")
+        end
+
+    end
+
     return status
+end
+
+
+function batch_estimation(log_errors::Bool = false, log_errors_filepath::String="log_errors.csv")
+
+    @threads for i in 1:100
+        try
+            results = estimate()
+        catch e
+
+            if log_errors
+                if !isfile(log_errors_filepath)
+                    open(log_errors_filepath, "w") do io
+                        println(io, "timestamp,iteration,error")
+                    end
+                end
+
+                open(log_errors_filepath, "a") do io
+                    println(io, "$(Dates.now()),$i,$(e.msg)")
+                end
+            end
+
+        end
+    end
+
 end
