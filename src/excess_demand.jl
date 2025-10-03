@@ -2,7 +2,7 @@
 # Equation 4.2 is the log_total_price_index in utility_function_paramerers.jl
 
 """
-    function market_clearing_price(x::Vector{T}, price_eu::Vector{T}, price_world::Vector{T},
+    function market_clearing_price(x::Vector{T}, log_price_eu::Vector{T}, log_price_world::Vector{T},
                                    params::Parameters, data::IndustryData, constants::Constants) where {T <: Real}
 
 Calculate the market clearing price constraint, equation 4.1.
@@ -190,37 +190,77 @@ function compute_fixed_capital_consumption_constraint(x::Vector{T}, KL::Vector{T
     λ = params.constants.loss_given_default
     # KL = rand(n) # TODO: KL will be computed by capital_market()
 
-    return fixed_capital_consumption - k0*q0*exp.(log_Delta) - q0 * λ / (1 - λ) .* KL
+    return @. fixed_capital_consumption - k0*q0*exp.(log_Delta) - q0 * λ / (1 - λ) .* KL
 
 end
 
 """
 F(n) in Matlab code ExcessDemand.m L344
 """
-function compute_normalisation_constraint(x::Vector{T}, price_eu::Vector{T}, price_world::Vector{T}, params::Parameters, elasticity::Elasticity) where {T <: Real}
+function compute_normalisation_constraint(x::Vector{T}, log_price_eu::Vector{T}, log_price_world::Vector{T}, params::Parameters, elasticity::Elasticity) where {T <: Real}
 
-    log_price_uk, zOC, expenditure, log_TFP, log_Delta = unpack_x(n, x)
+    log_price_uk, zOC, expenditure, log_TFP, log_Delta = unpack_x(params.constants.number_of_industries, x)
     price_uk = exp.(log_price_uk)
+    price_eu = exp.(log_price_eu)
+    price_world = exp.(log_price_world)
     logP = log_price_index(params.consumption.uk, params.consumption.eu, params.consumption.world,
-                           price_uk, price_eu, price_world, elasticity.consumption.armington)
-    logPBar = log_agg_price_index(params.consumption.agg, logP, elasticity.consumption.substitution)
+                           price_uk, price_eu, price_world, elasticity.armington)
+    logPBar = log_agg_price_index(params.consumption.agg, logP, elasticity.substitution)
 
     return logPBar - log(1e4)
 
 end
 
-# function compute_operating_cost_constraint(x::Vector{T}, price_eu::Vector{T}, price_world::Vector{T}, params::Parameters, elasticity::Elasticity) where {T <: Real}
+function compute_operating_cost_constraint(x::Vector{T}, log_price_eu::Vector{T}, log_price_world::Vector{T},
+                                           data::CleanData, params::Parameters) where {T <: Real}
 
-#     log_price_uk, zOC, expenditure, log_TFP, log_Delta = unpack_x(n, x)
-#     price_uk = exp.(log_price_uk)
-#     logPM = log_price_index(params.production.uk[i,:],
-#                             params.production.eu[i,:],
-#                             params.production.world[i,:],
-#                             price_uk, price_eu, price_world, elasticity.production.armington)
+    log_price_uk, zOC, expenditure, log_TFP, log_Delta = unpack_x(data.constants.number_of_industries, x)
+    price_uk = exp.(log_price_uk)
+    price_eu = exp.(log_price_eu)
+    price_world = exp.(log_price_world)
+    
+    ξ = data.constants.elasticities.production.substitution
+    ξa = data.constants.elasticities.production.armington
 
-#     PmIndex = params.production.agg .* exp(1 - elasticity.consumption.substitution .* logPM)
+    PmIndex = Matrix{T}(undef, data.constants.number_of_industries, data.constants.number_of_industries)
+    for i in axes(PmIndex, 1)
+        logPM = log_price_index(params.production.uk[i,:],
+                                params.production.eu[i,:],
+                                params.production.world[i,:],
+                                price_uk, price_eu, price_world, ξa)
+        PmIndex[i,:] = params.production.agg[i,:] .* exp.((1 - ξ) .* logPM)
+    end
+    
+    logH = labor_supply(data.household, data.constants, params)
+    
+    KLRatio = exp.(
+        log.(params.production.human)./ξ + (ξ - 1) / ξ * logH
+        - log.(params.production.capital)./ξ  - (ξ - 1) / ξ * log.(data.industry.capital.current_year)
+    )
+    
+    tau = compute_advalorem_tax(data.industry)
+    logTauPdMu_val = logTauPdMu.(log_price_uk, tau, params.production.shock_mean)
 
-# end
+    PmRatio = sum(PmIndex, dims = 2) ./ exp.((1 - ξ) .* logTauPdMu_val)
+    
+    return log.(PmRatio + KLRatio) - log.(1 .+ KLRatio) - zOC + log.(1 .+ exp.(zOC))
+    
+end
+
+"""
+Compute parms.logH, in matlab code B1_SetupParameters.m L370
+"""
+function labor_supply(data::HouseholdData, constants::Constants, params::Parameters)
+
+    ξh = constants.elasticities.production.skill_substitution
+
+    out =  ξh / (ξh - 1) * log.(params.production.low_skill .^ (1 / ξh) .* data.hours.low .^ ((ξh - 1) / ξh)
+                               + params.production.high_skill .^ (1 / ξh) .* data.hours.high .^ ((ξh - 1) / ξh))
+    replace!(out, NaN => 0.0)
+
+    return out
+    
+end
 
 """
     function log_price_index(param::ParamsStruct, prices::DataFrame, elasticity::T, export_cost::T) where {T<:Real}

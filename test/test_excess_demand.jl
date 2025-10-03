@@ -26,14 +26,17 @@ price_eu = exp.(df.logP_eu)
 price_world = exp.(df.logP_w)
 
 params = Supergrassi.compute_all_parameters(clean, log_price_uk, log_price_eu, log_price_world)
-#log_params = Supergrassi.compute_all_parameters(clean, prices, Supergrassi.log_parameters_by_region)
 
-operating_cost = df.zOC
-# Copied from matlab code to validate results
-household_expenditure = 7.27421398152353670952
+operating_cost = clean.industry.surplus.val;
+household_expenditure = clean.industry.regional.totals.expenditure;
 muI = Supergrassi.compute_muI(clean.industry, params.constants.elasticities.investment);
 
-    
+x = deepcopy([log_price_uk;
+             operating_cost;
+             household_expenditure;
+             muI;
+             clean.industry.depreciation.val])
+
 F = Supergrassi.market_clearing_price_constraint(price_uk, operating_cost, household_expenditure,
                                                  price_eu, price_world, muI, params, clean.industry, clean.constants)
 
@@ -48,23 +51,52 @@ F = Supergrassi.market_clearing_price_constraint(price_uk, operating_cost, house
 
 end
 
+OC = Supergrassi.compute_operating_cost_constraint(x, log_price_eu, log_price_world, clean, params)
 
-Jac = jacobian(set_runtime_activity(ForwardWithPrimal),
-               Supergrassi.market_clearing_price_constraint,
-               price_uk, operating_cost, household_expenditure,
-               Const(price_eu),
-               Const(price_world),
-               Const(muI),
-               Const(params),
-               Const(clean.industry),
-               Const(clean.constants))
+@testset "Operating Cost" begin
+
+    @test isequal(length(OC), 16)
+
+end
+
+CFC = Supergrassi.compute_fixed_capital_consumption_constraint(x, rand(16), clean.industry, params)
+
+@testset "Fixed Capital" begin
+
+    @test isequal(length(CFC), 16)
+
+end
+
+Jac1 = jacobian(set_runtime_activity(ForwardWithPrimal),
+                Supergrassi.market_clearing_price_constraint,
+                price_uk, operating_cost, household_expenditure,
+                Const(price_eu),
+                Const(price_world),
+                Const(muI),
+                Const(params),
+                Const(clean.industry),
+                Const(clean.constants))
+
+Jac2 = jacobian(set_runtime_activity(ForwardWithPrimal),
+                Supergrassi.compute_operating_cost_constraint,
+                x,
+                Const(log_price_eu),
+                Const(log_price_world),
+                Const(clean),
+                Const(params))
 
 @testset "Jacobian" begin
 
-    @test length(Jac.val) == 6
-    @test isapprox(sum(Jac.val), df.pdYBar + df.EFd + df.EX1d + df.EX2d + df.EId + df.EMd, atol = tol)
-    @test length(Jac.derivs[1]) == 16
-    @test length(Jac.derivs[2]) == 16
-    @test length(Jac.derivs[3]) == 6
+    @test length(Jac1.val) == 6
+    @test isapprox(sum(Jac1.val), df.pdYBar + df.EFd + df.EX1d + df.EX2d + df.EId + df.EMd, atol = tol)
+    @test length(Jac1.derivs[1]) == 16
+    @test length(Jac1.derivs[2]) == 16
+    @test length(Jac1.derivs[3]) == 6
+
+    @test length(Jac2.val) == 16
+    # TODO: Improve these tests
+    @test isless(sum(Jac2.val), 4.0)
+    @test isless(3.9, sum(Jac2.val))
+    @test length(Jac2.derivs[1]) == 16*50
     
 end

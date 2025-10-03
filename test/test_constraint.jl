@@ -27,21 +27,21 @@ price_world = exp.(df.logP_w)
 
 params = Supergrassi.compute_all_parameters(clean, log_price_uk, log_price_eu, log_price_world)
 
-x = deepcopy([log_price_uk;
+x = deepcopy([price_uk;
               clean.industry.surplus.val;
               clean.industry.regional.totals.expenditure;
               Supergrassi.compute_muI(clean.industry, params.constants.elasticities.investment);
               clean.industry.depreciation.val])
 
-y = zeros(32)
+y = zeros(48)
 
-CEQ = Supergrassi.constraint_function(x, log_price_eu, log_price_world, params, clean.industry, clean.constants, y)
+CEQ = Supergrassi.constraint_function(x, log_price_eu, log_price_world, clean, params, y)
 DCEQ = Supergrassi.constraint_jacobian(x, log_price_eu, log_price_world, clean, params) 
 
 @testset "Constraint Function" begin
 
-    @test length(CEQ) == 32
-    @test length(DCEQ) == 32*50
+    @test length(CEQ) == 48
+    @test length(DCEQ) == 48*50
     
 end
 

@@ -36,7 +36,7 @@ function create_optimization_functions(log_prices_eu, log_prices_world, clean, p
 
     simple_objective(x) = compute_objective_function(x, clean, log_prices_eu, log_prices_world)
     simple_gradient(x, gradient_var) = compute_gradient(x, clean, log_prices_eu, log_prices_world, gradient_var)
-    simple_constraint(x, constraint) = constraint_function(x, log_prices_eu, log_prices_world, params, clean.industry, clean.constants, constraint)
+    simple_constraint(x, constraint) = constraint_function(x, log_prices_eu, log_prices_world, clean, params, constraint)
     
     return simple_objective, simple_gradient, simple_constraint, simple_jacobian
 end
