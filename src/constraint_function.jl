@@ -31,7 +31,7 @@ function constraint_jacobian(x::Vector{T}, log_price_eu::Vector{T}, log_price_wo
 
     DCEQ = first(Jac)
 
-    return DCEQ
+    return dropdims(DCEQ, dims = 2)
 
 end
 
@@ -54,7 +54,7 @@ function constraint_function(x::Vector{T}, log_price_eu::Vector{T}, log_price_wo
     KL = rand(data.constants.number_of_industries) # TODO: compute with capital_market
     F = market_clearing_price_constraint(x, log_price_eu, log_price_world, params, data.industry, data.constants)
     F[data.constants.number_of_industries] = compute_normalisation_constraint(x, log_price_eu, log_price_world, params,
-                                                                      data.constants.elasticities.consumption)
+                                                                              data.constants.elasticities.consumption)
     OC = compute_operating_cost_constraint(x, log_price_eu, log_price_world, data, params)
     CFC = compute_fixed_capital_consumption_constraint(x, KL, data.industry, params)
     y = [F; OC; CFC]

@@ -43,13 +43,16 @@ function estimate()
 
     trial = sparser(global_jacobian)
 
+    n_variables = length(x)
+    n_constraints = size(global_jacobian)[1]
+
     prob = Ipopt.CreateIpoptProblem(
-        50,
-        [0.0 for i in 1:50],
-        [10.0 for i in 1:50],
-        32,
-        [0.0 for i in 1:32],
-        [0.0 for i in 1:32],
+        n_variables,
+        [0.0 for i in 1:n_variables],
+        [10.0 for i in 1:n_variables],
+        n_constraints,
+        [0.0 for i in 1:n_constraints],
+        [0.0 for i in 1:n_constraints],
         length(trial[1]),
         0,
         simple_objective,

@@ -2,30 +2,7 @@ using Test
 using Supergrassi
 using CSV, DataFrames, Enzyme
 
-tol = 1e-12
-
-if (!@isdefined data)
-    settings_path = create_filepath("config/settings.yml")
-    settings = read_settings(settings_path)
-    filepaths = check_file_availability(settings)
-    data = read_data(filepaths, settings)
-end
-
-if (!@isdefined clean)
-    clean = Supergrassi.clean_data(data,settings)
-    Supergrassi.postprocess_clean_data!(clean)
-end
-
-df = CSV.read(joinpath(@__DIR__,"..","data", "excess_demand_terms.csv"), DataFrame)
-
-log_price_uk = df.logP_uk
-log_price_eu = df.logP_eu
-log_price_world = df.logP_w
-price_uk = exp.(df.logP_uk)
-price_eu = exp.(df.logP_eu)
-price_world = exp.(df.logP_w)
-
-params = Supergrassi.compute_all_parameters(clean, log_price_uk, log_price_eu, log_price_world)
+df_xd = CSV.read(joinpath(@__DIR__,"..","data", "excess_demand_terms.csv"), DataFrame)
 
 operating_cost = clean.industry.surplus.val;
 household_expenditure = clean.industry.regional.totals.expenditure;
@@ -42,12 +19,12 @@ F = Supergrassi.market_clearing_price_constraint(price_uk, operating_cost, house
 
 @testset "Market Clearing" begin
 
-    @test isapprox(F[1][1:15], df.pdYBar[1:15], atol = tol)
-    @test isapprox(F[2][1:15], df.EFd[1:15], atol = tol)
-    @test isapprox(F[3][1:15], df.EX1d[1:15], atol = tol)
-    @test isapprox(F[4][1:15], df.EX2d[1:15], atol = tol)
-    @test isapprox(F[5][1:15], df.EId[1:15], atol = tol)
-    @test isapprox(F[6][1:15], df.EMd[1:15], atol = tol)
+    @test isapprox(F[1][1:15], df_xd.pdYBar[1:15], atol = tol)
+    @test isapprox(F[2][1:15], df_xd.EFd[1:15], atol = tol)
+    @test isapprox(F[3][1:15], df_xd.EX1d[1:15], atol = tol)
+    @test isapprox(F[4][1:15], df_xd.EX2d[1:15], atol = tol)
+    @test isapprox(F[5][1:15], df_xd.EId[1:15], atol = tol)
+    @test isapprox(F[6][1:15], df_xd.EMd[1:15], atol = tol)
 
 end
 
@@ -88,7 +65,7 @@ Jac2 = jacobian(set_runtime_activity(ForwardWithPrimal),
 @testset "Jacobian" begin
 
     @test length(Jac1.val) == 6
-    @test isapprox(sum(Jac1.val), df.pdYBar + df.EFd + df.EX1d + df.EX2d + df.EId + df.EMd, atol = tol)
+    @test isapprox(sum(Jac1.val), df_xd.pdYBar + df_xd.EFd + df_xd.EX1d + df_xd.EX2d + df_xd.EId + df_xd.EMd, atol = tol)
     @test length(Jac1.derivs[1]) == 16
     @test length(Jac1.derivs[2]) == 16
     @test length(Jac1.derivs[3]) == 6
