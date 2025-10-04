@@ -19,7 +19,6 @@ include("excess_demand.jl")
 include("objective_function.jl")
 include("constraint_function.jl")
 
-include("minimisation.jl")
 include("optimisation_helpers.jl")
 
 include("estimation.jl")
