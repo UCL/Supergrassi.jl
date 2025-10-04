@@ -261,7 +261,7 @@ Names reference
 - `low_skill::Vector{Float64}` : `γ_L`
 - `high_skill::Vector{Float64}` : `γ_H`
 - `shock_mean::Vector{Float64}` : `μ`
-- `shock_stddev::Vector{Float64}` : ̄`σ`
+- `shock_stdev::Vector{Float64}` : ̄`σ`
 - `uk::Matrix{Float64}` : `γ_Md`
 - `eu::Matrix{Float64}` : `γ_Meu`
 - `world::Matrix{Float64}` : `γ_Mw`
@@ -274,7 +274,7 @@ struct ParamsProduction
     low_skill::Vector{Float64}
     high_skill::Vector{Float64}
     shock_mean::Vector{Float64}
-    shock_stddev::Vector{Float64}
+    shock_stdev::Vector{Float64}
 
     uk::Matrix{Float64}
     eu::Matrix{Float64}
