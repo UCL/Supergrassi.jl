@@ -92,9 +92,10 @@ function estimate(;log_results::Bool = false, log_results_filepath::String="log_
 end
 
 
-function batch_estimation(;log_errors::Bool = false, log_errors_filepath::String="log_errors.csv", log_results::Bool = false, log_results_filepath::String="log_results.csv")
+function batch_estimation(;batch_size::Int = 100, log_errors::Bool = false, log_errors_filepath::String="log_errors.csv", log_results::Bool = false, log_results_filepath::String="log_results.csv")
 
-    @threads for i in 1:100
+    @threads for i in 1:batch_size
+        @info "Starting estimation iteration $i"
         try
             results = estimate(log_results=log_results, log_results_filepath=log_results_filepath)
         catch e
