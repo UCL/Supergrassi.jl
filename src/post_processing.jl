@@ -215,10 +215,12 @@ function rescale_data!(data::CleanData)
         data.industry.regional.total_use[!, col] .*= use_scaling_factor
     end
 
-    for name in unique(data.industry.assets_liabilities.current_year.SIC16)
-        for df in [data.industry.assets_liabilities.current_year, data.industry.assets_liabilities.next_year]
+    for (i,name) in enumerate(unique(data.industry.assets_liabilities.current_year.SIC16))
+        for year in [:current_year, :next_year]
+            df = getfield(data.industry.assets_liabilities, year)
+            k = data.industry.capital[:,year]
             mask = df.SIC16 .== name
-            df.Assets[mask] ./= sum(df.Assets[mask])
+            df.Assets[mask] .*= (k[i] / sum(df.Assets[mask]))
         end
     end
 

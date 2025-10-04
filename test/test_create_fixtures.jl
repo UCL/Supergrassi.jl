@@ -44,3 +44,4 @@ params = Supergrassi.compute_all_parameters(clean, log_price_uk, log_price_eu, l
     @test isa(tol, Float64)
 
 end
+

@@ -369,7 +369,7 @@ function clean_data(data::Data, settings::Dict{String, Any})
     year::Int64 = settings["constants"]["data_year"]
 
     industry_names = data.input_output.industry_names
-    aggregated_names = unique(data.merge_codes_64.x7[2:end])
+    aggregated_names = sort(unique(data.merge_codes_64.x7[2:end]))
 
     mapping_105_to_64 = create_map_105_to_64(data.merge_codes_105)
     mapping_64_to_16 = create_map_64_to_16(data.merge_codes_64)
