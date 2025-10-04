@@ -174,7 +174,18 @@ function market_clearing_price_constraint(price_uk::Vector{T}, operating_cost::V
 end
 
 """
+    function compute_fixed_capital_consumption_constraint(x::Vector{<:Number}, KL::Vector{<:Number}, data::IndustryData, params::Parameters) where {T <: Real}
+
 CEQ2 in Matlab code EstimationConstraint1.m L68
+
+# Arguments
+
+- `x::Vector{<:Number}`: Vector containing equilibrium variables.
+- `KL::Vector{<:Number}`: Vector containing capital stock variables.
+- `data::IndustryData` : Industry data structure containing advalorem tax rates.
+
+# Returns
+- `Vector{<:Number}` : Vector containing the fixed capital consumption constraints.
 """
 function compute_fixed_capital_consumption_constraint(x::Vector{T}, KL::Vector{T}, data::IndustryData, params::Parameters) where {T <: Real}
 
@@ -195,7 +206,16 @@ function compute_fixed_capital_consumption_constraint(x::Vector{T}, KL::Vector{T
 end
 
 """
+    function compute_normalisation_constraint(x::Vector{T}, log_price_eu::Vector{T}, log_price_world::Vector{T}, params::Parameters, elasticity::Elasticity) where {T <: Real}
+
 F(n) in Matlab code ExcessDemand.m L344
+
+# Arguments
+- `x::Vector{<:Number}`: Vector containing equilibrium variables.
+- `log_price_eu::Vector{<:Number}`: Vector containing the EU prices.
+- `log_price_world::Vector{<:Number}`: Vector containing the rest of the world prices.
+- `params::Parameters`: Parameters structure containing production and constants.
+- `elasticity::Elasticity` : Elasticity struct corresponding to consumption. Must contain substitution and armington. See [`Elasticity`](@ref)
 """
 function compute_normalisation_constraint(x::Vector{T}, log_price_eu::Vector{T}, log_price_world::Vector{T}, params::Parameters, elasticity::Elasticity) where {T <: Real}
 
@@ -211,6 +231,23 @@ function compute_normalisation_constraint(x::Vector{T}, log_price_eu::Vector{T},
 
 end
 
+"""
+    function compute_operating_cost_constraint(x::Vector{T}, log_price_eu::Vector{T}, log_price_world::Vector{T},
+                                           data::CleanData, params::Parameters) where {T <: Real}
+
+Compute the operating cost constraint.
+
+# Arguments
+- `x::Vector{<:Number}`: Vector containing equilibrium variables.
+- `log_price_eu::Vector{<:Number}`: Vector containing the EU prices.
+- `log_price_world::Vector{<:Number}`: Vector containing the rest of the world prices.
+- `data::CleanData`: Cleaned data structure containing industry and household data.
+- `params::Parameters`: Parameters structure containing production and constants.
+
+# Returns
+- `Vector{<:Number}`: Vector containing the operating cost constraints.
+
+"""
 function compute_operating_cost_constraint(x::Vector{T}, log_price_eu::Vector{T}, log_price_world::Vector{T},
                                            data::CleanData, params::Parameters) where {T <: Real}
 
@@ -248,7 +285,7 @@ function compute_operating_cost_constraint(x::Vector{T}, log_price_eu::Vector{T}
 end
 
 """
-Compute parms.logH, in matlab code B1_SetupParameters.m L370
+Compute params.logH, in matlab code B1_SetupParameters.m L370
 """
 function labor_supply(data::HouseholdData, constants::Constants, params::Parameters)
 

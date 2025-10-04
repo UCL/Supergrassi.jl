@@ -339,7 +339,7 @@ Clean the sigma bar data by converting it to a DataFrame, parsing strings to Flo
 # Returns
 - `DataFrame`: A DataFrame containing the cleaned sigma bar data, with specified indices set to zero.
 """
-function  clean_sigma_bar(sigma_data::Vector, zero_list::Vector{Int64}, sic64::Vector{String})
+function clean_sigma_bar(sigma_data::Vector, zero_list::Vector{Int64}, sic64::Vector{String})
 
     sigma_bar = DataFrame(permutedims(sigma_data), sic64)
 

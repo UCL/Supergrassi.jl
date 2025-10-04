@@ -117,6 +117,7 @@ Performs multiple estimation iterations in parallel, logging errors and results 
 - `log_errors_filepath::String`: The file path where errors will be logged if `log_errors` is true. Default is "log_errors.csv".
 - `log_results::Bool`: If true, logs the results of each estimation to a CSV file.
 - `log_results_filepath::String`: The file path where results will be logged if `log_results` is true. Default is "log_results.csv".
+
 """
 function batch_estimation(;batch_size::Int = 100, log_errors::Bool = false, log_errors_filepath::String="log_errors.csv", log_results::Bool = false, log_results_filepath::String="log_results.csv")
 
