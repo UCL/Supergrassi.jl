@@ -1,6 +1,6 @@
 using Base.Threads
 
-function estimate(log_results::Bool = false, log_results_filepath::String="log_results.csv")
+function estimate(;log_results::Bool = false, log_results_filepath::String="log_results.csv")
 
     @info "Estimation started."
 
@@ -89,7 +89,7 @@ function estimate(log_results::Bool = false, log_results_filepath::String="log_r
 end
 
 
-function batch_estimation(log_errors::Bool = false, log_errors_filepath::String="log_errors.csv", log_results::Bool = false, log_results_filepath::String="log_results.csv")
+function batch_estimation(;log_errors::Bool = false, log_errors_filepath::String="log_errors.csv", log_results::Bool = false, log_results_filepath::String="log_results.csv")
 
     @threads for i in 1:100
         try
