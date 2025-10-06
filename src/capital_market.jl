@@ -79,7 +79,7 @@ end
     function B(price_uk::T, μ::T, zOC::T, δ::T, τ::T, γK::T, ξ::T) where {T <: Real}
 
 As far as I can tell, in the Matlab code chi0 is always 0, q0 is always 1.
-Therefore this method assumes chi0 = 0, q0 = 1 and simplifies the calculation.
+Therefore this method assumes chi0 = 0, q0 = 1 and simplifies the calculation of B.
 """
 function B(price_uk::T, μ::T, zOC::T, δ::T, τ::T, γK::T, ξ::T) where {T <: Real}
 
@@ -90,7 +90,7 @@ end
 """
     function b(price_uk::T, μ::T, zOC::T, τ::T, γK::T, ξ::T) where {T <: Real}
 
-This method assumes q0 = 1 and simplifies the calculation
+This method assumes q0 = 1 and simplifies the calculation of b
 """
 function b(price_uk::T, μ::T, zOC::T, τ::T, γK::T, ξ::T) where {T <: Real}
 
@@ -102,7 +102,7 @@ end
 """
     function TzOC(zOC::T) where {T <: Real}
 
-Above C.1
+Compute T(zOC) Above equation C.1
 """
 function TzOC(zOC::T) where {T <: Real}
 
@@ -113,7 +113,7 @@ end
 """
     function rk(price_uk::T, μ::T, zOC::T, τ::T, γK::T, ξ::T, q0::T) where {T <: Real}
 
-C. 48
+Compute equation C. 48
 """
 function rk(price_uk::T, μ::T, zOC::T, τ::T, γK::T, ξ::T, q0::T) where {T <: Real}
 
@@ -124,7 +124,7 @@ end
 """
     function residual(logOmega::T, L::T, fun::Function) where {T<:Real}
 
-Compute the difference of fun(logOmega) and L.
+Compute the difference of fun(logOmega) and data L.
 """
 function residual(logOmega::T, L::T, fun::Function) where {T<:Real}
 
@@ -136,7 +136,7 @@ end
     function G(price_uk::T, zOC::T, mu::T, gammaK::T, delta::T,
            tau::T, logOmega::T, chi0::T, xi::T, q0::T, k0::T, muBar::T, sigmaBar::T) where {T <: Real}
 
-C. 44
+Compute Gi from equation C. 44
 """
 function G(price_uk::T, zOC::T, mu::T, gammaK::T, delta::T,
            tau::T, logOmega::T, chi0::T, xi::T, q0::T, k0::T, muBar::T, sigmaBar::T) where {T <: Real}
@@ -181,6 +181,14 @@ end
 """
     function compute_capital_market(price_uk::Vector{T}, zOC::Vector{T}, data::IndustryData, params::Parameters) where {T <: Real}
 
+Compute KL and KD from the supply and demand equations C.50 and C.51 and the free cash flow from equation 2.56
+
+# Arguments
+
+- price_uk::Vector{Real}: Vector of domestic prices
+- zOC::Vector{Real}: Vector of operating costs
+- data::IndustryData: see [`IndustryData`](@ref)
+- params::Parameters: see [`Parameters`](@ref)
 """
 function compute_capital_market(price_uk::Vector{T}, zOC::Vector{T}, data::IndustryData, params::Parameters) where {T <: Real}
 
@@ -275,6 +283,7 @@ end
 """
     function compute_logOmegaBar(bval::T, Bval::T, grid, liabilities::Vector{T}, fun::Function) where {T <: Real}
 
+Compute logOmegaBar by finding the root of the function Delta in equation C.47
 """
 function compute_logOmegaBar(bval::T, Bval::T, grid, liabilities::Vector{T}, fun::Function) where {T <: Real}
 
@@ -356,6 +365,7 @@ end
                               assets::Vector{T}, liabilities::Vector{T},
                               nonzero_indices::Vector{Int}, logOmegaBar::Vector{T}, fun::Function, grid) where {T <: Real}
 
+Compute the terms KL and KD (equations C.50 and C.51) and the FCF term (equation 2.56) given logOmegaBar
 """
 function capital_market_terms(price_uk::T, zOC::T, mu::T, muBar::T, sigmaBar::T, delta::T,
                               tau::T, gammaK::T, xi::T, lambda::T, R::T, k0::T, k1::T, chi1::T,
