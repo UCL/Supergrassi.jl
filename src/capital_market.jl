@@ -10,7 +10,7 @@ using LinearAlgebra
 Wrapper around Delta that exposes logOmega, price_uk and zOC as the arguments for computation
 of derivatives H.3 - H.5 (on the RHS of H.1 and H.2)
 """
-function Delta_wrapper(logOmega, price_uk, zOC, mu, muBar, sigmaBar, delta, tau, gammaK, xi, lambda, R)
+function Delta_wrapper(logOmega::T, price_uk::T, zOC::T, mu::T, muBar::T, sigmaBar::T, delta::T, tau::T, gammaK::T, xi::T, lambda::T, R::T) where {T <: Real}
 
     Bval = B(price_uk, mu, zOC, delta, tau, gammaK, xi)
     bval = b(price_uk, mu, zOC, tau, gammaK, xi)
@@ -50,7 +50,7 @@ Second part of C.47
 B(iNZ) = 1 - parms.delta(iNZ) + pd(iNZ).*(1-parms.tau(iNZ)).*parms.chi0(iNZ)/parms.q0 ...
       - rk(iNZ).*ROCTheta(iNZ)./(1-ROCTheta(iNZ));
 """
-function B(price_uk, μ, zOC, δ, τ, γK, χ0, ξ, q0)
+function B(price_uk::T, μ::T, zOC::T, δ::T, τ::T, γK::T, χ0::T, ξ::T, q0::T) where {T <: Real}
 
     return 1.0 - δ + (1.0 - τ) * price_uk * χ0 / q0 - rk(price_uk, μ, zOC, τ, γK, ξ, q0) * TzOC(zOC) / (1.0 - TzOC(zOC))
 
@@ -61,7 +61,7 @@ Second part of C.47
 
 b(iNZ) = rk(iNZ)./(parms.mu(iNZ).*(1-ROCTheta(iNZ)));
 """
-function b(price_uk, μ, zOC, τ, γK, ξ, q0)
+function b(price_uk::T, μ::T, zOC::T, τ::T, γK::T, ξ::T, q0::T) where {T <: Real}
 
     return rk(price_uk, μ, zOC, τ, γK, ξ, q0) / (μ * (1 - TzOC(zOC)))
 
@@ -71,18 +71,18 @@ end
 As far as I can tell, in the Matlab code chi0 is always 0, q0 is always 1.
 Therefore this method assumes chi0 = 0, q0 = 1 and simplifies the calculation.
 """
-function B(price_uk, μ, zOC, δ, τ, γK, ξ)
+function B(price_uk::T, μ::T, zOC::T, δ::T, τ::T, γK::T, ξ::T) where {T <: Real}
 
-    return 1.0 - δ - rk(price_uk, μ, zOC, τ, γK, ξ, 1) * TzOC(zOC) / (1.0 - TzOC(zOC))
+    return 1.0 - δ - rk(price_uk, μ, zOC, τ, γK, ξ, 1.0) * TzOC(zOC) / (1.0 - TzOC(zOC))
 
 end
 
 """
 This method assumes q0 = 1 and simplifies the calculation
 """
-function b(price_uk, μ, zOC, τ, γK, ξ)
+function b(price_uk::T, μ::T, zOC::T, τ::T, γK::T, ξ::T) where {T <: Real}
 
-    return rk(price_uk, μ, zOC, τ, γK, ξ, 1) / (μ * (1 - TzOC(zOC)))
+    return rk(price_uk, μ, zOC, τ, γK, ξ, 1.0) / (μ * (1 - TzOC(zOC)))
 
 end
 
@@ -90,7 +90,7 @@ end
 """
 Above C.1
 """
-function TzOC(zOC)
+function TzOC(zOC::T) where {T <: Real}
 
     return exp(zOC) / (1 + exp(zOC))
 
@@ -99,7 +99,7 @@ end
 """
 C. 48
 """
-function rk(price_uk, μ, zOC, τ, γK, ξ, q0)
+function rk(price_uk::T, μ::T, zOC::T, τ::T, γK::T, ξ::T, q0::T) where {T <: Real}
 
     return (1 - τ) * price_uk * μ * γK ^ (1 / (ξ - 1)) * (1 - TzOC(zOC)) ^ (1 / (1 - ξ)) / q0
 
