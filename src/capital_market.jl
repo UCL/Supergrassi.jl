@@ -7,10 +7,12 @@ using Random
 using LinearAlgebra
 
 """
+    function Delta_wrapper(logOmega::T, price_uk::T, zOC::T, mu::T, muBar::T, sigmaBar::T, delta::T, tau::T, gammaK::T, xi::T, lambda::T, R::T) where {T <: Real}
+
 Wrapper around Delta that exposes logOmega, price_uk and zOC as the arguments for computation
 of derivatives H.3 - H.5 (on the RHS of H.1 and H.2)
 """
-function Delta_wrapper(logOmega, price_uk, zOC, mu, muBar, sigmaBar, delta, tau, gammaK, xi, lambda, R)
+function Delta_wrapper(logOmega::T, price_uk::T, zOC::T, mu::T, muBar::T, sigmaBar::T, delta::T, tau::T, gammaK::T, xi::T, lambda::T, R::T) where {T <: Real}
 
     Bval = B(price_uk, mu, zOC, delta, tau, gammaK, xi)
     bval = b(price_uk, mu, zOC, tau, gammaK, xi)
@@ -20,6 +22,8 @@ function Delta_wrapper(logOmega, price_uk, zOC, mu, muBar, sigmaBar, delta, tau,
 end
 
 """
+    function Delta(logOmega::T, B::T, b::T, μ::T, muBar::T, sigmaBar::T, λ::T, R::T) where {T <: Real}
+
 Function Delta as a function of logOmega, B and b as written in the paper (C. 47).
 """
 function Delta(logOmega::T, B::T, b::T, μ::T, muBar::T, sigmaBar::T, λ::T, R::T) where {T <: Real}
@@ -45,66 +49,83 @@ function Delta(logOmega::T, B::T, b::T, μ::T, muBar::T, sigmaBar::T, λ::T, R::
 end
 
 """
+    function B(price_uk::T, μ::T, zOC::T, δ::T, τ::T, γK::T, χ0::T, ξ::T, q0::T) where {T <: Real}
+
 Second part of C.47
 
 B(iNZ) = 1 - parms.delta(iNZ) + pd(iNZ).*(1-parms.tau(iNZ)).*parms.chi0(iNZ)/parms.q0 ...
       - rk(iNZ).*ROCTheta(iNZ)./(1-ROCTheta(iNZ));
 """
-function B(price_uk, μ, zOC, δ, τ, γK, χ0, ξ, q0)
+function B(price_uk::T, μ::T, zOC::T, δ::T, τ::T, γK::T, χ0::T, ξ::T, q0::T) where {T <: Real}
 
     return 1.0 - δ + (1.0 - τ) * price_uk * χ0 / q0 - rk(price_uk, μ, zOC, τ, γK, ξ, q0) * TzOC(zOC) / (1.0 - TzOC(zOC))
 
 end
 
 """
+    function b(price_uk::T, μ::T, zOC::T, τ::T, γK::T, ξ::T, q0::T) where {T <: Real}
+
 Second part of C.47
 
 b(iNZ) = rk(iNZ)./(parms.mu(iNZ).*(1-ROCTheta(iNZ)));
 """
-function b(price_uk, μ, zOC, τ, γK, ξ, q0)
+function b(price_uk::T, μ::T, zOC::T, τ::T, γK::T, ξ::T, q0::T) where {T <: Real}
 
     return rk(price_uk, μ, zOC, τ, γK, ξ, q0) / (μ * (1 - TzOC(zOC)))
 
 end
 
 """
+    function B(price_uk::T, μ::T, zOC::T, δ::T, τ::T, γK::T, ξ::T) where {T <: Real}
+
 As far as I can tell, in the Matlab code chi0 is always 0, q0 is always 1.
-Therefore this method assumes chi0 = 0, q0 = 1 and simplifies the calculation.
+Therefore this method assumes chi0 = 0, q0 = 1 and simplifies the calculation of B.
 """
-function B(price_uk, μ, zOC, δ, τ, γK, ξ)
+function B(price_uk::T, μ::T, zOC::T, δ::T, τ::T, γK::T, ξ::T) where {T <: Real}
 
-    return 1.0 - δ - rk(price_uk, μ, zOC, τ, γK, ξ, 1) * TzOC(zOC) / (1.0 - TzOC(zOC))
+    return 1.0 - δ - rk(price_uk, μ, zOC, τ, γK, ξ, 1.0) * TzOC(zOC) / (1.0 - TzOC(zOC))
 
 end
 
 """
-This method assumes q0 = 1 and simplifies the calculation
-"""
-function b(price_uk, μ, zOC, τ, γK, ξ)
+    function b(price_uk::T, μ::T, zOC::T, τ::T, γK::T, ξ::T) where {T <: Real}
 
-    return rk(price_uk, μ, zOC, τ, γK, ξ, 1) / (μ * (1 - TzOC(zOC)))
+This method assumes q0 = 1 and simplifies the calculation of b
+"""
+function b(price_uk::T, μ::T, zOC::T, τ::T, γK::T, ξ::T) where {T <: Real}
+
+    return rk(price_uk, μ, zOC, τ, γK, ξ, 1.0) / (μ * (1 - TzOC(zOC)))
 
 end
 
 
 """
-Above C.1
+    function TzOC(zOC::T) where {T <: Real}
+
+Compute T(zOC) Above equation C.1
 """
-function TzOC(zOC)
+function TzOC(zOC::T) where {T <: Real}
 
     return exp(zOC) / (1 + exp(zOC))
 
 end
 
 """
-C. 48
+    function rk(price_uk::T, μ::T, zOC::T, τ::T, γK::T, ξ::T, q0::T) where {T <: Real}
+
+Compute equation C. 48
 """
-function rk(price_uk, μ, zOC, τ, γK, ξ, q0)
+function rk(price_uk::T, μ::T, zOC::T, τ::T, γK::T, ξ::T, q0::T) where {T <: Real}
 
     return (1 - τ) * price_uk * μ * γK ^ (1 / (ξ - 1)) * (1 - TzOC(zOC)) ^ (1 / (1 - ξ)) / q0
 
 end
 
+"""
+    function residual(logOmega::T, L::T, fun::Function) where {T<:Real}
+
+Compute the difference of fun(logOmega) and data L.
+"""
 function residual(logOmega::T, L::T, fun::Function) where {T<:Real}
 
     return L - fun(logOmega)
@@ -112,7 +133,10 @@ function residual(logOmega::T, L::T, fun::Function) where {T<:Real}
 end
 
 """
-C. 44
+    function G(price_uk::T, zOC::T, mu::T, gammaK::T, delta::T,
+           tau::T, logOmega::T, chi0::T, xi::T, q0::T, k0::T, muBar::T, sigmaBar::T) where {T <: Real}
+
+Compute Gi from equation C. 44
 """
 function G(price_uk::T, zOC::T, mu::T, gammaK::T, delta::T,
            tau::T, logOmega::T, chi0::T, xi::T, q0::T, k0::T, muBar::T, sigmaBar::T) where {T <: Real}
@@ -141,6 +165,10 @@ function G(price_uk::T, zOC::T, mu::T, gammaK::T, delta::T,
 
 end
 
+"""
+    function omegaV(zOC::T, μ::T, χ1::T, γK::T, ξ::T) where {T <: Real}
+
+"""
 function omegaV(zOC::T, μ::T, χ1::T, γK::T, ξ::T) where {T <: Real}
 
     ωV = μ - χ1 * ((1 - TzOC(zOC)) / γK ^ (1/ξ)) ^ (ξ/(ξ-1))
@@ -150,6 +178,18 @@ end
 
 # using Plots
 
+"""
+    function compute_capital_market(price_uk::Vector{T}, zOC::Vector{T}, data::IndustryData, params::Parameters) where {T <: Real}
+
+Compute KL and KD from the supply and demand equations C.50 and C.51 and the free cash flow from equation 2.56
+
+# Arguments
+
+- price_uk::Vector{Real}: Vector of domestic prices
+- zOC::Vector{Real}: Vector of operating costs
+- data::IndustryData: see [`IndustryData`](@ref)
+- params::Parameters: see [`Parameters`](@ref)
+"""
 function compute_capital_market(price_uk::Vector{T}, zOC::Vector{T}, data::IndustryData, params::Parameters) where {T <: Real}
 
     tau = compute_advalorem_tax(data)
@@ -229,13 +269,22 @@ end
 
 # end
 
+"""
+    function compute_grid(grid_size::Int, muBar::T, sigmaBar::T) where {T <: Real}
+
+Calculate a discrete 1d grid around muBar of width 4 * sigmaBar
+"""
 function compute_grid(grid_size::Int, muBar::T, sigmaBar::T) where {T <: Real}
 
     return range(muBar - 4 * sigmaBar, muBar + 4 * sigmaBar, grid_size)
 
 end
 
+"""
+    function compute_logOmegaBar(bval::T, Bval::T, grid, liabilities::Vector{T}, fun::Function) where {T <: Real}
 
+Compute logOmegaBar by finding the root of the function Delta in equation C.47
+"""
 function compute_logOmegaBar(bval::T, Bval::T, grid, liabilities::Vector{T}, fun::Function) where {T <: Real}
 
     # Find local maxima and minima of fun on grid
@@ -310,6 +359,14 @@ function compute_logOmegaBar(bval::T, Bval::T, grid, liabilities::Vector{T}, fun
 
 end
 
+"""
+    function capital_market_terms(price_uk::T, zOC::T, mu::T, muBar::T, sigmaBar::T, delta::T,
+                              tau::T, gammaK::T, xi::T, lambda::T, R::T, k0::T, k1::T, chi1::T,
+                              assets::Vector{T}, liabilities::Vector{T},
+                              nonzero_indices::Vector{Int}, logOmegaBar::Vector{T}, fun::Function, grid) where {T <: Real}
+
+Compute the terms KL and KD (equations C.50 and C.51) and the FCF term (equation 2.56) given logOmegaBar
+"""
 function capital_market_terms(price_uk::T, zOC::T, mu::T, muBar::T, sigmaBar::T, delta::T,
                               tau::T, gammaK::T, xi::T, lambda::T, R::T, k0::T, k1::T, chi1::T,
                               assets::Vector{T}, liabilities::Vector{T},
@@ -356,8 +413,9 @@ function capital_market_terms(price_uk::T, zOC::T, mu::T, muBar::T, sigmaBar::T,
 end
 
 # TODO: Fix this function with correct parameters
-# function compute_dividends(FCF::Vector{T}, params::Parameters) where {T <: Real}
+# function compute_dividends(FCF::Vector{T}, q1::T, params::Parameters, data::IndustryData) where {T <: Real}
 
-#     return FCF + params.D1 - params.D0 - q1 * (params.k1 - params.k0);
-
+#     # return FCF + params.D1 - params.D0 - q1 * (params.k1 - params.k0);
+#     return FCF + params.D1 - params.D0 - q1 * (data.capital.next_year .- data.capital.current_year);
+    
 # end
