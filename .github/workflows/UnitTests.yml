@@ -37,7 +37,7 @@ jobs:
       matrix:
         version:
           - 'min' # Earliest julia version according to `Project.toml`
-          - '1'
+          - '1.11'
         os:
           - ubuntu-latest
         arch:
