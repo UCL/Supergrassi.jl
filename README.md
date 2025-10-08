@@ -4,19 +4,72 @@
 [![Build Status](https://github.com/UCL/Supergrassi.jl/actions/workflows/UnitTests.yml/badge.svg?branch=main)](https://github.com/UCL/Supergrassi.jl/actions/workflows/UnitTests.yml?query=branch%3Amain)
 [![codecov](https://codecov.io/gh/UCL/Supergrassi.jl/graph/badge.svg?token=LU852FO3FP)](https://codecov.io/gh/UCL/Supergrassi.jl)
 
-Multi-sector dynamic macroeconomics model with debt and default
+A comprehensive Julia package for multi-sector dynamic macroeconomic modeling with debt and default, featuring constrained optimization of prices and other parameters.
 
-## Read data into Julia
+## Overview
+
+Supergrassi.jl provides a complete framework for macroeconomic analysis, including:
+
+- **Multi-regional economic modeling** (UK, EU, World regions)
+- **Industry-level analysis** with input-output matrices
+- **Household and firm behavior modeling**
+- **Capital market equilibrium**
+- **Constrained optimization** using Ipopt solver
+- **Automatic differentiation** with Enzyme.jl
+- **Batch estimation** with error handling and logging
+
+## Installation
+
+```bash
+git clone https://github.com/UCL/Supergrassi.jl.git
+cd Supergrassi.jl
+julia --project=.
+```
+
+## Quick Start
+
+### Basic Data Pipeline
 
 ```julia
 using Supergrassi
 
+# Load configuration and data
 settings_path = create_filepath("config/settings.yml")
 settings = read_settings(settings_path)
 filepaths = check_file_availability(settings)
 data = read_data(filepaths, settings)
 
+# Clean and process data
+clean_data = clean_data(data, settings)
+postprocess_clean_data!(clean_data)
 ```
+
+### Run Economic Estimation
+
+All the data processing steps are encapsulated in the `estimate` function. For batch processing, use `batch_estimation`.
+
+```julia
+# Single estimation
+status, prob = estimate()
+
+# Batch estimation with logging
+batch_estimation(
+    batch_size=100,
+    log_errors=true,
+    log_results=true,
+    log_results_filepath="results.csv"
+)
+```
+
+## Configuration
+
+All configurations are managed through a YAML file (`config/settings.yml`).
+
+The data files should be organized in the `input/` directory as specified in the configuration file.
+
+## Data Structure
+
+The main data structures used in Supergrassi.jl are illustrated below:
 
 ```mermaid
 classDiagram
